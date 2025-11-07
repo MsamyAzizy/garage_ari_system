@@ -1,0 +1,71 @@
+/* drawer.css - Styling for the Drawer component */
+
+/* -------------------- Overlay -------------------- */
+.drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    z-index: 1000; /* Ensure it's above everything else */
+}
+
+/* -------------------- Drawer Panel -------------------- */
+.drawer-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    background-color: white;
+    z-index: 1001; /* Above the overlay */
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    
+    /* Animation for smooth entry */
+    transform: translateX(0);
+    transition: transform 0.3s ease-in-out; 
+}
+
+/* Width Classes */
+.drawer-panel.small { width: 400px; }
+.drawer-panel.medium { width: 650px; }
+.drawer-panel.large { width: 90%; max-width: 1100px; }
+
+
+/* -------------------- Drawer Header -------------------- */
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #f8f9fa;
+}
+
+.drawer-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #343a40;
+}
+
+.drawer-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--secondary-color);
+    transition: color 0.2s;
+}
+
+.drawer-close-btn:hover {
+    color: #dc3545; /* Red on hover */
+}
+
+/* -------------------- Drawer Body (Content) -------------------- */
+.drawer-body {
+    padding: 25px;
+    flex-grow: 1;
+    overflow-y: auto; /* Allows scrolling inside the drawer if content is long */
+}

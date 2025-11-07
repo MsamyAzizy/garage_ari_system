@@ -1,0 +1,1141 @@
+/* layout.css - Core Structure & Styling (FINAL MODIFICATIONS) */
+
+/* -------------------- Global Reset & Variables -------------------- */
+:root {
+    --primary-color: #007bff; /* Blue */
+    --secondary-color: #6c757d; /* Gray */
+    --background-color: #f4f7f6; /* Light gray background (Page background) */
+    --sidebar-color: #343a40; /* Dark sidebar */
+    --sidebar-text: #ffffff;
+    --border-color: #dee2e6;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --text-color: #212529; /* Default text color */
+    --card-bg: white; /* Default card background */
+}
+
+/* -------------------- Dark Mode Variables (Light Theme Default) -------------------- */
+body.dark-theme {
+    --background-color: #1a1a2e; /* Dark Page background */
+    --sidebar-color: #16213e; /* Slightly darker sidebar */
+    --sidebar-text: #ffffff;
+    --border-color: #495057;
+    --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    --text-color: #f8f9fa; /* Light text color */
+    --card-bg: #2b3a55; /* Darker card background */
+}
+
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    /* Add transition for smooth theme switching */
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+body, html, #root {
+    height: 100%;
+    font-family: Arial, Sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color); /* Use variable for body text */
+}
+
+/* -------------------- App Container Layout -------------------- */
+.app-container {
+    display: grid;
+    grid-template-rows: 60px 1fr; 
+    height: 100vh;
+}
+
+/* * MODIFICATION START: Collapsible Sidebar Logic 
+ */
+.main-content-wrapper {
+    display: grid;
+    grid-template-columns: 250px 1fr; 
+    overflow: hidden; 
+    transition: grid-template-columns 0.3s ease-in-out;
+}
+
+.main-content-wrapper.sidebar-collapsed {
+    grid-template-columns: 60px 1fr; 
+}
+/* MODIFICATION END */
+
+/* -------------------- Top Navigation Bar Styling (MODERNIZED) -------------------- */
+.top-nav-bar {
+    grid-row: 1;
+    grid-column: 1 / -1; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background-color: var(--sidebar-color); 
+    color: var(--sidebar-text);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+}
+
+.logo-icon {
+    font-size: 24px;
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+.shop-name {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+/* Redesigned Search Bar: Cleaner and more integrated */
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #495057; 
+    padding: 8px 15px; 
+    border-radius: 8px; 
+    width: 400px; 
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.search-bar:focus-within {
+    background-color: #555c64; 
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.4); 
+}
+
+.search-bar svg {
+    margin-right: 10px;
+    color: #adb5bd; 
+    font-size: 1.1rem;
+}
+
+.search-bar input {
+    border: none;
+    background: transparent;
+    color: var(--sidebar-text);
+    width: 100%;
+    outline: none;
+    font-size: 0.95rem;
+}
+
+.search-bar input::placeholder {
+    color: #adb5bd;
+}
+
+.action-section {
+    display: flex;
+    align-items: center;
+}
+
+/* * MODERN BUTTON STYLES (Kept for other uses like dashboard cards) * */
+.btn-primary-action, .btn-secondary-action {
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 10px;
+    transition: background-color 0.2s, box-shadow 0.2s; 
+    display: flex; 
+    align-items: center;
+    gap: 8px; 
+}
+
+.btn-primary-action {
+    background-color: var(--primary-color); 
+    box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
+}
+
+.btn-primary-action:hover {
+    background-color: #0056b3; 
+    filter: none;
+}
+
+.btn-secondary-action {
+    background-color: #28a745; 
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3); 
+}
+
+.btn-secondary-action:hover {
+    background-color: #1e7e34;
+    filter: none;
+}
+/* END MODERN BUTTON STYLES */
+
+.icon-notification {
+    font-size: 20px;
+    margin-left: 20px;
+    cursor: pointer;
+    color: #ffc107; 
+}
+
+/* -------------------- User Profile Dropdown Styling (NEW) -------------------- */
+.user-profile-menu {
+    position: relative;
+    margin-left: 20px;
+}
+
+/* The clickable/hoverable profile area */
+.user-profile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.user-profile:hover {
+    background-color: #495057; 
+}
+
+.user-icon {
+    font-size: 30px;
+    margin-right: 8px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+}
+
+.user-name {
+    font-weight: bold;
+}
+
+.shop-location {
+    color: #adb5bd;
+}
+
+
+/* Dropdown Content */
+.dropdown-content {
+    position: absolute;
+    top: 100%; 
+    right: 0;
+    min-width: 240px; /* Slightly wider */
+    background-color: var(--card-bg); /* Use card background variable */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+    z-index: 100;
+    border: 1px solid var(--border-color); /* Added border */
+    
+    /* Transition for smooth appearance */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+}
+
+.dropdown-content.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Individual Menu Items */
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: var(--text-color); /* Dynamic text color */
+    text-decoration: none;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    gap: 10px;
+}
+
+.menu-item:hover {
+    background-color: var(--background-color);
+    color: var(--primary-color);
+}
+
+/* Dark Mode Toggle Specific Styling */
+.dark-mode-toggle {
+    justify-content: space-between;
+    font-weight: bold;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Logout Item */
+.logout-item {
+    color: #dc3545; /* Red for logout/warning */
+    font-weight: bold;
+}
+
+.logout-item:hover {
+    background-color: #f8d7da; /* Light red background on hover (Light Mode) */
+}
+
+/* Dark Mode Overrides for Logout */
+body.dark-theme .logout-item:hover {
+    background-color: #8b0000; /* Darker red background on hover (Dark Mode) */
+    color: white;
+}
+
+/* -------------------- Custom Toggle Switch Styling (for Dark Mode) -------------------- */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 25px;
+    margin: 0;
+    flex-shrink: 0; 
+}
+
+/* Hide default checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider/track */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 25px;
+}
+
+/* The knob/thumb */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 19px;
+    width: 19px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* When checked (Dark Mode ON) */
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(25px);
+}
+
+/* Icon Container */
+.switch .icons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5px;
+    pointer-events: none; /* Prevents icons from blocking the click */
+    font-size: 14px;
+}
+
+.switch .icon-sun {
+    color: #ffc107; /* Yellow for sun */
+    opacity: 1;
+    transition: opacity 0.4s;
+}
+
+.switch .icon-moon {
+    color: white;
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+/* Icon visibility */
+input:checked ~ .icons .icon-sun {
+    opacity: 0;
+}
+
+input:checked ~ .icons .icon-moon {
+    opacity: 1;
+}
+
+/* -------------------- Sidebar Navigation Styling -------------------- */
+/* * MODIFICATION START: Collapsible Sidebar Styles 
+ */
+.sidebar {
+    grid-column: 1;
+    background-color: var(--sidebar-color);
+    padding: 20px 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border-color); /* Use variable for dynamic border color */
+    display: flex; 
+    flex-direction: column; 
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    text-decoration: none;
+    color: var(--sidebar-text);
+    transition: background-color 0.2s, color 0.2s;
+    font-size: 0.95rem;
+}
+
+.sidebar li.active .sidebar-link,
+.sidebar-link:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.link-icon {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.highlight-tag {
+    margin-left: auto;
+    background-color: #dc3545; /* Red tag */
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* NEW: Styles when collapsed */
+.main-content-wrapper.sidebar-collapsed .sidebar-link {
+    justify-content: center; /* Center the icon */
+    padding: 12px 0;
+}
+
+/* NEW: Hide link names and highlight tags when collapsed */
+.main-content-wrapper.sidebar-collapsed .sidebar-link span {
+    display: none;
+}
+
+/* NEW: Sidebar Toggle Button */
+.sidebar-toggle-area {
+    margin-top: auto; /* Push to the bottom */
+    padding: 10px 0;
+    text-align: center;
+    border-top: 1px solid var(--border-color); /* Use variable for dynamic border color */
+}
+
+.sidebar-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--sidebar-text);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: #495057;
+}
+
+/* -------------------- Sub-Menu Styling (Inventory Dropdown) -------------------- */
+
+.submenu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.submenu-list li {
+    /* Base list item style for sub-links */
+    padding: 0;
+}
+
+.submenu-list .sidebar-link {
+    /* Adjust padding for indentation */
+    padding: 8px 20px 8px 35px; /* Added left padding for depth */
+    font-size: 0.9rem;
+    background-color: rgba(0, 0, 0, 0.1); /* Subtle darker background for submenu */
+}
+
+.submenu-list li.active .sidebar-link,
+.submenu-list .sidebar-link:hover {
+    /* Use primary color for highlight, but keep a subtle background */
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Ensure sub-links are centered when the sidebar is collapsed */
+.main-content-wrapper.sidebar-collapsed .submenu-list .sidebar-link {
+    display: none; /* Hide the sub-links entirely when collapsed */
+}
+
+/* MODIFICATION END */
+
+/* -------------------- Main Page Content Area -------------------- */
+.page-content {
+    grid-column: 2;
+    padding: 20px;
+    overflow-y: auto;
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+/* -------------------- Loading Screen & Spinner Styling (BUBBLE DANCE) -------------------- */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--sidebar-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    color: var(--sidebar-text);
+}
+
+.spinner {
+    width: 80px; 
+    height: 80px;
+    border-radius: 50%;
+    
+    /* Retain the modern blue gradient look */
+    background: conic-gradient(
+        transparent, 
+        rgba(0, 123, 255, 0.5), 
+        var(--primary-color)
+    );
+    
+    mask: radial-gradient(
+        farthest-side, 
+        transparent calc(100% - 10px), 
+        #fff calc(100% - 5px)
+    );
+    
+    /* Apply the new, complex animation */
+    animation: 
+        bubbleDance 3s ease-in-out infinite, /* Bouncy motion */
+        spin 3s linear infinite;              /* Constant rotation */
+
+    margin-bottom: 25px;
+
+    /* Subtle glow effect for depth */
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.8),
+                inset 0 0 10px rgba(255, 255, 255, 0.5); 
+}
+
+.loading-text {
+    color: #adb5bd;
+    font-size: 1.2rem;
+    font-weight: 300;
+}
+
+/* 1. Basic Rotation (3 seconds for a slower, smoother spin) */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 2. Bubble Dance Animation (Scale and Bounce) */
+@keyframes bubbleDance {
+    0%, 100% { 
+        transform: scale(1); 
+        opacity: 1;
+        filter: brightness(1);
+    }
+    25% { 
+        transform: scale(1.1); 
+        opacity: 0.9;
+        filter: brightness(1.2); 
+    }
+    50% { 
+        transform: scale(0.95); 
+        opacity: 0.95;
+        filter: brightness(0.9);
+    }
+    75% {
+        transform: scale(1.05); 
+        opacity: 0.98;
+        filter: brightness(1.1);
+    }
+}
+
+/* -------------------- Client List View Styling -------------------- */
+
+.clients-list-page {
+    /* Main container for the list view */
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.page-header h2 {
+    font-size: 1.8rem;
+    color: var(--text-color);
+}
+
+/* Search and Filter Bar */
+.filter-and-search {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 15px;
+    width: 350px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.search-input-group:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+.search-input-group .search-icon {
+    color: var(--secondary-color);
+    margin-right: 10px;
+    font-size: 1rem;
+}
+
+.search-input-group input {
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    width: 100%;
+    outline: none;
+    font-size: 1rem;
+}
+
+.search-input-group input::placeholder {
+    color: var(--secondary-color);
+}
+
+
+/* -------------------- Clients Table Styling -------------------- */
+
+.table-container {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    overflow-x: auto;
+}
+
+.clients-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.clients-table th, 
+.clients-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.clients-table th {
+    background-color: var(--background-color); /* Separates header from body */
+    color: var(--text-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.clients-table tbody tr:hover {
+    background-color: var(--background-color);
+}
+
+.clients-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.client-name-link {
+    font-weight: bold;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: color 0.1s;
+}
+
+.client-name-link:hover {
+    text-decoration: underline;
+}
+
+.text-center-placeholder {
+    text-align: center !important;
+    padding: 40px 15px !important;
+    color: var(--secondary-color);
+    font-style: italic;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 5px;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.icon-btn:hover {
+    color: var(--primary-color);
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* -------------------- Form Styling (ClientForm - Full Page) -------------------- */
+
+.form-card.full-page-form {
+    /* Card wrapper for the full page form content */
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 100px; /* Crucial: Space for the sticky footer */
+}
+
+/* Form Section Titles */
+.form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin: 25px 0 15px 0;
+    padding-bottom: 5px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.form-section-title svg {
+    color: var(--primary-color);
+}
+
+/* Form Group Base Styling */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: var(--card-bg); 
+    color: var(--text-color);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+    outline: none;
+}
+
+/* Grid Layouts for the Form */
+.form-grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* NOTE: Used for City, State, Zip in Client Form, and various 3-column layouts in Vehicle Form */
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr; 
+    gap: 20px;
+}
+
+/* Checkbox Group Specific Styling */
+.checkbox-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--primary-color);
+}
+
+.checkbox-group label {
+    margin-bottom: 0;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+/* Placeholder Section (e.g., for Vehicles) */
+.detail-card-section {
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.placeholder-section p {
+    color: var(--secondary-color);
+}
+
+.placeholder-section a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.placeholder-section a:hover {
+    text-decoration: underline;
+}
+
+
+/* -------------------- Full Page Form Action Styling (Sticky Footer) -------------------- */
+
+.form-actions.page-form-actions {
+    /* Position the action bar within the main content wrapper's viewport */
+    position: sticky; 
+    bottom: 0; 
+    
+    /* Ensure it spans the content area width */
+    grid-column: 2; /* Spans the main content area */
+    
+    /* Layout and styling */
+    display: flex;
+    justify-content: flex-end; /* Push buttons to the right */
+    align-items: center;
+    gap: 15px; 
+    
+    /* Padding to match the .page-content area */
+    padding: 15px 20px; 
+    
+    /* Appearance */
+    background-color: var(--card-bg); 
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.1); 
+    z-index: 50; 
+}
+
+/* Align buttons within the sticky footer (Save on right, Cancel on left) */
+/* NOTE: The order is visually (Cancel | Save) achieved by flex-end and the button order in JSX */
+.page-form-actions .btn-secondary-action {
+    order: 1; 
+    background-color: var(--secondary-color);
+}
+
+.page-form-actions .btn-primary-action {
+    order: 2; 
+}
+
+
+/* -------------------- Vehicle Form Specific Styling -------------------- */
+
+.vehicle-header {
+    /* Slightly less margin for secondary headers within a page */
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    border-bottom: none;
+}
+
+.vehicle-header h2 {
+    font-size: 1.5rem;
+}
+
+/* Vehicle Header Actions (Image, Label, Camera Icons) */
+.vehicle-form {
+    position: relative; /* Needed for absolute positioning of some icons if we add them later */
+}
+
+.vehicle-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+/* --- IMAGE PLACEHOLDER (Modified) --- */
+.image-placeholder {
+    width: 60px;
+    height: 60px;
+    background-color: var(--background-color);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer; /* NEW: Added cursor for clickability */
+}
+
+.image-placeholder::before {
+    /* SVG placeholder for image icon */
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="%236c757d"><path d="M448 80c8.8 0 16 7.2 16 16V416c0 8.8-7.2 16-16 16H64c-8.8 0-16-7.2-16-16V96c0-8.8 7.2-16 16-16H448zM64 368h384V96H64v272zM256 128a80 80 0 1 0 0 160 80 80 0 1 0 0-160zM96 320l96-96 64 64 128-128 64 64V368H96V320z"/></svg>');
+    display: block;
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+}
+
+/* --- IMAGE PREVIEW (NEW) --- */
+.image-preview-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    background-size: cover; /* Important for filling the space */
+    background-position: center;
+    border: 2px solid var(--primary-color); /* Highlight border when image is present */
+    flex-shrink: 0;
+    cursor: pointer;
+    /* When .image-preview-wrapper is present, we often want to hide the ::before from the placeholder if we reuse the same element class name, but since we are using a separate component/class in JS, this is safer: */
+}
+/* Ensure the original placeholder style is overridden when using the preview wrapper */
+.image-preview-wrapper::before {
+    content: none !important;
+}
+
+
+.icon-group {
+    display: flex;
+    gap: 10px;
+    margin-left: auto; /* Push icon group to the right */
+}
+
+.icon-btn-form {
+    font-size: 1.2rem;
+    color: var(--secondary-color);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.icon-btn-form:hover {
+    color: var(--primary-color);
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.small-btn {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+}
+
+/* Odometer Input Group (Input + Select) */
+.reading-group .input-with-select {
+    display: flex;
+}
+
+.reading-group .input-with-select input {
+    flex-grow: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.reading-group .unit-select {
+    width: 80px;
+    flex-shrink: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    text-align: center;
+}
+
+.note-text {
+    font-size: 0.8rem;
+    color: #dc3545; /* Red color for warning/internal note */
+    margin-top: 5px;
+}
+
+/* -------------------- Inventory Form Specific Styling -------------------- */
+
+/* Overall layout: Image on left, fields on right */
+.inventory-content-grid {
+    display: grid;
+    grid-template-columns: 80px 1fr; /* Narrow column for image, wide for fields */
+    gap: 30px;
+    padding: 15px 0;
+}
+
+.image-column {
+    display: flex;
+    justify-content: center;
+}
+
+/* Redefined placeholder for the Inventory form (larger size) */
+.image-placeholder.large-placeholder {
+    width: 80px;
+    height: 80px;
+}
+/* Ensure the icon is visible */
+.image-placeholder.large-placeholder::before {
+    content: none; /* Hide default vehicle placeholder */
+}
+.image-placeholder .placeholder-icon {
+    font-size: 2rem; /* Larger icon inside the placeholder */
+    color: var(--secondary-color);
+}
+
+/* Redefined preview wrapper for the Inventory form (larger size) */
+.image-preview-wrapper.large-preview {
+    width: 80px;
+    height: 80px;
+}
+
+
+/* Top Action Bar (Scan, Order, Import) */
+.top-action-bar {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.top-action-bar .large-btn {
+    padding: 10px 18px;
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+/* Input group for inputs with a 'Select' button next to them (Category, Location, Vendor) */
+.form-group.select-group {
+    position: relative;
+}
+
+.form-group.select-group input {
+    padding-right: 80px; /* Make space for the button */
+}
+
+.btn-select {
+    position: absolute;
+    right: 1px;
+    bottom: 1px; 
+    padding: 10px 15px;
+    height: calc(100% - 2px);
+    background-color: transparent;
+    border: none;
+    color: var(--primary-color);
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 0 6px 6px 0;
+    transition: background-color 0.1s;
+}
+
+.btn-select:hover {
+    background-color: var(--background-color);
+}
+
+
+/* Input group for icon inside the input (e.g., pricing) */
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon .input-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+}
+
+.input-with-icon input {
+    padding-left: 30px;
+}
+
+/* Input with action button on the side (Sale Price) */
+.input-with-action {
+    display: flex;
+    align-items: center;
+}
+
+.input-with-action .input-with-icon {
+    flex-grow: 1;
+}
+
+.btn-apply-markup {
+    /* Style for the "Apply Markup" button */
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 10px;
+    flex-shrink: 0;
+}
+
+.btn-apply-markup:hover {
+    text-decoration: underline;
+}
+
+/* Small X icon inside the Critical Quantity field */
+.form-group .input-action-icon {
+    position: absolute;
+    right: 15px;
+    /* Adjust positioning to align with input height */
+    top: 50%; 
+    transform: translateY(-50%);
+    color: var(--secondary-color);
+    cursor: pointer;
+    z-index: 5;
+}

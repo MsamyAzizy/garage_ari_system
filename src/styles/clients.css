@@ -1,0 +1,191 @@
+/* clients.css - Styling for ClientsList and ClientDetailForm components (MODIFIED) */
+
+/* -------------------- General Form Styling -------------------- */
+.client-form {
+    /* Basic form styling */
+}
+
+.form-section-title {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    padding: 10px 0;
+    margin-top: 20px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="tel"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Grid Layouts for the Form */
+.form-grid-1, .form-grid-2, .form-grid-3 {
+    display: grid;
+    gap: 20px;
+}
+
+.form-grid-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.form-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Checkbox specific styling */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-group label {
+    margin: 0;
+    font-weight: normal;
+}
+
+/* Placeholder for Vehicle List */
+.placeholder-section {
+    background-color: #f8f9fa;
+    border: 1px dashed var(--border-color);
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Detail Header Actions (Same as Job Cards, ensure consistency) */
+.detail-header-actions {
+    display: flex;
+    justify-content: flex-end; /* Push to the right */
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* -------------------- Clients List Styling (MODERNIZED) -------------------- */
+
+/* NEW: Clean Header Style with Separator */
+.clients-list-page .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color); 
+    padding-bottom: 10px;
+}
+
+.filter-and-search {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+}
+
+/* NEW: Modern Search Bar Look */
+.search-input-group {
+    display: flex;
+    align-items: center;
+    width: 350px; 
+    padding: 10px 15px;
+    background-color: white;
+    border: 1px solid #ced4da; 
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow lift */
+    transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.search-input-group:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Focus ring effect */
+}
+
+.search-input-group .search-icon {
+    color: var(--secondary-color);
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+
+.search-input-group input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 1rem;
+    color: #495057; 
+    background: transparent;
+}
+
+.search-input-group input::placeholder {
+    color: #adb5bd;
+}
+
+
+/* Table Styling (Reusing job cards styles where applicable, but specific to clients) */
+.clients-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+.clients-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.clients-table th, .clients-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.client-name-link {
+    color: var(--primary-color);
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.icon-small {
+    font-size: 0.8em;
+    color: var(--secondary-color);
+}
+
+/* NEW: Empty state text centering */
+.text-center-placeholder {
+    text-align: center !important;
+    padding: 40px !important;
+    color: var(--secondary-color);
+    font-style: italic;
+}

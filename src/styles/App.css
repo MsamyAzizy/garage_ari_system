@@ -1,0 +1,855 @@
+/* ======================================================= */
+/* DEFAULT REACT STYLES (Kept as provided)                 */
+/* ======================================================= */
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ======================================================= */
+/* 🌟 CORE LAYOUT & COLOR VARIABLES 🌟                      */
+/* ======================================================= */
+:root {
+    --primary-color: #007bff; /* Blue for primary actions/branding */
+    --primary-color-dark: #0056b3;
+    --primary-color-light: #52a3ff;
+    --primary-color-lightest: #e6f2ff;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+
+    --text-color: #333;
+    --text-muted: #6c757d;
+    
+    --background-color: #ffffff; /* Main content background */
+    --background-secondary: #f4f6f9; /* App background (under sidebar/header) */
+    --card-bg: #ffffff;
+    --hover-bg: #f8f9fa;
+    
+    --border-color: #dee2e6;
+    --border-color-darker: #c3c7cb;
+    --border-radius-base: 4px;
+    --border-radius-large: 8px;
+    
+    --sidebar-width: 250px;
+    --navbar-height: 60px;
+}
+
+/* Dark Mode Variables */
+.dark-theme {
+    --primary-color: #3f9cff;
+    --primary-color-dark: #1e70d4;
+    --primary-color-light: #5eabff;
+    --primary-color-lightest: #1a2a40; /* Dark background tint */
+    
+    --text-color: #e2e6e9;
+    --text-muted: #9fa6ad;
+    
+    --background-color: #1e2125; /* Main content background */
+    --background-secondary: #121417; /* App background */
+    --card-bg: #282c34;
+    --hover-bg: #343a40;
+    
+    --border-color: #495057;
+    --border-color-darker: #6c757d;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    background-color: var(--background-secondary);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* --- App Layout --- */
+.app-container {
+    display: grid;
+    grid-template-rows: var(--navbar-height) 1fr;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.main-content-wrapper {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    transition: grid-template-columns 0.3s ease-in-out;
+    height: calc(100vh - var(--navbar-height));
+    overflow: hidden;
+}
+
+.main-content-wrapper.sidebar-collapsed {
+    grid-template-columns: 60px 1fr;
+}
+
+.page-content {
+    padding: 0;
+    overflow-y: auto;
+    background-color: var(--background-secondary);
+}
+
+/* --- Common UI Elements --- */
+.page-header {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: var(--background-color);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky; /* Keep header visible */
+    top: 0;
+    z-index: 10;
+}
+.page-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.form-card {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: var(--border-radius-large);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin: 20px;
+}
+
+/* --- Buttons --- */
+.btn-primary-action {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+.btn-primary-action:hover {
+    background-color: var(--primary-color-dark);
+}
+/* Large buttons for forms like Client/Vehicle selection */
+.large-action-btn {
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+.primary-bg-light {
+    background-color: var(--primary-color-lightest);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color-light);
+}
+.primary-bg-light:hover {
+    background-color: var(--primary-color-light);
+    color: white;
+}
+
+
+.btn-secondary-action {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color-darker);
+    padding: 10px 15px;
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+.btn-secondary-action:hover {
+    background-color: var(--hover-bg);
+}
+
+.btn-secondary-outline {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 8px 12px;
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+.btn-secondary-outline:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 5px;
+    font-size: 0.9rem;
+}
+.btn-link-icon {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 5px 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+
+/* --- Data Table --- */
+.data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-base);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+.data-table th {
+    background-color: var(--primary-color-lightest); /* Light header color */
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.data-table tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+/* ======================================================= */
+/* 🌟 UPDATED: LOADING SPINNER STYLES (Minimalist Segmented Arcs) 🌟*/
+/* ======================================================= */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Use background-secondary for theme consistency (Light/Dark mode) */
+    background-color: var(--background-secondary); 
+    display: flex;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center;
+    z-index: 10000; /* Ensure it covers everything */
+    transition: opacity 0.3s ease; 
+}
+
+/* Main spinner container */
+.spinner {
+    width: 50px; 
+    height: 50px;
+    position: relative; /* Needed for absolute positioning of arcs */
+    animation: spinner-rotate 1.8s linear infinite; /* Overall rotation */
+}
+
+/* Individual arc styling */
+.spinner::before,
+.spinner::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    border: 3px solid transparent; /* Base for all segments */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.spinner::before {
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-top-color: #E74C3C; /* Red arc */
+    border-left-color: #3498DB; /* Blue arc */
+    animation: arc-grow-shrink 2s ease-in-out infinite alternate; /* Animates arc length */
+}
+
+.spinner::after {
+    top: 10px; left: 10px; right: 10px; bottom: 10px; /* Smaller inner circle */
+    border-top-color: #F39C12; /* Yellow arc */
+    border-right-color: #1ABC9C; /* Green arc */
+    animation: arc-grow-shrink-reverse 2s ease-in-out infinite alternate; /* Animates arc length in reverse */
+}
+
+/* Keyframes for overall spinner rotation */
+@keyframes spinner-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Keyframes for arc growing and shrinking (to create the "broken" effect) */
+@keyframes arc-grow-shrink {
+    0% { border-width: 3px; transform: scale(1); opacity: 1; }
+    50% { border-width: 5px; transform: scale(0.9); opacity: 0.8; }
+    100% { border-width: 3px; transform: scale(1); opacity: 1; }
+}
+
+/* Keyframes for arc growing and shrinking (reversed for inner arc) */
+@keyframes arc-grow-shrink-reverse {
+    0% { border-width: 3px; transform: scale(1); opacity: 1; }
+    50% { border-width: 5px; transform: scale(1.1); opacity: 0.8; } /* Slightly larger scale for a different effect */
+    100% { border-width: 3px; transform: scale(1); opacity: 1; }
+}
+
+/* ======================================================= */
+/* 🌟 FORM FIELD STYLES 🌟                                 */
+/* ======================================================= */
+
+/* Group styling for label and input */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+/* Targeting all common input types and select/textarea */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="password"],
+textarea,
+select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.2;
+    box-sizing: border-box; /* Crucial for padding/border calculation */
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Focus state */
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary-color-light);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Light blue shadow */
+}
+
+/* Grid layout for forms (used in VehicleForm, ClientForm, VendorForm etc.) */
+.form-grid {
+    display: grid;
+    /* Explicitly setting columns for the multi-column sections in forms */
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px;
+}
+/* Allow elements to span full width */
+.full-width {
+    grid-column: 1 / -1;
+}
+
+
+/* ======================================================= */
+/* 🌟 JOB CARD LIST STYLES 🌟                              */
+/* ======================================================= */
+
+.job-card-list-page {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: var(--background-secondary); 
+    min-height: 100%;
+}
+
+/* --- List Toolbar --- */
+.list-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--background-secondary);
+    position: sticky;
+    top: 60px; /* Below the main header */
+    z-index: 5;
+}
+
+/* --- View Switcher (Tab Styles) --- */
+.view-switcher {
+    display: flex;
+    gap: 0; /* Remove gap between buttons */
+}
+.view-switcher button {
+    padding: 8px 15px;
+    border: 1px solid var(--border-color-darker);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.view-switcher .active-view-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    border-radius: var(--border-radius-base) 0 0 var(--border-radius-base);
+}
+
+.view-switcher .inactive-view-btn {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border-left: none;
+    border-radius: 0 var(--border-radius-base) var(--border-radius-base) 0;
+}
+.view-switcher .active-view-btn:hover {
+    background-color: var(--primary-color-dark);
+}
+.view-switcher .inactive-view-btn:hover {
+    background-color: var(--hover-bg);
+}
+
+/* --- Search Bar Styling --- */
+.search-bar {
+    display: flex;
+    align-items: center;
+    border: red;
+    border-radius: var(--border-radius-base);
+    padding: 8px 12px;
+    background-color: 0 4px 10px rgba(6, 42, 77, 0.2);
+    flex-grow: 1;
+    max-width: 400px;
+    position: inherit;
+}
+
+.search-bar input {
+    border: transparent;
+    outline: none;
+    padding-left: 10px;
+    background: 0 4px 10px rgba(34, 34, 34, 0.2);
+    color: var(--text-color);
+    width: 100%;
+}
+
+/* --- Date Filters Styling --- */
+.date-filters {
+    display: flex;
+    gap: 10px;
+}
+
+.date-filters select,
+.date-filters input {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* --- List Table Header (for list view) --- */
+.data-table.list-header-only {
+    /* Override standard table to act as a sticky header */
+    margin-top: 0;
+    border-radius: 0;
+    position: sticky;
+    top: 130px; /* Below the main header and the toolbar */
+    z-index: 5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.data-table.list-header-only thead tr {
+    background-color: var(--background-color);
+    border-bottom: 2px solid var(--border-color);
+}
+.data-table.list-header-only th {
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    background-color: var(--primary-color-lightest);
+}
+
+/* --- Empty State Area Styling --- */
+.empty-state-area {
+    background-color: var(--background-color);
+    border: 1px dashed var(--border-color-darker);
+    border-radius: var(--border-radius-large);
+    margin-top: 20px;
+    padding: 50px 20px;
+    flex-grow: 1; 
+    text-align: center;
+    color: var(--text-muted);
+}
+.empty-state-area h4 {
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+.empty-state-area p {
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* --- Floating Action Button (FAB) / Sticky Action Button --- */
+.floating-action-btn,
+.sticky-action-btn { /* Combined class for floating button */
+    position: fixed !important; 
+    bottom: 30px;
+    right: 30px; 
+    z-index: 1000; 
+    padding: 15px 25px !important;
+    min-width: 160px;
+    height: 50px;
+    border-radius: 50px !important;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.fab-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+.fab-primary:hover {
+    background-color: var(--primary-color-dark);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ======================================================= */
+/* 🌟 JOBCARD FORM SPECIFIC STYLES 🌟                      */
+/* ======================================================= */
+
+.jobcard-form {
+    padding: 0; 
+    box-shadow: none; 
+    background-color: transparent; 
+}
+
+/* Base style for form sections */
+.section-group {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: var(--border-radius-large);
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 1.3rem;
+    color: var(--text-color);
+    border-bottom: 2px solid var(--border-color-darker);
+    padding-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Style for buttons used in the Inspect/Diagnose section */
+.section-btn {
+    width: 100%;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    padding: 20px 10px;
+    border-radius: var(--border-radius-base);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-color);
+    transition: all 0.2s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.section-btn:hover {
+    background-color: var(--primary-color-lightest);
+    color: var(--primary-color-dark);
+    border-color: var(--primary-color-light);
+}
+
+/* Grid for the client/vehicle selection */
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+/* --- Parts and Labor Table Styling --- */
+.sub-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color-dark);
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+.line-item-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 10px;
+}
+
+.line-item-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.line-item-table th,
+.line-item-table td {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    white-space: nowrap; 
+}
+
+.line-item-table th {
+    background-color: var(--primary-color-lightest);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* Override input styling specifically for small table fields */
+.line-item-table input[type="text"],
+.line-item-table input[type="number"],
+.line-item-table select {
+    width: 100%;
+    padding: 6px; /* Slightly smaller padding */
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    box-sizing: border-box;
+    font-size: 0.9rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.amount-display {
+    display: block;
+    text-align: right;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.line-item-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 5px;
+}
+
+/* --- Totals Summary Section --- */
+.totals-section .section-title {
+    font-size: 1.5rem;
+    color: var(--success-color);
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.total-actions {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.totals-breakdown {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-secondary);
+    border-radius: var(--border-radius-base);
+}
+
+.total-col {
+    flex: 1;
+    padding: 0 10px;
+    font-size: 0.95rem;
+}
+
+.total-col h4 {
+    font-size: 1.6rem;
+    color: var(--success-color);
+    margin: 5px 0;
+}
+
+.total-col.right-col {
+    text-align: right;
+}
+.total-col.center-col {
+    text-align: center;
+}
+
+/* --- Payments Section --- */
+.payments-section .balance-due-display {
+    text-align: center;
+    padding: 15px;
+    background-color: var(--danger-color);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border-radius: var(--border-radius-base);
+    margin-top: 15px;
+}
+.payments-section .balance-due-display span {
+    margin-left: 10px;
+}
+
+
+/* --- Fixed Footer Actions --- */
+.form-actions.fixed-footer {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: var(--sidebar-width); /* Default width */
+    padding: 15px 30px;
+    background-color: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+    display: flex;
+    /* This ensures the Save button is on the left side */
+    justify-content: flex-start; 
+    gap: 15px;
+    z-index: 100;
+    transition: left 0.3s ease-in-out;
+}
+
+/* Adjust fixed footer when sidebar is collapsed (assumes 60px) */
+.main-content-wrapper.sidebar-collapsed + .page-content .form-actions.fixed-footer {
+    left: 60px;
+}
+
+/* Badge Style */
+.badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 10px;
+}
+.new-badge {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* --- SPINNER KEYFRAMES FOR DYNAMIC LOADER --- */
+
+/* 1. Clockwise Spin (Outer Ring) */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 2. Counter-Clockwise Spin (Inner Ring) */
+@keyframes spin-reverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+/* 3. Slow Spin (FaCogs Icon) */
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 4. Color Change (Inner Ring Color Transition) */
+@keyframes color-change {
+    0% { border-bottom-color: #6366F1; } /* Indigo Blue */
+    50% { border-bottom-color: #34D399; } /* Emerald Green */
+    100% { border-bottom-color: #FBBF24; } /* Amber Yellow */
+}
