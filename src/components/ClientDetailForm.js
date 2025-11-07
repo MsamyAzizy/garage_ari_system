@@ -1,6 +1,6 @@
 // src/components/ClientForm.js - Fetches client data from the Django API 
 
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback } from 'react'; 
 import { useParams, useNavigate } from 'react-router-dom'; 
 import { 
     FaSave, 
@@ -15,7 +15,11 @@ import {
     FaBuilding,
     FaCheckCircle, 
     FaExclamationTriangle,
-    FaTools // Icon for Settings
+    FaTools,
+    FaDollarSign, 
+    FaPercent, 
+    FaCar, 
+    FaPlusCircle // Added for 'Add Vehicle' button
 } from 'react-icons/fa'; 
 
 import PhoneInput from 'react-phone-input-2';
@@ -31,7 +35,17 @@ const TEXT_PRIMARY_DARK = '#ffffff';
 const TEXT_MUTED_DARK = '#aeb8c8';
 const INPUT_BORDER_DARK = '#38465b';  
 const DANGER_RED = '#ff4d4f'; 
-const SUCCESS_GREEN = '#2ecc71'; // Added for toast consistency
+const SUCCESS_GREEN = '#2ecc71'; 
+const EDIT_ORANGE = '#ffa726'; // Defined a color for consistent button styling
+
+// --- CITY OPTIONS FOR TANZANIA (Curated List) ---
+const TANZANIA_CITIES = [
+    "Dar es Salaam", "Mwanza", "Dodoma", "Arusha", "Mbeya", "Morogoro", 
+    "Tanga", "Kahama", "Tabora", "Zanzibar City", "Kigoma", "Sumbawanga", 
+    "Kasulu", "Songea", "Moshi", "Musoma", "Shinyanga", "Iringa", "Singida", 
+    "Njombe", "Bukoba", "Kibaha", "Mtwara", "Mpanda", "Tunduma", "Makambako", 
+    "Babati", "Handeni", "Lindi", "Korogwe"
+];
 
 // Helper function to extract name for messages
 const getClientName = (client) => {
@@ -45,7 +59,7 @@ const getClientName = (client) => {
 };
 
 // -----------------------------------------------------------------
-// 🚀 NEW COMPONENT: Toggle Switch (Replicating image style)
+// Toggle Switch Component
 // -----------------------------------------------------------------
 
 const ToggleSwitch = ({ id, label, description, checked, onChange }) => (
@@ -72,7 +86,6 @@ const ToggleSwitch = ({ id, label, description, checked, onChange }) => (
 
 /**
  * Client Detail Form Component.
- * Handles client creation, editing, API submission, and error handling.
  */
 const ClientForm = () => {
     // 1. Setup Routing Hooks
@@ -97,9 +110,13 @@ const ClientForm = () => {
         clientType: MODE_INDIVIDUAL,
         taxId: '', 
         notes: '',
+        // 🚀 NEW CUSTOM FIELDS
+        customLaborRate: '',
+        customMarkupPercentage: '',
+        customPaymentTerms: '',
     };
     
-    // 🏆 NEW STATE: Client Settings (Matching the screenshot image)
+    // Client Settings State (Booleans)
     const initialSettings = {
         isTaxExempt: false,
         applyDiscount: false,
@@ -109,12 +126,12 @@ const ClientForm = () => {
     };
 
     const [formData, setFormData] = useState(initialFormData);
-    const [clientSettings, setClientSettings] = useState(initialSettings); // NEW
+    const [clientSettings, setClientSettings] = useState(initialSettings); 
     const [isLoading, setIsLoading] = useState(isEditMode);
-    const [error, setError] = useState(null); // Form-level validation error
+    const [error, setError] = useState(null); 
     
     const [nameMode, setNameMode] = useState(MODE_INDIVIDUAL); 
-    const [countryCode, setCountryCode] = useState('us'); 
+    const [countryCode, setCountryCode] = useState('tz'); // Default to Tanzania
     const [phoneError, setPhoneError] = useState('');
     
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
@@ -145,6 +162,9 @@ const ClientForm = () => {
                                 : MODE_INDIVIDUAL;
                                 
             setNameMode(currentMode);
+            
+            // Utility function to safely parse DecimalFields (which might come as strings or numbers)
+            const safeDecimal = (val) => (val === null || val === undefined || val === '') ? '' : String(val);
 
             setFormData({
                 id: clientData.id,
@@ -154,15 +174,18 @@ const ClientForm = () => {
                 phone: phone_number,
                 email: clientData.email || '',
                 addressLine1: clientData.address || '', 
-                city: clientData.city || '',
+                city: clientData.city || '', 
                 state: clientData.state || '',
                 zip: clientData.zip_code || '', 
                 clientType: clientType,
                 taxId: clientData.tax_id || '', 
                 notes: clientData.notes || '',
+                // 🚀 FETCHING NEW CUSTOM FIELDS
+                customLaborRate: safeDecimal(clientData.custom_labor_rate),
+                customMarkupPercentage: safeDecimal(clientData.custom_markup_percentage),
+                customPaymentTerms: clientData.custom_payment_terms || '',
             });
             
-            // 💡 Placeholder: Populate client settings from API response (assuming fields exist)
             setClientSettings({
                 isTaxExempt: clientData.is_tax_exempt || false,
                 applyDiscount: clientData.apply_discount || false,
@@ -172,8 +195,11 @@ const ClientForm = () => {
             });
             
             if (phone_number.length > 0) {
-                const deducedCountry = (clientData.country || '').toLowerCase(); 
-                if (deducedCountry) setCountryCode(deducedCountry);
+                // Determine country code from phone number if possible, default to saved or 'tz'
+                const phoneWithoutPlus = phone_number.replace('+', '');
+                // Simple deduction: if it starts with '255', assume TZ (not robust, but helps initialize)
+                const deducedCountry = phoneWithoutPlus.startsWith('255') ? 'tz' : (clientData.country || '').toLowerCase() || 'tz'; 
+                setCountryCode(deducedCountry);
             }
             setIsLoading(false);
         } catch (err) {
@@ -188,16 +214,27 @@ const ClientForm = () => {
     }, [fetchClient]);
 
 
-    // Handle change for standard inputs
+    // Handle change for standard and custom inputs
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value,
-        }));
+        
+        // Handle input for custom fields (ensure correct type conversion for API if needed later)
+        if (name.startsWith('custom')) {
+            // For decimal inputs, allow empty string but ensure valid characters
+            const cleanedValue = value.replace(/[^0-9.]/g, ''); 
+            setFormData(prev => ({
+                ...prev,
+                [name]: cleanedValue,
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value,
+            }));
+        }
     };
     
-    // 🏆 NEW: Handle change for the toggle switches
+    // Handle change for the toggle switches (update boolean state)
     const handleSettingsChange = (e) => {
         const { id, checked } = e.target;
         setClientSettings(prev => ({
@@ -242,10 +279,10 @@ const ClientForm = () => {
 
         const localNumber = value.slice(country.dialCode.length);
         
+        // Basic check for leading zero in local number (common requirement in TZ)
         if (localNumber.length > 0 && localNumber.startsWith('0')) {
-            const errorMessage = 'Local number part cannot start with zero.';
-            setPhoneError(errorMessage);
-            return errorMessage; 
+            // Allow this to pass to let the backend validate if this is truly an error in the API schema.
+            // For now, only check length.
         }
         
         if (localNumber.length > 0 && localNumber.length < MIN_LOCAL_DIGITS) {
@@ -263,13 +300,15 @@ const ClientForm = () => {
         setPhoneError('');
         return true;
     };
+    
+    // Helper function to convert empty string to null for API
+    const formatValueForApi = (value) => value.trim() === '' ? null : value.trim();
 
 
-    // 🏆 CRITICAL UPDATE: API Submission and Error Handling Logic
+    // API Submission and Error Handling Logic
     const handleSubmit = async (e) => { 
         e.preventDefault();
         
-        // Block submission if client-side phone error exists.
         if (phoneError) {
             showToastNotification("Please fix the client-side error in the phone number field.", 'error');
             return; 
@@ -278,14 +317,12 @@ const ClientForm = () => {
         // Final sanity check for required fields based on mode
         let validationError = null;
         
-        // 🛑 VALIDATION 1: Check conditional name fields
         if (nameMode === MODE_INDIVIDUAL && (!formData.firstName || !formData.lastName)) {
             validationError = "First Name and Last Name are required for an Individual client.";
         } else if (nameMode === MODE_COMPANY && !formData.companyName) {
             validationError = "Company Name is required for a Company client.";
         } 
         
-        // 🛑 VALIDATION 2: Check required email field
         if (!formData.email || formData.email.trim() === '') {
              validationError = validationError ? 
                                `${validationError} Also, Email Address is required.` : 
@@ -300,86 +337,102 @@ const ClientForm = () => {
         setIsLoading(true);
         setError(null);
         
-        // 3. Prepare data for API (Merged formData and clientSettings)
+        // Prepare data for API (Merged formData and clientSettings)
         const dataToSend = {
             ...(formData.id && { id: formData.id }),
             // Identity
-            first_name: formData.clientType === 'Individual' ? formData.firstName.trim() || null : null,
-            last_name: formData.clientType === 'Individual' ? formData.lastName.trim() || null : null,
-            company_name: formData.clientType === 'Company' ? formData.companyName.trim() || null : null,
+            first_name: formData.clientType === 'Individual' ? formatValueForApi(formData.firstName) : null,
+            last_name: formData.clientType === 'Individual' ? formatValueForApi(formData.lastName) : null,
+            company_name: formData.clientType === 'Company' ? formatValueForApi(formData.companyName) : null,
             
             // Contact
-            phone_number: formData.phone || null,
-            email: formData.email.trim() || null, 
+            phone_number: formatValueForApi(formData.phone),
+            email: formatValueForApi(formData.email), 
             
             // Address
-            address: formData.addressLine1.trim() || null, 
-            city: formData.city.trim() || null,
-            state: formData.state.trim() || null,
-            zip_code: formData.zip.trim() || null, 
+            address: formatValueForApi(formData.addressLine1), 
+            city: formatValueForApi(formData.city),
+            state: formatValueForApi(formData.state),
+            zip_code: formatValueForApi(formData.zip), 
             
             // Segmentation
             client_type: formData.clientType, 
-            tax_id: formData.taxId.trim() || null, 
-            notes: formData.notes.trim() || null,
+            tax_id: formatValueForApi(formData.taxId), 
+            notes: formatValueForApi(formData.notes),
             
-            // 🏆 NEW: Send Settings to API (Assuming these fields exist on the backend model)
+            // Settings (Booleans)
             is_tax_exempt: clientSettings.isTaxExempt,
             apply_discount: clientSettings.applyDiscount,
             labor_rate_override: clientSettings.laborRateOverride,
             parts_markup_override: clientSettings.partsMarkupOverride,
             payment_terms_override: clientSettings.paymentTermsOverride,
+            
+            // 🚀 NEW CUSTOM VALUE FIELDS (Only send if the toggle is ON, otherwise send null or let backend clean)
+            custom_labor_rate: clientSettings.laborRateOverride 
+                ? formatValueForApi(formData.customLaborRate) : null,
+                
+            custom_markup_percentage: clientSettings.partsMarkupOverride
+                ? formatValueForApi(formData.customMarkupPercentage) : null,
+                
+            custom_payment_terms: clientSettings.paymentTermsOverride
+                ? formatValueForApi(formData.customPaymentTerms) : null,
         };
+        
+        // Ensure decimal fields are sent as null if they are empty strings
+        if (dataToSend.custom_labor_rate === '') dataToSend.custom_labor_rate = null;
+        if (dataToSend.custom_markup_percentage === '') dataToSend.custom_markup_percentage = null;
 
         const isEdit = !!formData.id;
         const url = isEdit ? `/clients/${formData.id}/` : '/clients/';
         const method = isEdit ? 'put' : 'post'; 
 
         try {
-            // 4. API Call Attempt
+            // API Call Attempt
             const response = await apiClient({
                 method: method,
                 url: url,
                 data: dataToSend,
             });
 
-            // 🏆 SUCCESS BLOCK: API call successful. NOW WE REDIRECT.
+            // SUCCESS BLOCK
             const savedClientData = response.data;
             const successMessage = isEdit 
-                ? `Successfully updated client: ${getClientName(savedClientData)}.`
-                : `Successfully added new client: ${getClientName(savedClientData)}.`;
+                ? `Successfully updated client: **${getClientName(savedClientData)}**.`
+                : `Successfully added new client: **${getClientName(savedClientData)}**!`;
             
-            // Navigate back to the list page with a success message
             navigate('/clients', { state: { successMessage: successMessage } });
 
         } catch (err) {
-            // 🛑 ERROR BLOCK: Handle API Errors
+            // ERROR BLOCK
             const errorData = err.response?.data;
             let errorMessage = "An unknown error occurred while saving the client.";
 
             console.error("API Validation Error Response:", errorData); 
 
             if (err.response && err.response.status === 400 && errorData) {
-                
-                if (errorData.phone_number) {
-                    errorMessage = `**Phone Number Error:** ${Array.isArray(errorData.phone_number) ? errorData.phone_number.join(' ') : errorData.phone_number}`;
-                } else if (errorData.email) {
-                    errorMessage = `**Email Error:** ${Array.isArray(errorData.email) ? errorData.email.join(' ') : errorData.email}`;
-                } else if (errorData.first_name || errorData.last_name || errorData.company_name) {
-                    const nameErrors = [
-                        ...(errorData.first_name || []), 
-                        ...(errorData.last_name || []), 
-                        ...(errorData.company_name || [])
-                    ].join(' ');
-                    errorMessage = `**Name Validation Error:** ${nameErrors.trim() || "Required name field is missing."}`;
-                }
-                
-                else if (typeof errorData === 'object' && Object.keys(errorData).length > 0) {
+                // Handle specific field errors returned by the backend
+                if (typeof errorData === 'object' && Object.keys(errorData).length > 0) {
+                    // Try to extract the most relevant error
                     const firstKey = Object.keys(errorData)[0];
                     const firstError = Array.isArray(errorData[firstKey]) ? errorData[firstKey][0] : errorData[firstKey];
                     
                     if (firstKey) {
-                        const fieldName = firstKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        // Attempt to map snake_case keys back to user-friendly names
+                        let fieldName = firstKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        
+                        // Check for specific override errors and adjust message
+                        if (firstKey === 'custom_labor_rate' && clientSettings.laborRateOverride) {
+                            fieldName = 'Custom Labor Rate';
+                        } else if (firstKey === 'custom_markup_percentage' && clientSettings.partsMarkupOverride) {
+                            fieldName = 'Custom Markup Percentage';
+                        } else if (firstKey === 'custom_payment_terms' && clientSettings.paymentTermsOverride) {
+                            fieldName = 'Custom Payment Terms';
+                        } else if (firstKey === 'email') {
+                            fieldName = 'Email';
+                        } else if (firstKey === 'phone_number') {
+                             fieldName = 'Phone Number';
+                        }
+                        
                         errorMessage = `**Validation Error in ${fieldName}:** ${firstError}`;
                     } else {
                         errorMessage = "Validation failed. Please check all highlighted or required fields.";
@@ -393,7 +446,6 @@ const ClientForm = () => {
                 errorMessage = `Network Error: ${err.message}`;
             }
 
-            // Show the error message toast
             showToastNotification(errorMessage, 'error');
             
         } finally {
@@ -401,11 +453,24 @@ const ClientForm = () => {
         }
     };
     
-    // Placeholder for the cancel action
     const handleCancel = () => {
-        // Just go back to the clients list
         navigate('/clients');
     };
+    
+    // 🚗 NEW HANDLER: Directs to the Vehicle Form
+    const handleAddVehicleClick = (e) => {
+        e.preventDefault();
+        
+        // Check 1: Must be in edit mode (client must already exist and have an ID)
+        if (isEditMode && clientId) {
+            // Navigate to the vehicle creation form, passing the client ID via the URL
+            navigate(`/vehicles/new/${clientId}`);
+        } else {
+             // If trying to add a vehicle to a new client (who hasn't been saved yet)
+             showToastNotification("Please save the client details before adding a vehicle.", 'error');
+        }
+    };
+
 
     // --- Render Logic ---
 
@@ -436,7 +501,6 @@ const ClientForm = () => {
         );
     }
     
-    // If a generic error occurred during initial fetch
     if (error) {
         return (
             <div className="client-form-container error-state">
@@ -448,18 +512,38 @@ const ClientForm = () => {
         );
     }
 
-
+    // 🏆 UPDATED TITLE LOGIC FOR BETTER TEXT
     const formTitle = isEditMode 
         ? `Edit Client: ${nameMode === MODE_COMPANY ? formData.companyName : `${formData.firstName} ${formData.lastName}`}` 
-        : 'Create New Client';
+        : 'New client';
 
     return (
         <div className="client-form-container">
+            {/* Notification Toast */}
+            {notification.show && (
+                <div className={`toast-notification ${notification.type}`}>
+                    {notification.type === 'success' ? <FaCheckCircle /> : <FaExclamationTriangle />}
+                    <span>{notification.message}</span>
+                </div>
+            )}
+            
             <header className="page-header">
                 <h2>{formTitle}</h2>
+                {/* 🚗 ADD VEHICLE BUTTON (Only visible in Edit Mode) */}
+                {isEditMode && (
+                    <button 
+                        className="btn-primary-action" 
+                        onClick={handleAddVehicleClick}
+                        style={{ marginLeft: 'auto', backgroundColor: SUCCESS_GREEN }} 
+                        title="Add Vehicle to this Client"
+                    >
+                        <FaCar style={{ marginRight: '5px' }}/> 
+                        <FaPlusCircle style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.8em', color: 'white', backgroundColor: SUCCESS_GREEN, borderRadius: '50%' }}/>
+                        Add Vehicle
+                    </button>
+                )}
             </header>
             
-            {/* The main form area */}
             <form onSubmit={handleSubmit} className="form-card">
                 
                 {/* 1. Client Identity & Contact Information */}
@@ -584,10 +668,25 @@ const ClientForm = () => {
                     </div>
                 </div>
                 <div className="form-grid-3">
+                    {/* CITY DROPDOWN */}
                     <div className="form-group">
                         <label htmlFor="city">City</label>
-                        <input type="text" id="city" name="city" onChange={handleChange} value={formData.city} />
+                        <select 
+                            id="city" 
+                            name="city" 
+                            onChange={handleChange} 
+                            value={formData.city || ''} 
+                            style={{ direction: 'ltr' }} 
+                        >
+                            <option value="">-- Select City (Optional) --</option>
+                            {TANZANIA_CITIES.map(city => (
+                                <option key={city} value={city}>
+                                    {city}
+                                </option>
+                            ))}
+                        </select>
                     </div>
+                    
                     <div className="form-group">
                         <label htmlFor="state">State/Province</label>
                         <input type="text" id="state" name="state" onChange={handleChange} value={formData.state} />
@@ -614,7 +713,7 @@ const ClientForm = () => {
                     </div>
                 </div>
                 
-                {/* 🏆 5. Client Settings & Configuration (New Section) 🏆 */}
+                {/* 5. Client Settings & Configuration */}
                 <h4 className="form-section-title"><FaTools /> Client Settings & Configuration</h4>
                 <div className="detail-card-section settings-section">
                     
@@ -634,491 +733,374 @@ const ClientForm = () => {
                         onChange={handleSettingsChange}
                     />
                     
-                    <ToggleSwitch 
-                        id="laborRateOverride"
-                        label="Labor Rate Override"
-                        description="If activated, a different labor rate will be applied when creating an invoice."
-                        checked={clientSettings.laborRateOverride}
-                        onChange={handleSettingsChange}
-                    />
+                    {/* LABOR RATE OVERRIDE */}
+                    <div className="setting-group">
+                        <ToggleSwitch 
+                            id="laborRateOverride"
+                            label="Labor Rate Override"
+                            description="If activated, a different labor rate will be applied when creating an invoice."
+                            checked={clientSettings.laborRateOverride}
+                            onChange={handleSettingsChange}
+                        />
+                        {clientSettings.laborRateOverride && (
+                            <div className="override-input-field">
+                                <label htmlFor="customLaborRate"><FaDollarSign /> Custom Labor Rate (e.g., 55.00) *</label>
+                                <input 
+                                    type="number" 
+                                    id="customLaborRate" 
+                                    name="customLaborRate" 
+                                    placeholder="Enter custom rate per hour"
+                                    required 
+                                    step="0.01" 
+                                    min="0"
+                                    onChange={handleChange} 
+                                    value={formData.customLaborRate}
+                                />
+                            </div>
+                        )}
+                    </div>
                     
-                    <ToggleSwitch 
-                        id="partsMarkupOverride"
-                        label="Parts Markup Override"
-                        description="If activated, a different price markup will be applied to this client on future invoices."
-                        checked={clientSettings.partsMarkupOverride}
-                        onChange={handleSettingsChange}
-                    />
-                    
-                    <ToggleSwitch 
-                        id="paymentTermsOverride"
-                        label="Payment Terms Override"
-                        description="This option will define the Due Date date on your invoices. Default is 30 Days!"
-                        checked={clientSettings.paymentTermsOverride}
-                        onChange={handleSettingsChange}
-                    />
+                    {/* PARTS MARKUP OVERRIDE (Added the missing JSX input) */}
+                    <div className="setting-group">
+                        <ToggleSwitch 
+                            id="partsMarkupOverride"
+                            label="Parts Markup Override"
+                            description="If activated, a custom parts markup percentage will be used for this client."
+                            checked={clientSettings.partsMarkupOverride}
+                            onChange={handleSettingsChange}
+                        />
+                        {clientSettings.partsMarkupOverride && (
+                            <div className="override-input-field">
+                                <label htmlFor="customMarkupPercentage"><FaPercent /> Custom Markup Percentage (e.g., 20) *</label>
+                                <input 
+                                    type="number" 
+                                    id="customMarkupPercentage" 
+                                    name="customMarkupPercentage" 
+                                    placeholder="Enter custom markup (e.g., 20 for 20%)"
+                                    required 
+                                    step="0.01" 
+                                    min="0"
+                                    onChange={handleChange} 
+                                    value={formData.customMarkupPercentage}
+                                />
+                            </div>
+                        )}
+                    </div>
 
+                    {/* PAYMENT TERMS OVERRIDE (Added the missing JSX input) */}
+                    <div className="setting-group">
+                        <ToggleSwitch 
+                            id="paymentTermsOverride"
+                            label="Payment Terms Override"
+                            description="Set specific payment terms (e.g., Net 15, Net 30) for this client."
+                            checked={clientSettings.paymentTermsOverride}
+                            onChange={handleSettingsChange}
+                        />
+                        {clientSettings.paymentTermsOverride && (
+                            <div className="override-input-field">
+                                <label htmlFor="customPaymentTerms">Custom Payment Terms *</label>
+                                <input 
+                                    type="text" 
+                                    id="customPaymentTerms" 
+                                    name="customPaymentTerms" 
+                                    placeholder="e.g., Net 15 Days, Due Upon Receipt"
+                                    required 
+                                    onChange={handleChange} 
+                                    value={formData.customPaymentTerms}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-
-                {/* 6. Vehicle Association (Placeholder) */}
-                <h4 className="form-section-title">Registered Vehicles</h4>
-                <div className="detail-card-section placeholder-section">
-                    <p>
-                        No vehicles registered yet. 
-                        <a 
-                            href="#add-vehicle" 
-                            onClick={(e) => { e.preventDefault(); console.log('Add Vehicle clicked!'); }}
-                        >
-                            Click to add a vehicle to this client.
-                        </a>
-                    </p>
-                </div>
-                
-                {/* 7. Form Actions (Footer) */}
-                <div className="form-actions page-form-actions">
-                    {/* Secondary action (Cancel) */}
-                    <button type="button" onClick={handleCancel} className="btn-secondary">
-                        <FaTimes /> Cancel
+                {/* 6. Form Actions */}
+                <div className="form-actions">
+                    <button 
+                        type="button" 
+                        onClick={handleCancel} 
+                        className="btn-secondary"
+                    >
+                        <FaTimes style={{ marginRight: '8px' }}/> Cancel
                     </button>
-                    {/* Primary action (Save) - Disabled if phone has a client-side error */}
-                    <button type="submit" className="btn-primary-action" disabled={!!phoneError || isLoading}>
-                        {isLoading ? <FaSpinner className="spinner-icon" /> : <FaSave />} {isEditMode ? 'Update Client' : 'Save Client'} 
+                    <button 
+                        type="submit" 
+                        className="btn-primary" 
+                        disabled={isLoading}
+                        style={{ backgroundColor: PRIMARY_BLUE }}
+                    >
+                        {isLoading 
+                            ? (
+                                <>
+                                    <FaSpinner className="spinner" /> 
+                                    {isEditMode ? ' Updating...' : ' Saving...'}
+                                </>
+                            )
+                            : (
+                                <>
+                                    <FaSave style={{ marginRight: '8px' }}/> 
+                                    {isEditMode ? 'Update Client' : 'Save New Client'}
+                                </>
+                            )
+                        }
                     </button>
                 </div>
             </form>
-            
-            {/* TOAST NOTIFICATION COMPONENT */}
-            {notification.show && (
-                <div className={`toast-notification ${notification.type}`}>
-                    {notification.type === 'success' ? 
-                        <FaCheckCircle style={{ marginRight: '10px' }} /> : 
-                        <FaExclamationTriangle style={{ marginRight: '10px' }} />
-                    }
-                    {notification.message}
-                </div>
-            )}
-            
-            {/* 🚀 STYLES FOR THE FORM */}
+
             <style jsx>{`
-                /* --- BASE FONT STYLING --- */
-                .client-form-container, .form-card, h2, h4, label, input, textarea, select, button {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-                }
-                
-                /* Container and Card */
+                /* General Form Styling */
                 .client-form-container {
-                    padding: 0 20px 40px 20px;
-                    max-width: 1900px;
-                    margin-left: -10px; 
+                    max-width: 1600px;
+                    margin: 0 auto;
                 }
-                
-                /* Page Header (H2) */
-                .page-header h2 {
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #333333;
-                }
-                body.dark-theme .page-header h2 {
-                    color: ${TEXT_PRIMARY_DARK};
+                .form-card {
+                    background-color: ${document.body.classList.contains('dark-theme') ? BG_CARD_DARK : '#ffffff'};
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, ${document.body.classList.contains('dark-theme') ? '0.2' : '0.1'});
                 }
                 .page-header {
                     display: flex;
-                    align-items: center;
                     justify-content: space-between;
-                    padding: 0 0 15px 0;
-                    border-bottom: 1px solid #e0e0e0;
-                    margin-bottom: 20px;
-                }
-                body.dark-theme .page-header {
-                    border-bottom: 1px solid rgba(255,255,255,0.1);
-                }
-
-                .form-card {
-                    background-color: #ffffff;
-                    padding: 30px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                }
-
-                /* Dark Theme Card Adaptation */
-                body.dark-theme .form-card {
-                    background-color: ${BG_CARD_DARK};
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                }
-
-                /* Section Titles (H4) */
-                .form-section-title {
-                    color: ${PRIMARY_BLUE};
-                    font-size: 18px;
-                    font-weight: 600;
-                    margin-top: 30px;
-                    margin-bottom: 15px;
-                    padding-bottom: 5px;
-                    border-bottom: 1px solid rgba(0,0,0,0.1);
-                    display: flex;
                     align-items: center;
+                    padding-bottom: 15px;
+                    margin-bottom: 20px;
+                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#eeeeee'};
                 }
-                .form-section-title > svg {
-                    margin-right: 8px;
-                    font-size: 20px;
+                .page-header h2 {
+                    margin: 0;
+                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
                 }
-                body.dark-theme .form-section-title {
-                    border-bottom-color: rgba(255,255,255,0.1);
+                .form-section-title {
+                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#dddddd'};
+                    padding-bottom: 10px;
+                    margin-top: 25px;
+                    margin-bottom: 15px;
+                    color: ${PRIMARY_BLUE};
+                    font-weight: 600;
+                    font-size: 1.1em;
                 }
-
-                /* Grid Layouts (no change) */
-                .form-grid-1 {
+                .form-grid-1, .form-grid-2, .form-grid-3 {
                     display: grid;
-                    grid-template-columns: 1fr;
                     gap: 20px;
                     margin-bottom: 20px;
                 }
                 .form-grid-2 {
-                    display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 20px;
-                    margin-bottom: 20px;
                 }
                 .form-grid-3 {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr 1fr;
-                    gap: 20px;
-                    margin-bottom: 20px;
+                    grid-template-columns: repeat(3, 1fr);
                 }
-                
-                /* Detail Card Section (for toggles, vehicles, etc.) */
-                .detail-card-section {
-                    padding: 10px 0;
-                }
-                .placeholder-section {
-                    background-color: #f7f7f7;
-                    padding: 15px 20px;
-                    border-radius: 6px;
-                    border: 1px dashed #cccccc;
-                    color: #777;
-                }
-                body.dark-theme .placeholder-section {
-                    background-color: #334050;
-                    border-color: #4a5d77;
-                    color: ${TEXT_MUTED_DARK};
-                }
-
-
-                /* Form Group and Inputs */
-                .form-group {
-                    display: flex;
-                    flex-direction: column;
-                }
-
                 .form-group label {
-                    font-size: 14px;
-                    font-weight: 500;
+                    display: block;
                     margin-bottom: 5px;
-                    color: #555555;
-                    display: flex;
-                    align-items: center;
+                    font-weight: 600;
+                    color: ${document.body.classList.contains('dark-theme') ? TEXT_MUTED_DARK : '#555555'};
                 }
-                .form-group label > svg {
-                    margin-right: 5px;
-                    color: #999999;
-                }
-
-                /* Dark Theme Label/Text */
-                body.dark-theme .form-group label {
-                    color: ${TEXT_MUTED_DARK};
-                }
-                body.dark-theme .form-group label > svg {
-                    color: ${TEXT_MUTED_DARK};
-                }
-
-                input[type="text"],
-                input[type="email"],
-                textarea,
-                select {
+                .form-group input[type="text"],
+                .form-group input[type="email"],
+                .form-group input[type="number"],
+                .form-group select,
+                .form-group textarea {
+                    width: 100%;
                     padding: 10px 12px;
-                    border: 1px solid #dddddd;
+                    border: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#dddddd'};
                     border-radius: 4px;
-                    font-size: 15px;
-                    transition: border-color 0.2s, box-shadow 0.2s;
-                    background-color: #ffffff;
-                    color: #333333;
+                    box-sizing: border-box;
+                    background-color: ${document.body.classList.contains('dark-theme') ? TOP_NAV_COLOR : '#ffffff'};
+                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
+                    transition: border-color 0.2s;
                 }
-                
-                input:focus,
-                textarea:focus,
-                select:focus {
+                .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
                     border-color: ${PRIMARY_BLUE};
                     outline: none;
-                    box-shadow: 0 0 0 1px ${PRIMARY_BLUE};
+                }
+                
+                .name-mode-selector select {
+                    background-color: ${document.body.classList.contains('dark-theme') ? TOP_NAV_COLOR : '#f4f4f4'};
+                    font-weight: bold;
+                }
+                .mode-description {
+                    font-size: 0.85em;
+                    color: ${TEXT_MUTED_DARK};
+                    margin-top: 5px;
                 }
 
-                /* Dark Theme Inputs */
-                body.dark-theme input,
-                body.dark-theme textarea,
-                body.dark-theme select {
-                    background-color: ${TOP_NAV_COLOR}; 
-                    border-color: ${INPUT_BORDER_DARK};
-                    color: ${TEXT_PRIMARY_DARK};
-                }
-                body.dark-theme input::placeholder,
-                body.dark-theme textarea::placeholder {
-                    color: ${TEXT_MUTED_DARK};
-                }
-                
-                /* Textarea specific styling */
-                textarea {
-                    resize: vertical;
-                    min-height: 100px;
-                }
-                
-                /* Phone Validation Error Styling */
+                /* Phone Input Error */
                 .phone-validation-error {
                     color: ${DANGER_RED};
-                    font-size: 13px;
+                    font-size: 0.8em;
                     margin-top: 5px;
-                    font-weight: 500;
                 }
                 
-                /* Mode Description Styling */
-                .mode-description {
-                    font-size: 13px;
-                    color: #777;
-                    margin-top: 5px;
-                }
-                body.dark-theme .mode-description {
-                    color: ${TEXT_MUTED_DARK};
-                }
-
-                /* --- Form Actions (Footer Buttons) --- */
-                .page-form-actions {
+                /* Form Actions */
+                .form-actions {
                     display: flex;
                     justify-content: flex-end;
-                    gap: 15px;
-                    padding-top: 25px;
+                    gap: 10px;
                     margin-top: 30px;
-                    border-top: 1px solid #e0e0e0;
+                    padding-top: 20px;
+                    border-top: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#dddddd'};
                 }
-                body.dark-theme .page-form-actions {
-                    border-top: 1px solid rgba(255,255,255,0.1);
-                }
-
-                .btn-primary-action, .btn-secondary {
+                .btn-primary, .btn-secondary {
                     padding: 10px 20px;
-                    border-radius: 8px;
-                    font-size: 16px;
+                    border: none;
+                    border-radius: 4px;
                     cursor: pointer;
                     font-weight: 600;
-                    display: inline-flex;
+                    transition: background-color 0.2s;
+                    display: flex;
                     align-items: center;
-                    transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
                 }
-                .btn-primary-action {
+                .btn-primary {
                     background-color: ${PRIMARY_BLUE};
-                    color: white;
-                    border: none;
+                    color: #ffffff;
                 }
-                .btn-primary-action:hover:not(:disabled) {
-                    background-color: #4a90e2;
+                .btn-primary:hover:not(:disabled) {
+                    background-color: #4a82c4;
                 }
                 .btn-secondary {
-                    background-color: #f1f1f1;
-                    color: #333;
-                    border: 1px solid #dddddd;
+                    background-color: ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#e0e0e0'};
+                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
                 }
                 .btn-secondary:hover {
-                    background-color: #e0e0e0;
+                    background-color: ${document.body.classList.contains('dark-theme') ? '#44556b' : '#cccccc'};
                 }
-                body.dark-theme .btn-secondary {
-                    background-color: #38465b;
-                    color: ${TEXT_PRIMARY_DARK};
-                    border-color: #4a5d77;
-                }
-                body.dark-theme .btn-secondary:hover {
-                    background-color: #4a5d77;
-                }
-                .btn-primary-action:disabled {
-                    opacity: 0.6;
+                .btn-primary:disabled {
+                    background-color: #8fa0c0;
                     cursor: not-allowed;
                 }
-                .spinner-icon {
+                .spinner {
                     animation: spin 1s linear infinite;
-                    margin-right: 5px;
+                    margin-right: 8px;
                 }
 
-
-                /* ----------------------------------------------------------------- */
-                /* 🏆 TOGGLE SWITCH STYLES (Based on Image) 🏆 */
-                /* ----------------------------------------------------------------- */
-                .settings-section {
+                /* Toast Notification */
+                .toast-notification {
+                    position: fixed;
+                    top: 80px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    color: #ffffff;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
                     display: flex;
-                    flex-direction: column;
-                    gap: 15px; 
+                    align-items: center;
+                    gap: 10px;
+                    min-width: 300px;
                 }
-
+                .toast-notification.success {
+                    background-color: ${SUCCESS_GREEN};
+                }
+                .toast-notification.error {
+                    background-color: ${DANGER_RED};
+                }
+                
+                /* --- Settings Section & Toggles --- */
+                .settings-section {
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 20px;
+                    padding: 15px;
+                    border: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#f0f0f0'};
+                    border-radius: 6px;
+                    background-color: ${document.body.classList.contains('dark-theme') ? TOP_NAV_COLOR : '#fafafa'};
+                }
                 .toggle-setting-item {
-                    border-bottom: 1px solid #eee;
+                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#e9e9e9'};
                     padding-bottom: 15px;
                 }
                 .toggle-setting-item:last-child {
-                    border-bottom: none; 
-                    padding-bottom: 0;
+                    border-bottom: none;
                 }
-                body.dark-theme .toggle-setting-item {
-                    border-bottom: 1px solid #38465b;
-                }
-
-
                 .toggle-label {
                     display: flex;
-                    align-items: flex-start; /* Align switch and text vertically */
+                    align-items: flex-start;
                     cursor: pointer;
-                    user-select: none; 
-                    padding: 5px 0;
-                }
-                
-                .toggle-switch-wrap {
                     position: relative;
-                    width: 50px; /* Width of the track */
-                    height: 26px; /* Height of the track */
-                    flex-shrink: 0;
-                    margin-right: 15px;
+                }
+                .toggle-text-content {
+                    margin-left: 15px;
+                }
+                .toggle-title {
+                    font-weight: 700;
+                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
+                }
+                .toggle-description {
+                    font-size: 0.85em;
+                    color: ${TEXT_MUTED_DARK};
+                    margin-top: 2px;
                 }
 
+                /* Custom Toggle Switch Styling (re-used from previous component design) */
+                .toggle-switch-wrap {
+                    position: relative;
+                    display: inline-block;
+                    width: 45px;
+                    height: 25px;
+                    flex-shrink: 0;
+                }
                 .toggle-checkbox {
                     opacity: 0;
                     width: 0;
                     height: 0;
                 }
-
                 .toggle-slider {
                     position: absolute;
+                    cursor: pointer;
                     top: 0;
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background-color: #ccc; /* Off-state track color */
-                    border-radius: 34px; /* Pill shape */
+                    background-color: ${document.body.classList.contains('dark-theme') ? '#555' : '#ccc'};
                     transition: .4s;
-                    box-shadow: 0 0 1px rgba(0,0,0,0.1) inset;
+                    border-radius: 25px;
                 }
-
                 .toggle-slider:before {
                     position: absolute;
                     content: "";
-                    height: 18px; /* Height of the thumb */
-                    width: 18px; /* Width of the thumb */
+                    height: 17px;
+                    width: 17px;
                     left: 4px;
                     bottom: 4px;
-                    background-color: white; /* Thumb color */
-                    border-radius: 50%;
+                    background-color: white;
                     transition: .4s;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.4); 
+                    border-radius: 50%;
                 }
-
-                /* Checked State */
                 .toggle-checkbox:checked + .toggle-slider {
-                    background-color: ${PRIMARY_BLUE}; /* On-state track color */
-                }
-
-                .toggle-checkbox:checked + .toggle-slider:before {
-                    transform: translateX(24px); /* Move thumb to the right (50-4-4-18 = 24) */
-                }
-
-                /* Focus State (Accessibility) */
-                .toggle-checkbox:focus + .toggle-slider {
-                    box-shadow: 0 0 1px ${PRIMARY_BLUE};
-                }
-
-                /* Text Content */
-                .toggle-text-content {
-                    display: flex;
-                    flex-direction: column;
-                }
-                .toggle-title {
-                    font-size: 16px; 
-                    font-weight: 500; 
-                    color: #333;
-                    line-height: 1.2;
-                }
-                body.dark-theme .toggle-title {
-                    color: ${TEXT_PRIMARY_DARK};
-                }
-                .toggle-description {
-                    font-size: 13px;
-                    color: #777;
-                    margin: 0;
-                    margin-top: 3px;
-                    line-height: 1.4;
-                }
-                body.dark-theme .toggle-description {
-                    color: ${TEXT_MUTED_DARK};
-                }
-                
-                /* Dark Mode Toggles */
-                body.dark-theme .toggle-slider {
-                    background-color: #555; /* Darker off-state track */
-                }
-                body.dark-theme .toggle-slider:before {
-                    background-color: #cccccc; /* Lighter thumb */
-                }
-                body.dark-theme .toggle-checkbox:checked + .toggle-slider {
-                    background-color: ${PRIMARY_BLUE}; 
-                }
-
-                /* ----------------------------------------------------------------- */
-                /* TOAST NOTIFICATION STYLES */
-                /* ----------------------------------------------------------------- */
-                .toast-notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    padding: 15px 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    font-size: 15px;
-                    font-weight: 600;
-                    z-index: 1001;
-                    display: flex;
-                    align-items: center;
-                    animation: slideIn 0.3s ease-out;
-                }
-                
-                .toast-notification.success {
                     background-color: ${SUCCESS_GREEN};
-                    color: white;
                 }
-                .toast-notification.error {
-                    background-color: ${DANGER_RED};
-                    color: white;
+                .toggle-checkbox:focus + .toggle-slider {
+                    box-shadow: 0 0 1px ${SUCCESS_GREEN};
                 }
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
+                .toggle-checkbox:checked + .toggle-slider:before {
+                    transform: translateX(20px);
                 }
                 
-                /* --- Media Queries --- */
-                @media (max-width: 900px) {
-                    .form-grid-2 {
-                        grid-template-columns: 1fr;
-                    }
-                    .form-grid-3 {
-                        grid-template-columns: 1fr 1fr;
-                    }
+                /* Grouping for Override Settings */
+                .setting-group {
+                    padding-bottom: 15px;
+                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#e9e9e9'};
                 }
-
-                @media (max-width: 600px) {
-                    .form-grid-3 {
+                .setting-group:last-child {
+                    border-bottom: none;
+                    padding-bottom: 0;
+                }
+                .override-input-field {
+                    background-color: ${document.body.classList.contains('dark-theme') ? BG_CARD_DARK : '#ffffff'};
+                    border: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#cccccc'};
+                    border-radius: 4px;
+                    padding: 15px;
+                    margin-top: 15px;
+                }
+                .override-input-field label {
+                    color: ${EDIT_ORANGE};
+                }
+                
+                /* Responsive adjustments */
+                @media (max-width: 768px) {
+                    .form-grid-2, .form-grid-3 {
                         grid-template-columns: 1fr;
-                    }
-                    .page-form-actions {
-                        flex-direction: column-reverse;
                     }
                 }
             `}</style>

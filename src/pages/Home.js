@@ -1,8 +1,9 @@
 // src/pages/Home.js - The main protected application layout
 
 import React, { useState, useEffect } from 'react'; 
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom'; // Added Navigate for fallback
-import { FaCar, FaPlusCircle, FaPlus } from 'react-icons/fa'; 
+// 🛑 Added useLocation to read state from navigation
+import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom'; 
+import { FaCar, FaPlusCircle, FaPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'; // 🛑 Added icons
 
 // 🛑 IMPORTANT: Import the apiClient instance
 import apiClient from '../utils/apiClient';
@@ -29,6 +30,73 @@ import VendorForm from '../components/VendorForm';
 import AppointmentForm from '../components/AppointmentForm';
 // 🏆 NEW: Import the Footer component
 import Footer from '../components/Footer';
+
+
+// Define common colors for the Toast
+const SUCCESS_COLOR = '#2ecc71'; 
+const ERROR_COLOR = '#e74c3c'; 
+
+
+// -----------------------------------------------------------------
+// 1. TOAST NOTIFICATION COMPONENT (Defined for Home.js for App-Wide use)
+// -----------------------------------------------------------------
+const ToastNotification = ({ message, type, duration = 2000, onClose }) => {
+    
+    useEffect(() => {
+        if (!message) return;
+
+        const timer = setTimeout(() => {
+            onClose();
+        }, duration); 
+        return () => clearTimeout(timer);
+    }, [message, duration, onClose]);
+
+    if (!message) return null; 
+
+    // Determine color and icon
+    const color = type === 'success' ? SUCCESS_COLOR : ERROR_COLOR;
+    const icon = type === 'success' ? <FaCheckCircle /> : <FaTimesCircle />;
+
+    return (
+        <div className="app-toast-notification-container">
+            <div className="toast-content" style={{ backgroundColor: color }}>
+                {icon}
+                <span className="toast-message">{message}</span>
+            </div>
+             {/* CSS for the Toast Notification (Top Right) */}
+            <style jsx>{`
+                .app-toast-notification-container {
+                    position: fixed;
+                    top: 80px; /* Below the 60px TopNavBar + 20px buffer */
+                    right: 20px;
+                    z-index: 10000;
+                    opacity: 0;
+                    animation: slide-in 0.5s forwards, fade-out 0.5s ${duration/1000 - 0.5}s forwards; 
+                }
+
+                .toast-content {
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-weight: 600;
+                }
+
+                @keyframes slide-in {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes fade-out {
+                    0% { opacity: 1; }
+                    100% { opacity: 0; }
+                }
+            `}</style>
+        </div>
+    );
+};
 
 
 // -----------------------------------------------------------------
@@ -87,19 +155,34 @@ const VehicleList = ({ navigateTo, vehicles }) => (
 // HOME COMPONENT (MAIN APPLICATION LAYOUT)
 // -----------------------------------------------------------------
 const Home = () => { 
-    // Destructure 'user' and 'logout' from useAuth()
     const { logout, user } = useAuth();
+    const navigate = useNavigate(); 
+    const location = useLocation(); // 🛑 Hook to read navigation state
 
     // State Hooks
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(false); // Controls the theme
+    const [isDarkMode, setIsDarkMode] = useState(false); 
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    const [vehicles, setVehicles] = useState([]); // Mock vehicle list state
+    const [vehicles, setVehicles] = useState([]); 
     
-    // CRITICAL: Get the navigation function
-    const navigate = useNavigate(); 
+    // 🛑 NEW: Toast state for application-wide messages
+    const [appToast, setAppToast] = useState({ message: '', type: '' });
     
-    // EFFECT: Apply dark-theme class to body when isDarkMode changes
+    // EFFECT: Read and display success/error message from navigation state
+    useEffect(() => {
+        if (location.state?.successMessage) {
+            setAppToast({ message: location.state.successMessage, type: 'success' });
+            // Clear the state so the message doesn't reappear on subsequent visits
+            // This requires modifying the history state manually
+            navigate(location.pathname, { replace: true, state: {} });
+        } else if (location.state?.errorMessage) {
+            setAppToast({ message: location.state.errorMessage, type: 'error' });
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, location.pathname, navigate]);
+
+
+    // EFFECT: Apply dark-theme class to body when isDarkMode changes (remains the same)
     useEffect(() => {
         // Load theme preference from localStorage on mount
         const savedTheme = localStorage.getItem('theme');
@@ -128,7 +211,6 @@ const Home = () => {
         setIsProfileMenuOpen(false); 
         // Auto-close sidebar on mobile devices for better UX
         if (window.innerWidth < 768) { 
-            // Fix: Set to true to collapse the sidebar on mobile after navigation
             setIsSidebarCollapsed(true); 
         }
     };
@@ -145,7 +227,6 @@ const Home = () => {
     
     /**
      * Handles the submission (POST or PUT/PATCH) for the ClientForm.
-     * Maps frontend data to Django API format and handles success/error navigation.
      */
     const handleClientSave = async (formData) => {
         const isEditMode = !!formData.id;
@@ -166,67 +247,62 @@ const Home = () => {
         };
 
         // 🛑 CRITICAL FIX: Conditionally add name fields.
-        // If a field is not present in the payload, Django won't try to validate it 
-        // against null/blank constraints unless it's explicitly required by the serializer.
-        
         if (isIndividual) {
-            // For Individual: Add first_name and last_name (must not be null/blank)
             apiData = {
                 ...apiData,
                 first_name: formData.firstName || '', 
                 last_name: formData.lastName || '',
-                // Ensure company_name is explicitly excluded or set to '' if the serializer requires it
                 company_name: '', 
             };
         } else {
-            // For Company: Add company_name (must not be null/blank)
             apiData = {
                 ...apiData,
                 company_name: formData.companyName || '',
-                // Ensure individual names are explicitly excluded or set to '' if the serializer requires them
                 first_name: '',
                 last_name: '', 
             };
         }
 
-        // Final check: Remove any empty strings if the field is optional on the backend
-        // For required fields like first_name/company_name, we must send an empty string if the user didn't fill it,
-        // so we'll let the backend validation handle the 'This field may not be blank' error.
-
         try {
             let response;
             let successMessage;
+            let savedClient;
             
             if (isEditMode) {
-                // 2. EDIT MODE: Use PUT/PATCH to update existing client
+                // 2. EDIT MODE
                 console.log(`Submitting Client UPDATE (PUT) for ID ${clientId}:`, apiData);
                 response = await apiClient.put(`/clients/${clientId}/`, apiData);
+                savedClient = response.data;
                 
-                // Determine the name for the success message based on the type
                 const clientName = isIndividual 
                     ? `${formData.firstName} ${formData.lastName}`.trim() 
                     : formData.companyName;
                 
                 successMessage = `Client **${clientName}** was successfully updated!`;
             } else {
-                // 2. CREATE MODE: Use POST to create new client
+                // 2. CREATE MODE
                 console.log("Submitting Client CREATE (POST):", apiData);
                 response = await apiClient.post('/clients/', apiData);
-                const savedClient = response.data;
+                savedClient = response.data;
                 
-                // Determine the name for the success message from the API response
                 const clientName = (savedClient.company_name || `${savedClient.first_name || ''} ${savedClient.last_name || ''}`).trim();
                 successMessage = `Client **${clientName}** was successfully created!`;
             }
             
-            console.log("Client successfully saved:", response.data);
+            console.log("Client successfully saved:", savedClient);
             
-            // 3. Navigate back to the client list upon success
-            navigate('/clients', { 
-                state: { 
-                    successMessage: successMessage 
-                } 
-            }); 
+            // 3. Navigate to a new route upon successful creation, allowing the user to add a vehicle
+            if (!isEditMode && savedClient.id) {
+                 // 🏆 NEW FEATURE: Navigate to the Add Vehicle page for the new client
+                 navigate(`/vehicles/new/${savedClient.id}`);
+            } else {
+                // 3. Navigate back to the client list upon success (Edit Mode)
+                navigate('/clients', { 
+                    state: { 
+                        successMessage: successMessage 
+                    } 
+                }); 
+            }
 
         } catch (error) {
             // Log the detailed response data (CRITICAL for debugging failed validations)
@@ -239,13 +315,12 @@ const Home = () => {
                 
                 // 🏆 Robust Parsing Logic for API Validation Errors 🏆
                 
-                // 1. Check for specific top-level field errors (e.g., 'phone_number', 'first_name', 'company_name')
+                // 1. Check for specific top-level field errors
                 if (errorData.phone_number) {
                     displayMessage = `Phone Error: ${errorData.phone_number.join(' ')}`; 
                 } else if (errorData.email) {
                     displayMessage = `Email Error: ${errorData.email.join(' ')}`; 
                 } else if (errorData.first_name) {
-                    // Correcting the likely error: if we send '' and the field is required, we'll see "may not be blank."
                     displayMessage = `First Name Error: ${errorData.first_name.join(' ')}`;
                 } else if (errorData.company_name) {
                     displayMessage = `Company Name Error: ${errorData.company_name.join(' ')}`;
@@ -253,10 +328,8 @@ const Home = () => {
                 
                 // 2. Fallback for generic or non-field errors
                 else if (typeof errorData === 'object' && !Array.isArray(errorData)) {
-                    // Collect all nested error messages from all fields
                     const allErrors = Object.entries(errorData)
                         .map(([field, messages]) => {
-                            // Format field name nicely (e.g., 'first_name' -> 'First Name')
                             const cleanField = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                             return `${cleanField}: ${Array.isArray(messages) ? messages.join(' ') : String(messages)}`;
                         })
@@ -266,7 +339,7 @@ const Home = () => {
                         displayMessage = allErrors;
                     }
                 } 
-                // 3. Handle list of strings (e.g., a non-field error returned as a list)
+                // 3. Handle list of strings
                 else if (Array.isArray(errorData) && typeof errorData[0] === 'string') {
                     displayMessage = errorData.join(' | ');
                 }
@@ -275,7 +348,6 @@ const Home = () => {
             // 4. Navigate back to the client list upon FAILURE
             navigate('/clients', { 
                 state: { 
-                    // Pass the error message
                     errorMessage: displayMessage
                 } 
             }); 
@@ -283,7 +355,6 @@ const Home = () => {
     };
 
     const handleClientCancel = () => {
-        // Simply navigate away, discarding form changes
         navigate('/clients');
     };
     // ---------------------------------
@@ -300,11 +371,18 @@ const Home = () => {
         };
         // In a real project, this would be api.post('/vehicles/', newVehicle)
         setVehicles(prevVehicles => [...prevVehicles, newVehicle]);
-        navigate('/vehicles');
+        
+        // 🛑 Navigate to the client list with a success message
+        navigate('/clients', { 
+            state: { 
+                successMessage: `Vehicle **${newVehicle.make} ${newVehicle.model}** added successfully!` 
+            } 
+        });
     };
 
     const handleVehicleCancel = () => {
-        navigate('/vehicles');
+        // Safe navigation back to the client list
+        navigate('/clients');
     };
 
     const handleGenericInventorySave = (data) => {
@@ -327,12 +405,10 @@ const Home = () => {
 
     const handleVendorSave = (data) => {
         console.log("Vendor Saved!", data);
-        // Navigate to the list of vendors
         navigate('/inventory/vendors');
     };
 
     const handleVendorCancel = () => {
-        // Navigate to the list of vendors
         navigate('/inventory/vendors');
     };
     
@@ -349,17 +425,22 @@ const Home = () => {
     // Dynamic Props for TopNavBar
     const navBarProps = {
         shopName: "Autowork Garage", 
-        // Use the user data from context
         userName: user 
             ? `${user.first_name} ${user.last_name || ''}`.trim()
             : 'Loading User...',
-        // Dynamically display the user's email address
         shopLocation: user?.email || "No Email Provided", 
     };
 
     // RENDER MAIN APPLICATION LAYOUT
     return (
         <div className="app-container"> 
+            
+            {/* 🛑 RENDER APPLICATION-WIDE TOAST HERE */}
+            <ToastNotification 
+                message={appToast.message} 
+                type={appToast.type}
+                onClose={() => setAppToast({ message: '', type: '' })}
+            />
             
             {/* Top Navigation Bar (Fixed at top) */}
             <TopNavBar 
@@ -369,9 +450,7 @@ const Home = () => {
                 toggleDarkMode={toggleDarkMode}
                 isProfileMenuOpen={isProfileMenuOpen}
                 toggleProfileMenu={toggleProfileMenu}
-                // Pass the 'navigate' function
                 navigate={navigate} 
-                // Pass the real logout function to TopNavBar
                 onLogout={logout} 
             />
 
@@ -383,7 +462,6 @@ const Home = () => {
                     isCollapsed={isSidebarCollapsed} 
                     currentPath={window.location.pathname} 
                     navigateTo={handleNavigate}
-                    // NOTE: Fix function passed to toggleSidebar
                     toggleSidebar={() => setIsSidebarCollapsed(prev => !prev)} 
                 />
 
@@ -444,8 +522,9 @@ const Home = () => {
                             path="/vehicles" 
                             element={<VehicleList navigateTo={handleNavigate} vehicles={vehicles} />} 
                         />
+                        {/* 🎯 UPDATED: Route for adding a new vehicle, now accepts an optional clientId */}
                         <Route 
-                            path="/vehicles/new" 
+                            path="/vehicles/new/:clientId?" 
                             element={<VehicleForm onSave={handleVehicleSave} onCancel={handleVehicleCancel} />} 
                         />
                         {/* Route for viewing/editing a specific vehicle */}
@@ -555,14 +634,14 @@ const Home = () => {
                 /* CRITICAL LAYOUT FIX (Main Content Positioning) */
                 /* ----------------------------------------------------------------- */
                 .main-content-wrapper {
-                    /* Start content right after the sidebar's default width (250px) */
+                    /* Start content right after the sidebar's default width (220px) */
                     margin-left: 220px; 
                     /* Pushes the content away from the fixed TopNavBar (60px tall, plus buffer) */
                     padding-top: 70px; 
                     flex-grow: 1;
                     min-height: 100vh; 
                     transition: margin-left 0.3s ease;
-                    width: calc(100% - 250px); /* Adjust width to fit the margin */
+                    width: calc(100% - 220px); /* Adjust width to fit the margin */
                     box-sizing: border-box;
 
                     /* 🏆 STICKY FOOTER FIX: Make wrapper a flex container */

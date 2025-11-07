@@ -1,6 +1,6 @@
 // src/components/TopNavigationBar.js - FULL CODE
 
-import React from 'react';
+import React, { useState, useEffect } from 'react'; 
 // Import all necessary icons
 import { 
     FaCar,          
@@ -8,9 +8,90 @@ import {
     FaUser,         
     FaSignOutAlt, 
     FaMoon, 
-    FaSun 
+    FaSun,
+    FaCheckCircle, 
+    FaTimesCircle  
 } from 'react-icons/fa'; 
-// 🛑 REMOVED: import SearchBar from './SearchBar'; 
+
+
+// Define common colors
+const SUCCESS_COLOR = '#2ecc71'; 
+const ERROR_COLOR = '#e74c3c'; 
+
+
+// -----------------------------------------------------------------
+// 1. TOAST NOTIFICATION COMPONENT (Floating Pop-up - Top Right)
+// -----------------------------------------------------------------
+// This component must manage its own display and lifetime
+const ToastNotification = ({ message, type, duration = 1500, onClose }) => {
+    
+    // Use useEffect unconditionally
+    useEffect(() => {
+        if (!message) return;
+
+        const timer = setTimeout(() => {
+            onClose();
+        }, duration); 
+        return () => clearTimeout(timer);
+    }, [message, duration, onClose]);
+
+    if (!message) return null; 
+
+    // Determine color and icon
+    const color = type === 'success' ? SUCCESS_COLOR : ERROR_COLOR;
+    const icon = type === 'success' ? <FaCheckCircle /> : <FaTimesCircle />;
+
+    return (
+        // 🛑 Renamed class for clarity: 'top-right-toast'
+        <div className="toast-notification-container top-right-toast"> 
+            <div className="toast-content" style={{ backgroundColor: color }}>
+                {icon}
+                <span className="toast-message">{message}</span>
+            </div>
+             {/* 🛑 UPDATED CSS for the Toast Notification (Top Right) */}
+            <style jsx>{`
+                .top-right-toast {
+                    position: fixed;
+                    /* 🛑 New Positioning: Top Right */
+                    top: 20px;
+                    right: 20px; 
+                    left: auto; /* Ensure 'left' is unset */
+                    transform: none; /* Reset transform */
+                    z-index: 10000;
+                    opacity: 0;
+                    /* 🛑 Updated animation to slide-in from the right */
+                    animation: slide-in 0.5s forwards, fade-out 0.5s ${duration/1000 - 0.5}s forwards; 
+                }
+
+                .toast-content {
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-weight: 600;
+                }
+                
+                .toast-message {
+                    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+                }
+
+                /* 🛑 New animation keyframes for sliding in from the right */
+                @keyframes slide-in {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                /* Start fading out */
+                @keyframes fade-out {
+                    0% { opacity: 1; }
+                    100% { opacity: 0; }
+                }
+            `}</style>
+        </div>
+    );
+};
 
 
 // --- Custom ToggleSwitch Component ---
@@ -34,40 +115,51 @@ const TopNavigationBar = ({
     toggleProfileMenu,  
     isDarkMode,         
     toggleDarkMode,     
-    onLogout,
+    onLogout,           
     navigate          
 }) => {
     
+    // 🛑 State to manage the toast notification
+    const [toast, setToast] = useState({ message: '', type: '' });
+    
     const handleProfileClick = (e) => {
         e.preventDefault();
-        toggleProfileMenu(); 
         navigate('/profile'); 
     };
     
-    const handleLogoutClick = (e) => {
+    const handleLogoutClick = async (e) => { 
         e.preventDefault();
-        toggleProfileMenu(); 
-        onLogout(); 
+        toggleProfileMenu(); // Close the dropdown immediately
+
+        // 1. Show the toast notification
+        setToast({ message: 'Successfully logged out!', type: 'success' });
+
+        // 2. Execute onLogout
+        await onLogout(); 
     };
     
-    // 🛑 REMOVED: Mock Search Handler handleSearch
-
 
     return (
         <header className="top-nav-bar">
+            
+            {/* 🛑 RENDER TOAST HERE */}
+            <ToastNotification 
+                message={toast.message} 
+                type={toast.type}
+                onClose={() => setToast({ message: '', type: '' })}
+            />
+
             {/* 1. Left Section: Logo and Shop Name */}
             <div className="logo-section">
                 <FaCar className="logo-icon" /> 
                 <span className="shop-name">{shopName}</span>
             </div>
 
-            {/* 2. Central Empty Space (Now takes up the space previously occupied by the Search Bar) */}
+            {/* 2. Central Empty Space */}
             <div style={{ flexGrow: 1 }}></div>
 
             {/* 3. Right Section: Action and User Profile */}
             <div className="action-section">
-                
-                {/* 🛑 REMOVED: Search Bar Wrapper */}
                 
                 <FaBell className="icon-notification icon-action" />
                 
@@ -107,7 +199,7 @@ const TopNavigationBar = ({
                         <a 
                             href="#logout" 
                             className="menu-item logout-item" 
-                            onClick={handleLogoutClick} 
+                            onClick={handleLogoutClick} // 🛑 Calls the function that triggers the toast
                         >
                             <FaSignOutAlt /> Logout
                         </a>
@@ -118,7 +210,7 @@ const TopNavigationBar = ({
             </div>
             
             {/* ----------------------------------------------------------------- */}
-            {/* STYLES FOR LAYOUT AND DARK MODE TOGGLE */}
+            {/* STYLES FOR LAYOUT AND DARK MODE TOGGLE (No Change in Core Styling) */}
             {/* ----------------------------------------------------------------- */}
             <style jsx>{`
                 /* Color Variables for Top Nav (from previous steps) */
@@ -165,13 +257,10 @@ const TopNavigationBar = ({
                     font-weight: 600;
                 }
 
-                /* 🛑 REMOVED: .search-bar-wrapper styles */
-
                 /* --- 3. Right Section (Actions/User) --- */
                 .action-section {
                     display: flex;
                     align-items: center;
-                    /* Removed margin-left: auto as the flexGrow: 1 div now pushes it right */
                     gap: 25px; 
                 }
                 

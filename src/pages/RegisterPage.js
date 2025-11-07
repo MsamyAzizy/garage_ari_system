@@ -1,12 +1,89 @@
-// src/pages/RegisterPage.js - Handles new user registration
+// src/pages/RegisterPage.js - Updated with Split-Screen appearance and Toast Notification
 
-import React, { useState } from 'react';
-import { FaUserPlus, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react'; // 🛑 Added useEffect
+import { FaUserPlus, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash, FaArrowLeft, FaCheckCircle } from 'react-icons/fa'; // 🛑 Added FaCheckCircle
 import { useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext'; 
 
+// Define the main active colors (Based on your current input, but defining SUCCESS_COLOR)
+const ACTIVE_COLOR = '#2c3e50'; 
+const ACCENT_PANEL_COLOR = '#2c3e50'; 
+const PRIMARY_TEXT_COLOR = '#2c3e50'; 
+const SUCCESS_COLOR = '#2ecc71'; // Green for success toast
+const ERROR_COLOR = '#e74c3c';
+
+// -----------------------------------------------------------------
+// 1. TOAST NOTIFICATION COMPONENT (Floating Pop-up)
+// -----------------------------------------------------------------
+const ToastNotification = ({ message, type, onClose }) => {
+    
+    // React Hook must be called unconditionally
+    useEffect(() => {
+        if (!message) return; // Exit if no message is present
+
+        // Automatically hide after 1500ms (to match the redirect timer)
+        const timer = setTimeout(() => {
+            onClose();
+        }, 1500); 
+        return () => clearTimeout(timer);
+    }, [message, onClose]); // Re-run effect when the message changes
+
+    // Only render the JSX if a message is present
+    if (!message) return null; 
+
+    // Determine color and icon based on type 
+    const color = type === 'success' ? SUCCESS_COLOR : ERROR_COLOR;
+    const icon = type === 'success' ? <FaCheckCircle /> : null;
+
+    return (
+        <div className="toast-notification-container">
+            <div className="toast-content" style={{ backgroundColor: color }}>
+                {icon}
+                <span className="toast-message">{message}</span>
+            </div>
+             {/* 🛑 CSS for the Toast Notification */}
+            <style jsx>{`
+                .toast-notification-container {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 10000;
+                    opacity: 0;
+                    animation: slide-in 0.5s forwards, fade-out 0.5s 1s forwards; 
+                }
+
+                .toast-content {
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-weight: 600;
+                }
+                
+                .toast-message {
+                    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+                }
+
+                @keyframes slide-in {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                /* Start fading out 1 second (1000ms) after animation starts */
+                @keyframes fade-out {
+                    0% { opacity: 1; }
+                    100% { opacity: 0; }
+                }
+            `}</style>
+        </div>
+    );
+};
+
+
 /**
- * User Registration Page Component
+ * User Registration Page Component (Split-Screen Design)
  */
 const RegisterPage = () => {
     const { register } = useAuth(); 
@@ -17,21 +94,18 @@ const RegisterPage = () => {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [password2, setPassword2] = useState(''); // For password confirmation
+    const [password2, setPassword2] = useState(''); 
     
     // UI States
     const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState(''); // 🚀 NEW: State for success message
+    const [successMessage, setSuccessMessage] = useState('');
     const [showPassword, setShowPassword] = useState(false); 
     const [isLoading, setIsLoading] = useState(false); 
     
-    // Assume Dark Mode for styling consistency
-    const isDarkMode = true; 
-
     const handleSubmit = async (e) => { 
         e.preventDefault();
         setError('');
-        setSuccessMessage(''); // Clear success message on new submission
+        setSuccessMessage(''); 
 
         if (password !== password2) {
             setError("Passwords do not match.");
@@ -41,19 +115,17 @@ const RegisterPage = () => {
         setIsLoading(true);
 
         try {
-            // Call the register function (which now only registers, no auto-login)
             await register(email, password, firstName, lastName);
             
-            // 🚀 SUCCESS LOGIC: Show message and redirect
+            // 🛑 Set success message, which triggers the Toast
             setSuccessMessage("Registration successful! Redirecting to login...");
             
-            // Wait a moment for the user to see the success message, then navigate
             setTimeout(() => {
                 navigate('/login'); 
-            }, 1500); // 1.5 second delay
+            }, 1500); 
             
         } catch (err) {
-            // 🛑 Simplified Error Handling (since auto-login is removed, the complex nested logic isn't needed)
+            // Simplified error handling
             let errorMessage = "Registration failed. Please check your data.";
             
             if (err.response && err.response.data) {
@@ -66,7 +138,6 @@ const RegisterPage = () => {
                 } else if (data.detail) {
                     errorMessage = data.detail;
                 } else {
-                    // Fallback for unexpected structured errors (e.g., first_name required)
                     const firstKey = Object.keys(data)[0];
                     if (Array.isArray(data[firstKey])) {
                         errorMessage = `${firstKey.replace(/_/g, ' ')}: ${data[firstKey].join(' ')}`;
@@ -86,286 +157,409 @@ const RegisterPage = () => {
         setShowPassword(prev => !prev);
     };
     
-    // Determine the CSS class for the container
-    const pageClass = isDarkMode ? 'login-page dark-mode' : 'login-page light-mode';
+    // Use the `Maps` hook for routing to the login page
+    const handleLoginClick = () => {
+        navigate('/login');
+    };
+
 
     return (
-        <div className={pageClass}>
+        <div className="split-login-page">
             
-            {/* Animated Background */}
-            {isDarkMode && (
-                <ul className="animated-background-circles">
-                    <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
-                </ul>
-            )}
+            {/* 🛑 RENDER TOAST HERE */}
+            <ToastNotification 
+                message={successMessage} 
+                type="success" 
+                onClose={() => setSuccessMessage('')} 
+            />
             
-            <div className="login-logo-header">
-                <h1 className="logo-main-text">Autowork</h1> 
-                <p className="logo-sub-text">Auto Repair Management System</p>
-            </div>
-            
-            <div className="login-box">
-                <h2 className="login-title">
-                    <FaUserPlus style={{ marginRight: '10px' }} />
-                    Register New Account
-                </h2>
+            <div className="split-login-container">
                 
-                <form onSubmit={handleSubmit}>
-                    {/* Input Fields */}
-                    {/* ... (First Name, Last Name, Email, Password, Password Confirmation inputs remain the same) ... */}
-                    <div className="input-group">
-                        <FaUser className="input-icon" />
-                        <input
-                            type="text"
-                            placeholder="First Name"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="input-group">
-                        <FaUser className="input-icon" />
-                        <input
-                            type="text"
-                            placeholder="Last Name"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="input-group">
-                        <FaEnvelope className="input-icon" />
-                        <input
-                            type="email"
-                            placeholder="Email Address"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="input-group">
-                        <FaLock className="input-icon" />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                        <span 
-                            className="password-toggle-icon" 
-                            onClick={togglePasswordVisibility}
-                            role="button"
-                            tabIndex="0"
+                {/* ----------------------------------------------------------------- */}
+                {/* LEFT PANEL: Registration Form (White Section) */}
+                {/* ----------------------------------------------------------------- */}
+                <div className="split-right-panel form-panel"> 
+                    <h2 className="login-title">
+                        <FaUserPlus style={{ marginRight: '10px', color: ACTIVE_COLOR }} />
+                        Create New Account
+                    </h2>
+
+                    <form onSubmit={handleSubmit} className="login-form">
+                        
+                        {/* Name Inputs */}
+                        <div className="input-group">
+                            <FaUser className="input-icon" />
+                            <input
+                                type="text"
+                                placeholder="First Name"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <FaUser className="input-icon" />
+                            <input
+                                type="text"
+                                placeholder="Last Name"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                required
+                            />
+                        </div>
+                        
+                        {/* Email Input Group */}
+                        <div className="input-group">
+                            <FaEnvelope className="input-icon" />
+                            <input
+                                type="email"
+                                placeholder="Email Address"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        
+                        {/* Password Input Group */}
+                        <div className="input-group">
+                            <FaLock className="input-icon" />
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                            <span 
+                                className="password-toggle-icon" 
+                                onClick={togglePasswordVisibility}
+                                role="button"
+                                tabIndex="0"
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </span>
+                        </div>
+                        
+                        {/* Confirm Password Input Group */}
+                        <div className="input-group">
+                            <FaLock className="input-icon" />
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Confirm Password"
+                                value={password2}
+                                onChange={(e) => setPassword2(e.target.value)}
+                                required
+                            />
+                        </div>
+                        
+                        {error && <p className="error-message">{error}</p>}
+                        {/* 🛑 successMessage removed from inline rendering */}
+
+                        <button 
+                            type="submit" 
+                            className="login-button"
+                            disabled={isLoading || successMessage}
                         >
-                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                        </span>
-                    </div>
-                    <div className="input-group">
-                        <FaLock className="input-icon" />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Confirm Password"
-                            value={password2}
-                            onChange={(e) => setPassword2(e.target.value)}
-                            required
-                        />
-                    </div>
+                            {isLoading ? 'Registering...' : 'Complete Registration'}
+                        </button>
+                    </form>
+                </div>
+                
+                {/* ----------------------------------------------------------------- */}
+                {/* RIGHT PANEL: Info & Navigation to Login (Colored Section) */}
+                {/* ----------------------------------------------------------------- */}
+                <div className="split-left-panel panel-right">
                     
-                    {error && <p className="error-message">{error}</p>}
-                    {/* 🚀 NEW: Display Success Message */}
-                    {successMessage && <p className="success-message">{successMessage}</p>}
+                    {/* Logo/Branding Placeholder */}
+                    <div className="panel-header">
+                        <h1 className="logo-main-text">Autowork</h1> 
+                        <p className="logo-sub-text">Repair Management System</p>
+                    </div>
 
-
-                    <button 
-                        type="submit" 
-                        className="login-button" 
-                        disabled={isLoading || successMessage} // Disable button on loading or success
-                    >
-                        {isLoading ? 'Registering...' : 'Complete Registration'}
-                    </button>
-                </form>
-
-                <p 
-                    className="forgot-link"
-                    onClick={() => navigate('/login')} 
-                    style={{ marginTop: '20px' }}
-                >
-                    Already have an account? **Login here.**
-                </p>
+                    <div className="panel-content">
+                        <h2 className="welcome-title">Hello, Friend!</h2>
+                        <p className="welcome-text">
+                            Enter your personal details to start your journey with us.
+                        </p>
+                        
+                        {/* Link to Login */}
+                        <button 
+                            className="register-link-button" 
+                            onClick={handleLoginClick}
+                            type="button" 
+                        >
+                            <FaArrowLeft /> Already have an account?
+                        </button>
+                    </div>
+                </div>
             </div>
-            
-            {/* EMBEDDED CSS (Add style for success message) */}
-            <style jsx="true">{`
-                /* ... (Rest of existing CSS) ... */
-                .login-page {
-                    min-height: 100vh;
+
+            {/* CSS Styling (Adopted from LoginPage) */}
+            <style>{`
+                /* ----------------------------------------------------------------- */
+                /* GLOBAL PAGE STYLES */
+                /* ----------------------------------------------------------------- */
+                body {
+                    background-color: #f0f4f8 !important; 
+                    transition: background-color 0.5s;
+                }
+
+                .split-login-page {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    font-family: 'Inter', sans-serif;
+                    background-color: #f0f4f8; 
+                }
+
+                /* ----------------------------------------------------------------- */
+                /* SPLIT CONTAINER STYLES (Improved Shadow) */
+                /* ----------------------------------------------------------------- */
+                .split-login-container {
+                    display: flex;
+                    width: 900px;
+                    max-width: 90%;
+                    min-height: 550px;
+                    background: #ffffff;
+                    border-radius: 12px; 
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.05); 
+                    overflow: hidden;
+                    transition: transform 0.3s ease-out;
+                }
+                .split-login-container:hover {
+                    transform: translateY(-2px); 
+                }
+                
+                /* ----------------------------------------------------------------- */
+                /* COLORED PANEL (Right Side in Register) */
+                /* ----------------------------------------------------------------- */
+                .split-left-panel {
+                    flex: 1;
+                    /* 🛑 ACCENT COLOR */
+                    background-color: ${ACCENT_PANEL_COLOR}; 
+                    color: white;
+                    padding: 40px;
                     display: flex;
                     flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    position: relative;
-                    overflow: hidden;
-                }
-                .login-page.dark-mode {
-                    background-color: #1a1a2e; /* Dark background */
-                    color: #e4e6eb;
-                }
-                .login-logo-header {
+                    justify-content: space-between;
                     text-align: center;
-                    margin-bottom: 30px;
-                    z-index: 10;
                 }
-                .logo-main-text {
-                    font-size: 3em;
-                    font-weight: 700;
-                    color: #00bcd4; /* Accent color */
-                    letter-spacing: 2px;
-                    margin-bottom: 5px;
-                }
-                .logo-sub-text {
-                    font-size: 0.9em;
-                    color: #7f8c8d;
-                    text-transform: uppercase;
-                }
-                .login-box {
-                    background: rgba(255, 255, 255, 0.05); /* Semi-transparent box */
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 15px;
-                    padding: 40px;
-                    width: 100%;
-                    max-width: 450px;
-                    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-                    z-index: 10;
-                }
-                .login-title {
-                    text-align: center;
-                    color: #00bcd4;
-                    margin-bottom: 30px;
-                    font-size: 1.5em;
-                    font-weight: 500;
-                }
-                .input-group {
-                    display: flex;
-                    align-items: center;
+                
+                .panel-header {
                     margin-bottom: 20px;
-                    position: relative;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    border-radius: 8px;
-                    padding: 0 15px;
-                    border: 1px solid transparent;
-                    transition: border-color 0.3s;
-                }
-                .input-group:focus-within {
-                    border-color: #00bcd4;
-                }
-                .input-icon {
-                    color: #7f8c8d;
-                    margin-right: 15px;
-                }
-                .input-group input {
-                    flex-grow: 1;
-                    padding: 15px 0;
-                    background: transparent;
-                    border: none;
-                    color: #e4e6eb;
-                    font-size: 1em;
-                    outline: none;
-                }
-                .input-group input::placeholder {
-                    color: #a0a0a0;
-                }
-                .password-toggle-icon {
-                    color: #7f8c8d;
-                    cursor: pointer;
-                    padding-left: 10px;
-                }
-                .login-button {
-                    width: 100%;
-                    padding: 15px;
-                    border: none;
-                    border-radius: 8px;
-                    background-color: #00bcd4;
-                    color: #1a1a2e;
-                    font-size: 1.1em;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: background-color 0.3s, transform 0.1s;
-                    margin-top: 10px;
-                }
-                .login-button:hover:not(:disabled) {
-                    background-color: #00a0b7;
-                }
-                .login-button:disabled {
-                    background-color: #34495e;
-                    cursor: not-allowed;
-                }
-                .error-message {
-                    color: #e74c3c;
-                    text-align: center;
-                    margin-bottom: 20px;
-                    background-color: rgba(231, 76, 60, 0.1);
-                    padding: 10px;
-                    border-radius: 5px;
-                }
-                /* 🚀 NEW SUCCESS MESSAGE STYLE */
-                .success-message {
-                    color: #27ae60;
-                    text-align: center;
-                    margin-bottom: 20px;
-                    background-color: rgba(39, 174, 96, 0.1);
-                    padding: 10px;
-                    border-radius: 5px;
+                    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); 
                 }
 
-                .forgot-link {
-                    text-align: center;
-                    color: #00bcd4;
-                    font-size: 0.9em;
-                    cursor: pointer;
-                    transition: color 0.3s;
-                }
-                .forgot-link:hover {
-                    color: #e4e6eb;
-                }
-                
-                /* Animated Background Circles */
-                .animated-background-circles {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    overflow: hidden;
+                .logo-main-text {
+                    font-size: 38px;
+                    color: white;
+                    font-weight: 900; 
                     margin: 0;
-                    padding: 0;
-                    list-style: none;
                 }
-                .animated-background-circles li {
-                    position: absolute;
-                    display: block;
-                    list-style: none;
-                    width: 20px;
-                    height: 20px;
-                    background: rgba(255, 255, 255, 0.1);
-                    animation: animate-circles 25s linear infinite;
-                    bottom: -150px;
+                .logo-sub-text {
+                    font-size: 15px;
+                    margin-top: 5px;
+                    color: rgba(255, 255, 255, 0.9); 
                 }
-                .animated-background-circles li:nth-child(1) { left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
-                .animated-background-circles li:nth-child(2) { left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
-                .animated-background-circles li:nth-child(3) { left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
-                .animated-background-circles li:nth-child(4) { left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
-                .animated-background-circles li:nth-child(5) { left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
-                .animated-background-circles li:nth-child(6) { left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
-                .animated-background-circles li:nth-child(7) { left: 35%; width: 150px; height: 150px; animation-delay: 7s; }
-                .animated-background-circles li:nth-child(8) { left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
-                .animated-background-circles li:nth-child(9) { left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
-                .animated-background-circles li:nth-child(10) { left: 85%; width: 150px; height: 150px; animation-delay: 11s; }
                 
-                @keyframes animate-circles {
-                    0% { transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
-                    100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+                .panel-content {
+                    flex-grow: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                }
+
+                .welcome-title {
+                    font-size: 36px;
+                    font-weight: 700;
+                    margin-bottom: 15px;
+                }
+                .welcome-text {
+                    font-size: 16px;
+                    line-height: 1.6;
+                    margin-bottom: 30px;
+                    color: rgba(255, 255, 255, 0.95); 
+                }
+
+                .register-link-button {
+                    background-color: white;
+                    color: ${ACCENT_PANEL_COLOR}; 
+                    border: 2px solid white; 
+                    padding: 12px 25px;
+                    border-radius: 25px; 
+                    font-size: 16px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: background-color 0.3s, transform 0.1s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    max-width: 300px;
+                    margin: 0 auto;
+                }
+
+                .register-link-button:hover {
+                    background-color: #f0f8ff; 
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                }
+
+                /* ----------------------------------------------------------------- */
+                /* FORM PANEL (Left Side in Register) */
+                /* ----------------------------------------------------------------- */
+                .split-right-panel {
+                    flex: 1.3; 
+                    padding: 40px 50px; 
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    color: ${PRIMARY_TEXT_COLOR};
+                }
+                
+                .login-title {
+                    font-weight: 600;
+                    font-size: 28px;
+                    margin-bottom: 30px; 
+                    text-align: center;
+                    color: #2c3e50;
+                }
+
+                /* Input Field Styling */
+                .login-form {
+                    width: 100%;
+                }
+                .input-group { 
+                    position: relative; 
+                    margin-bottom: 18px; 
+                }
+                .input-icon { 
+                    position: absolute; 
+                    left: 15px; 
+                    top: 50%; 
+                    transform: translateY(-50%); 
+                    font-size: 18px; 
+                    pointer-events: none; 
+                    color: #95a5a6;
+                }
+
+                .split-right-panel input {
+                    width: 100%; 
+                    padding: 15px 15px 15px 50px; 
+                    border-radius: 8px;
+                    border: 1px solid #e0e6ed; 
+                    background-color: #fcfdff; 
+                    font-size: 17px; 
+                    color: ${PRIMARY_TEXT_COLOR};
+                    box-sizing: border-box; 
+                    transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+                }
+                .split-right-panel input:focus {
+                    border-color: ${ACTIVE_COLOR}; 
+                    box-shadow: 0 0 8px rgba(44, 62, 80, 0.35); /* Used ACTIVE_COLOR here */
+                    outline: none;
+                    background-color: white;
+                }
+                
+                /* Password Toggle Icon Styling */
+                .password-toggle-icon {
+                    position: absolute; 
+                    right: 15px; 
+                    top: 50%; 
+                    transform: translateY(-50%); 
+                    color: #95a5a6; 
+                    cursor: pointer; 
+                    font-size: 18px; 
+                    transition: color 0.2s ease;
+                }
+                .password-toggle-icon:hover { 
+                    color: ${ACTIVE_COLOR}; 
+                }
+
+                /* Link and Error/Success Styling */
+                .error-message { 
+                    color: #e74c3c; 
+                    margin-bottom: 15px; 
+                    font-size: 15px; 
+                    font-weight: 600;
+                    text-align: center; 
+                    padding: 8px;
+                    border: 1px solid rgba(231, 76, 60, 0.3);
+                    border-radius: 6px;
+                    background-color: #fcecec;
+                }
+                
+                /* 🛑 SUCCESS MESSAGE IS NOW HANDLED BY TOAST */
+                .success-message {
+                    display: none;
+                }
+
+                /* Button Styling */
+                .login-button {
+                    width: 100%; 
+                    padding: 16px; 
+                    background-color: ${ACTIVE_COLOR}; 
+                    color: white; 
+                    border: none;
+                    border-radius: 8px; 
+                    font-size: 18px; 
+                    font-weight: 700; 
+                    cursor: pointer;
+                    transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
+                    margin-top: 15px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    letter-spacing: 0.5px;
+                }
+                .login-button:hover:not(:disabled) {
+                    /* Changed hover color to a slightly lighter version of the dark blue */
+                    background-color: #34495e; 
+                    box-shadow: 0 5px 15px rgba(44, 62, 80, 0.5);
+                    transform: translateY(-2px); 
+                }
+                .login-button:disabled {
+                    background-color: #34495e; 
+                    cursor: not-allowed;
+                    opacity: 0.8;
+                }
+
+                /* ----------------------------------------------------------------- */
+                /* RESPONSIVENESS */
+                /* ----------------------------------------------------------------- */
+                @media (max-width: 992px) {
+                    .split-login-container {
+                        min-height: 450px;
+                        max-width: 500px;
+                        flex-direction: column-reverse; /* Put form on top on mobile */
+                    }
+
+                    .split-left-panel {
+                        flex: 0 0 120px; /* Make the blue panel shorter */
+                        padding: 20px;
+                    }
+                    
+                    .split-left-panel .panel-header {
+                        display: none; /* Hide main header on small screen */
+                    }
+                    
+                    .split-left-panel .panel-content {
+                        justify-content: center;
+                    }
+                    
+                    .welcome-title, .welcome-text {
+                        display: none; /* Hide large text */
+                    }
+                    
+                    .register-link-button {
+                         max-width: 100%;
+                    }
+
+                    .split-right-panel {
+                        flex: 1;
+                        padding: 30px 30px;
+                    }
                 }
             `}</style>
         </div>

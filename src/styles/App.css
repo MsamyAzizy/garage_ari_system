@@ -399,7 +399,73 @@ select:focus {
 
 
 /* ======================================================= */
-/* 🌟 JOB CARD LIST STYLES 🌟                              */
+/* 🌟 AUTHENTICATION/FORGOT PASSWORD STYLES (New Section) 🌟*/
+/* ======================================================= */
+
+.login-box, .forgot-box {
+    /* Apply base theme variables from App.css to the boxes used in authentication pages */
+    background: var(--card-bg); 
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+    border-radius: var(--border-radius-large);
+    padding: 40px;
+    width: 400px;
+    max-width: 90%;
+    z-index: 10; /* Above circles */
+}
+
+.dark-theme .login-box, .dark-theme .forgot-box {
+    /* Override for dark theme */
+    background: var(--card-bg); 
+    border-color: var(--border-color-darker);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+}
+
+/* General input styling for auth forms */
+.auth-page .input-group {
+    position: relative; 
+    margin-bottom: 30px; 
+}
+.auth-page .input-icon { 
+    position: absolute; left: 15px; top: 50%; transform: translateY(-50%); 
+    font-size: 18px; pointer-events: none; 
+    color: var(--text-muted); 
+    transition: color 0.3s;
+}
+.auth-page .input-group:focus-within .input-icon {
+    color: var(--primary-color);
+}
+/* Apply main input styling to inputs within auth pages */
+.auth-page input[type="email"],
+.auth-page input[type="password"] {
+    padding: 16px 15px 16px 50px; 
+    border-radius: 10px; 
+    font-size: 17px; 
+    box-sizing: border-box; 
+    border: 1px solid var(--border-color); 
+    background-color: var(--background-color); 
+    color: var(--text-color); 
+}
+.auth-page input:focus { 
+    border-color: var(--primary-color); 
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.4); 
+    outline: none; 
+}
+/* Login Button Re-use */
+.login-button { 
+    width: 100%; padding: 16px; background-color: var(--primary-color); color: white; border: none; 
+    border-radius: 10px; font-size: 19px; font-weight: 700; cursor: pointer; 
+    letter-spacing: 0.8px; transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s; margin-top: 5px; 
+}
+.login-button:hover:not(:disabled) { 
+    background-color: var(--primary-color-dark); 
+    box-shadow: 0 5px 20px rgba(0, 123, 255, 0.3); 
+    transform: translateY(-1px); 
+}
+.login-button:disabled { background-color: #555; cursor: not-allowed; }
+
+/* ======================================================= */
+/* 🌟 JOB CARD LIST STYLES 🌟 (Remaining sections are unchanged) */
 /* ======================================================= */
 
 .job-card-list-page {

@@ -2,7 +2,17 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 // Added FaCheckCircle for the success notification icon
-import { FaUserFriends, FaPlusCircle, FaTimes, FaCheckCircle, FaClipboardList, FaSpinner, FaChevronLeft, FaChevronRight } from 'react-icons/fa'; 
+import { 
+    FaUserFriends, 
+    FaPlusCircle, 
+    FaTimes, 
+    FaCheckCircle, 
+    FaClipboardList, 
+    FaSpinner, 
+    FaChevronLeft, 
+    FaChevronRight,
+    FaArrowLeft // Added icon for "Back" button
+} from 'react-icons/fa'; 
 // Use useLocation to read navigation state
 import { useNavigate, useLocation } from 'react-router-dom'; 
 
@@ -41,7 +51,6 @@ const PaginationControl = ({ currentPage, totalPages, totalItems, onPageChange }
     
     // 🏆 CORRECTED LOGIC FOR PER-PAGE RANGE DISPLAY 🏆
     // Page 1: (1-1) * 10 + 1 = 1
-    // Page 2: (2-1) * 10 + 1 = 11
     const startRange = (currentPage - 1) * ITEMS_PER_PAGE + 1;
     
     // End range is either the theoretical end of the page or the total number of items
@@ -216,6 +225,16 @@ const ClientsList = () => {
         // Fetch clients for the new page, retaining the current search term
         fetchClients(searchTerm, newPage);
     };
+    
+    // -----------------------------------------------------------------
+    // Function to clear search and return to the main list
+    // -----------------------------------------------------------------
+    const handleClearSearch = () => {
+        // Clear the search term state
+        setSearchTerm('');
+        // Fetch clients without a search term, starting on page 1
+        fetchClients('', 1);
+    };
 
 
     // -----------------------------------------------------------------
@@ -278,7 +297,9 @@ const ClientsList = () => {
             await apiClient.delete(`/clients/${clientToDelete.id}/`);
             
             // After successful deletion, refresh the current page 
-            await fetchClients(searchTerm, currentPage);
+            // Use Math.max(1, currentPage) to ensure we don't land on page 0 if the last item of a page was deleted.
+            const pageToFetch = clients.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+            await fetchClients(searchTerm, pageToFetch);
             
             setShowDeleteModal(false);
             setClientToDelete(null);
@@ -307,11 +328,26 @@ const ClientsList = () => {
     // Function to render the top header area (reusable)
     const renderHeader = () => (
         <header className="page-header">
-            <h2 style={{ flexGrow: 0 }}><FaUserFriends style={{ marginRight: '8px' }}/> Clients ({loading ? '...' : totalClients})</h2>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+                {/* Back Button first if search is active */}
+                {searchTerm && (
+                    <button 
+                        className="btn-back-to-list" 
+                        onClick={handleClearSearch}
+                        title="Clear search filter and view all clients"
+                    >
+                        <FaArrowLeft style={{ marginRight: '5px' }}/> Back to All Clients
+                    </button>
+                )}
+                <h2 style={{ flexGrow: 0, marginLeft: searchTerm ? '20px' : '0' }}>
+                    <FaUserFriends style={{ marginRight: '8px' }}/> Clients ({loading ? '...' : totalClients})
+                </h2>
+            </div>
             
             <div className="search-and-button-container">
                 <SearchBar 
                     onSearch={handleSearch} 
+                    initialTerm={searchTerm} // Added to keep search term visible in search box
                     placeholder="Search by name, email, tax ID..."
                 />
                 <button className="btn-primary-action" onClick={navigateToAddClient}>
@@ -561,7 +597,7 @@ const ClientsList = () => {
                     margin-bottom: 25px;
                 }
                 .page-header h2 {
-                    font-size: 26px; 
+                    font-size: 15px; 
                     font-weight: 700; 
                     color: #333333;
                 }
@@ -578,7 +614,36 @@ const ClientsList = () => {
                     gap: 15px;
                     align-items: center;
                 }
-
+                
+                /* 🏆 UPDATED STYLE: Back to All Clients Button (GREEN) */
+                .btn-back-to-list {
+                    padding: 5px 10px;
+                    background-color: ${SUCCESS_GREEN}; /* Green background */
+                    color: white; /* White text for contrast */
+                    border: 1px solid ${SUCCESS_GREEN}; 
+                    border-radius: 4px;
+                    font-size: 14px;
+                    font-weight: 600; /* Bolder font weight */
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    transition: background-color 0.2s, opacity 0.2s;
+                    box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3); /* Subtle green shadow */
+                }
+                .btn-back-to-list:hover {
+                    background-color: #27ae60; /* Darker green on hover */
+                    border-color: #27ae60;
+                }
+                body.dark-theme .btn-back-to-list {
+                    background-color: ${SUCCESS_GREEN};
+                    color: white;
+                    border-color: ${SUCCESS_GREEN};
+                }
+                body.dark-theme .btn-back-to-list:hover {
+                    background-color: #27ae60;
+                }
+                
+                
                 /* Main Content Card */
                 .client-list-container {
                     padding: 0; 
@@ -766,78 +831,31 @@ const ClientsList = () => {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
-
-                @media (max-width: 1000px) {
-                    .page-header {
-                        flex-direction: column;
-                        align-items: flex-start;
-                    }
-                    .search-and-button-container {
-                        margin-top: 15px;
-                        width: 100%;
-                        justify-content: space-between;
-                    }
-                }
-                @media (max-width: 768px) {
-                    .client-table-responsive {
-                        overflow-x: auto;
-                    }
-                    .client-table {
-                        min-width: 1250px; 
-                    }
-                    .client-table th, .client-table td {
-                        padding: 15px 15px;
-                    }
-                }
                 
-                .btn-primary-action {
-                    padding: 10px 18px; 
-                    background-color: ${PRIMARY_BLUE};
-                    color: white;
-                    border: none;
-                    border-radius: 8px; 
-                    font-size: 15px; 
-                    cursor: pointer;
-                    font-weight: 600; 
-                    display: inline-flex;
-                    align-items: center;
-                    transition: background-color 0.2s, transform 0.1s;
-                }
-                .btn-primary-action:hover {
-                    background-color: #4a90e2;
-                }
-                .btn-primary-action:active {
-                    transform: scale(0.98);
-                }
-                
-                /* ----------------------------------------------------------------- */
-                /* CUSTOM MODAL STYLES */
-                /* ----------------------------------------------------------------- */
+                /* --- MODAL STYLES --- */
                 .custom-modal-backdrop {
                     position: fixed;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background-color: rgba(0, 0, 0, 0.7); 
+                    background-color: rgba(0, 0, 0, 0.6);
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    z-index: 1000;
+                    z-index: 1050;
                 }
-
                 .custom-modal {
                     background-color: #ffffff;
-                    border-radius: 12px; 
+                    padding: 25px;
+                    border-radius: 10px;
                     width: 90%;
-                    max-width: 480px; 
-                    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3); 
-                    animation: slideInDown 0.3s ease-out;
-                    overflow: hidden;
+                    max-width: 500px;
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                    animation: dropIn 0.3s ease-out;
                 }
-                
                 body.dark-theme .custom-modal {
-                    background-color: #37475a; 
+                    background-color: ${BG_CARD_DARK};
                     color: ${TEXT_PRIMARY_DARK};
                 }
 
@@ -845,117 +863,129 @@ const ClientsList = () => {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 20px 25px; 
-                    border-bottom: 1px solid #e9e9e9;
+                    border-bottom: 1px solid #e9ecef;
+                    padding-bottom: 10px;
+                    margin-bottom: 15px;
                 }
                 body.dark-theme .modal-header {
-                    border-bottom: 1px solid #4a5d77;
+                    border-bottom-color: ${INPUT_BORDER_DARK};
                 }
-
+                
                 .modal-title {
-                    margin: 0;
-                    font-size: 20px; 
-                    font-weight: 700; 
+                    font-size: 20px;
+                    font-weight: 600;
                     color: #333;
                 }
                 body.dark-theme .modal-title {
                     color: ${TEXT_PRIMARY_DARK};
                 }
 
-                .modal-body {
-                    padding: 25px; 
-                    font-size: 16px; 
-                    line-height: 1.6;
-                }
-                
-                .client-name-highlight {
-                    font-weight: 700;
-                    color: ${PRIMARY_BLUE}; 
-                }
-                
-                .warning-text {
-                    font-size: 15px; 
-                    color: #777;
-                    margin-top: 20px;
-                    padding: 15px; 
-                    background-color: #fff0f0; 
-                    border-left: 4px solid ${DANGER_RED};
-                    border-radius: 6px;
-                }
-                body.dark-theme .warning-text {
-                    color: ${TEXT_MUTED_DARK};
-                    background-color: #4a3030;
-                    border-left-color: ${DANGER_RED};
-                }
-
-                .modal-footer {
-                    display: flex;
-                    justify-content: flex-end;
-                    padding: 15px 25px; 
-                    border-top: 1px solid #eeeeee;
-                    gap: 10px;
-                }
-                 body.dark-theme .modal-footer {
-                    border-top: 1px solid #4a5d77;
-                }
-
-                .modal-btn {
-                    padding: 10px 20px; 
-                    border-radius: 8px; 
-                    font-size: 15px; 
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: background-color 0.2s, box-shadow 0.2s, opacity 0.2s;
-                    border: 1px solid transparent;
-                }
-
-                .modal-btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-                
-                .btn-danger {
-                    background-color: ${DANGER_RED};
-                    color: white;
-                }
-                .btn-danger:hover:not(:disabled) {
-                    background-color: #c0392b;
-                    box-shadow: 0 4px 12px ${DANGER_RED}40;
-                }
-                .btn-secondary {
-                    background-color: #f1f1f1;
-                    color: #333;
-                }
-                body.dark-theme .btn-secondary {
-                    background-color: #4a5d77;
-                    color: ${TEXT_PRIMARY_DARK};
-                }
-                .btn-secondary:hover:not(:disabled) {
-                    background-color: #e0e0e0;
-                }
-                body.dark-theme .btn-secondary:hover:not(:disabled) {
-                    background-color: #5d7596;
-                }
-                
                 .close-btn {
                     background: none;
                     border: none;
                     font-size: 20px;
                     cursor: pointer;
-                    color: #999;
-                    padding: 5px;
+                    color: #aaa;
                     transition: color 0.2s;
+                }
+                .close-btn:hover {
+                    color: #555;
                 }
                 body.dark-theme .close-btn {
                     color: ${TEXT_MUTED_DARK};
                 }
-                .close-btn:hover {
-                    color: #333;
+                
+                .modal-body {
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #555;
                 }
-                body.dark-theme .close-btn:hover {
-                    color: ${TEXT_PRIMARY_DARK};
+                body.dark-theme .modal-body {
+                    color: ${TEXT_MUTED_DARK};
                 }
                 
+                .client-name-highlight {
+                    font-weight: bold;
+                    color: ${PRIMARY_BLUE};
+                    margin-left: 5px;
+                }
+                body.dark-theme .client-name-highlight {
+                    color: #79b0f4;
+                }
+
+                .warning-text {
+                    color: ${DANGER_RED};
+                    margin-top: 15px;
+                    padding: 10px;
+                    border: 1px solid ${DANGER_RED}40;
+                    background-color: #fff0f0;
+                    border-radius: 6px;
+                }
+                body.dark-theme .warning-text {
+                    background-color: #5c1f24;
+                    border-color: #7e2a33;
+                    color: #f5c6cb;
+                }
+
+                .modal-footer {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                    padding-top: 15px;
+                    border-top: 1px solid #e9ecef;
+                    margin-top: 20px;
+                }
+                body.dark-theme .modal-footer {
+                    border-top-color: ${INPUT_BORDER_DARK};
+                }
+
+                .modal-btn {
+                    padding: 10px 15px;
+                    border-radius: 6px;
+                    font-size: 15px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: opacity 0.2s, background-color 0.2s;
+                }
+                
+                .btn-danger {
+                    background-color: ${DANGER_RED};
+                    color: white;
+                    border: none;
+                }
+                .btn-danger:hover {
+                    background-color: #c9302c;
+                }
+                
+                .modal-btn.btn-secondary {
+                    background-color: #f1f1f1;
+                    color: #333;
+                    border: 1px solid #ddd;
+                }
+                .modal-btn.btn-secondary:hover {
+                    background-color: #e0e0e0;
+                }
+                body.dark-theme .modal-btn.btn-secondary {
+                    background-color: #4a5d77;
+                    color: ${TEXT_PRIMARY_DARK};
+                    border: 1px solid #5a6e87;
+                }
+                body.dark-theme .modal-btn.btn-secondary:hover {
+                    background-color: #5a6e87;
+                }
+                .modal-btn:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+                
+                @keyframes dropIn {
+                    from { transform: translateY(-50px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+
                 /* ----------------------------------------------------------------- */
                 /* TOAST NOTIFICATION STYLES */
                 /* ----------------------------------------------------------------- */
@@ -979,7 +1009,7 @@ const ClientsList = () => {
                     color: white;
                 }
                 .toast-notification.error {
-                    background-color: ${ERROR_RED};
+                    background-color: ${DANGER_RED};
                     color: white;
                 }
                 @keyframes slideIn {
@@ -992,7 +1022,7 @@ const ClientsList = () => {
                         opacity: 1;
                     }
                 }
-
+                
                 /* ----------------------------------------------------------------- */
                 /* PAGINATION STYLES */
                 /* ----------------------------------------------------------------- */
@@ -1000,18 +1030,18 @@ const ClientsList = () => {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 15px 20px; 
-                    margin-top: 0; /* Already integrated inside client-list-container */
+                    padding: 15px 20px;
+                    background-color: #fdfdfd; 
                     border-top: 1px solid #e0e0e0;
-                    background-color: #fcfcfc;
+                    border-radius: 0 0 12px 12px;
                 }
                 body.dark-theme .pagination-wrap {
-                    border-top: 1px solid ${INPUT_BORDER_DARK};
-                    background-color: #263240; 
+                    background-color: #334050;
+                    border-top: 1px solid #38465b;
                 }
-                
+
                 .pagination-range-text {
-                    font-size: 14px;
+                    font-size: 15px;
                     color: #777;
                     margin: 0;
                 }
@@ -1022,59 +1052,95 @@ const ClientsList = () => {
                 .pagination-container {
                     display: flex;
                     gap: 5px;
+                    align-items: center;
                 }
 
                 .pagination-link {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-width: 32px;
-                    height: 32px;
-                    padding: 0 8px;
+                    padding: 8px 12px;
+                    border-radius: 6px;
                     text-decoration: none;
-                    color: ${PRIMARY_BLUE}; /* Primary Blue */
-                    font-size: 14px;
-                    border-radius: 4px;
-                    transition: background-color 0.2s, color 0.2s;
+                    color: ${PRIMARY_BLUE};
                     font-weight: 500;
-                    border: 1px solid transparent; 
+                    font-size: 14px;
+                    transition: background-color 0.2s, color 0.2s;
+                    display: flex;
+                    align-items: center;
                 }
 
                 .pagination-link:hover:not(.active):not(.disabled) {
-                    background-color: #e0eaff;
-                }
-                body.dark-theme .pagination-link {
-                    color: #8bb4e8;
+                    background-color: #e6f7ff;
                 }
                 body.dark-theme .pagination-link:hover:not(.active):not(.disabled) {
-                    background-color: #4a5d77;
+                    background-color: #5d9cec20;
                 }
 
                 .pagination-link.active {
-                    /* Style for the current page number */
-                    background-color: ${PRIMARY_BLUE}; 
-                    color: #fff;
-                    font-weight: 700;
-                    border-color: ${PRIMARY_BLUE};
-                }
-                
-                .pagination-link.disabled {
-                    color: #aaa;
-                    cursor: not-allowed;
-                }
-                body.dark-theme .pagination-link.disabled {
-                    color: #555;
+                    background-color: ${PRIMARY_BLUE};
+                    color: white;
+                    pointer-events: none;
                 }
 
-                /* Responsive adjustment for pagination */
-                @media (max-width: 600px) {
+                .pagination-link.disabled {
+                    color: #aaaaaa;
+                    cursor: not-allowed;
+                    opacity: 0.6;
+                }
+                body.dark-theme .pagination-link.disabled {
+                    color: #777;
+                }
+                
+                /* --- Primary Action Button (Add Client) --- */
+                .btn-primary-action {
+                    padding: 10px 15px;
+                    border: none;
+                    border-radius: 8px;
+                    background-color: ${PRIMARY_BLUE};
+                    color: white;
+                    font-size: 15px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    transition: background-color 0.2s;
+                }
+                .btn-primary-action:hover {
+                    background-color: #4a90e2;
+                }
+
+
+                /* --- Media Queries --- */
+                @media (max-width: 900px) {
+                    .page-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                    }
+                    /* Ensure back button is next to title on small screens */
+                    .page-header > div:first-child {
+                        width: 100%;
+                        justify-content: space-between;
+                        margin-bottom: 10px;
+                    }
+
+                    .search-and-button-container {
+                        width: 100%;
+                        margin-top: 5px;
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+                    .search-and-button-container > * {
+                        width: 100%;
+                    }
+                    .btn-back-to-list {
+                        margin-left: 0; /* Clear left margin on small screens */
+                    }
+                    .client-table-responsive {
+                        overflow-x: auto;
+                    }
                     .pagination-wrap {
                         flex-direction: column;
                         gap: 10px;
-                        padding: 15px 10px;
                     }
                 }
-
             `}</style>
         </div>
     );

@@ -1,41 +1,36 @@
-// src/components/SplashLoader.js - Updated to use the minimalist circular spinner from the image
+// src/components/SplashLoader.js - Updated to use the premium Sky Blue theme and consolidated styles
 
 import React, { useEffect } from 'react';
 
+// Define the main colors
+const ACTIVE_COLOR = '#00bfff'; // Sky Blue
+const BACKGROUND_COLOR = '#f0f4f8'; // Light background, similar to page body
+const PRIMARY_TEXT_COLOR = '#2c3e50';
 
 // -----------------------------------------------------------------
 // 1. SPLASH VISUAL COMPONENT 
 // -----------------------------------------------------------------
 /**
- * Animated circular spinner with four colored segments on a dark background.
+ * Animated circular spinner with four colored segments on a clean background.
  */
 const SplashVisual = () => (
     <div className="app-splash"> 
-        {/* Animated Background Circles (kept for structure, but hidden by CSS) */}
-        <ul className="animated-background-circles">
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-        </ul>
+        
+        {/* Logo/Branding Placeholder */}
+        <div className="splash-logo-header">
+            <h1 className="logo-main-text">Autowork</h1> 
+            <p className="logo-sub-text">Auto Repair Management System</p>
+        </div>
 
-        {/* Loader Content - The Spinner */}
+        {/* Loader Content - The Enhanced Spinner */}
         <div className="circular-spinner-container">
             <div className="circular-spinner">
                 {/* Pure CSS creates the spinning segments */}
             </div>
         </div>
         
-        {/* Other elements (dots, text, line) kept for structure, but hidden by CSS */}
-        <div className="dots-loader-container"></div>
-        <p className="loading-text"></p>
-        <div className="glowing-line"></div>
+        {/* Loading Text */}
+        <p className="loading-text">Loading Application...</p>
         
         {/* CSS for the custom UI loader */}
         <style>
@@ -51,48 +46,89 @@ const SplashVisual = () => (
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    color: #ffffff;
+                    color: ${PRIMARY_TEXT_COLOR};
                     z-index: 9999;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-family: 'Inter', sans-serif;
                     overflow: hidden; 
                     
-                    /* Simple dark background to match the image */
-                    background-color: #242424; 
+                    /* Clean background to match the new app aesthetic */
+                    background-color: ${BACKGROUND_COLOR}; 
                     position: relative; 
                 }
                 
                 /* ----------------------------------------------------------------- */
-                /* HIDE UNNEEDED ELEMENTS AND ANIMATED CIRCLES */
+                /* BRANDING STYLES */
                 /* ----------------------------------------------------------------- */
-                .animated-background-circles,
-                .animated-background-circles li, /* Hide bubbles */
-                .glowing-line,
-                .loading-text,
-                .dots-loader-container {
-                    display: none;
+                .splash-logo-header {
+                    text-align: center;
+                    margin-bottom: 40px;
                 }
-                
+                .logo-main-text {
+                    font-size: 56px;
+                    color: ${ACTIVE_COLOR}; /* Sky Blue */
+                    font-weight: 900; 
+                    margin: 0;
+                    text-shadow: 0 4px 10px rgba(0, 191, 255, 0.2);
+                    transition: all 0.5s ease;
+                }
+                .logo-sub-text {
+                    font-size: 18px;
+                    margin-top: 5px;
+                    color: #7f8c8d; 
+                    font-weight: 500;
+                }
+
                 /* ----------------------------------------------------------------- */
-                /* LOADER VISUAL STYLES (Circular Spinner) */
+                /* LOADER VISUAL STYLES (Circular Spinner - Enhanced) */
                 /* ----------------------------------------------------------------- */
                 .circular-spinner-container {
                     z-index: 1;
+                    /* Apply subtle pulse animation to the container */
+                    animation: pulse 2s infinite ease-in-out;
                 }
 
                 .circular-spinner {
-                    width: 50px; 
-                    height: 50px;
-                    border: 3px solid transparent; /* Base transparent border */
+                    width: 70px; /* Larger spinner */
+                    height: 70px;
+                    position: relative;
+                    /* Base rotation */
+                    animation: spin 1.5s cubic-bezier(0.5, 0.2, 0.5, 0.8) infinite;
+                }
+
+                /* Create two overlapping segments for a complex look */
+                .circular-spinner::before,
+                .circular-spinner::after {
+                    content: '';
+                    position: absolute;
                     border-radius: 50%;
-                    
-                    /* Define the four colored arcs/segments based on the image */
-                    border-top: 3px solid #e74c3c;    /* Red segment */
-                    border-right: 3px solid #3498db;  /* Blue segment */
-                    border-bottom: 3px solid #f39c12; /* Yellow segment */
-                    border-left: 3px solid #1abc9c;   /* Green segment */
-                    
-                    /* The animation for rotation */
-                    animation: spin 1.2s cubic-bezier(0.5, 0.2, 0.5, 0.8) infinite;
+                    border: 5px solid transparent; /* Thicker border */
+                    box-sizing: border-box; 
+                }
+
+                /* Outer Segment (Red and Blue) */
+                .circular-spinner::before {
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    border-top-color: #e74c3c;    /* Red segment */
+                    border-right-color: ${ACTIVE_COLOR};  /* Blue segment */
+                    /* Separate animation for subtle effect */
+                    animation: dash-expand 3s ease-in-out infinite alternate;
+                }
+                
+                /* Inner Segment (Yellow and Green) */
+                .circular-spinner::after {
+                    top: 10px; left: 10px; right: 10px; bottom: 10px; /* Smaller inner ring */
+                    border-bottom-color: #f39c12; /* Yellow segment */
+                    border-left-color: #2ecc71;   /* Green segment */
+                    /* Rotate opposite to the main spin for dynamism */
+                    animation: spin-reverse 2.5s cubic-bezier(0.5, 0.2, 0.5, 0.8) infinite;
+                }
+                
+                .loading-text {
+                    margin-top: 30px;
+                    font-size: 18px;
+                    color: #55606d;
+                    font-weight: 600;
+                    letter-spacing: 1px;
                 }
                 
                 /* KEYFRAMES */
@@ -101,7 +137,30 @@ const SplashVisual = () => (
                     100% { transform: rotate(360deg); }
                 }
 
-                /* Original keyframes removed as they are no longer used by the new spinner */
+                @keyframes spin-reverse {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(-360deg); }
+                }
+                
+                @keyframes pulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.02); }
+                    100% { transform: scale(1); }
+                }
+
+                @keyframes dash-expand {
+                    0% { border-width: 5px; opacity: 1; }
+                    50% { border-width: 6px; opacity: 0.9; }
+                    100% { border-width: 5px; opacity: 1; }
+                }
+
+                /* HIDE ALL UNNEEDED/LEGACY ELEMENTS */
+                .animated-background-circles,
+                .animated-background-circles li,
+                .glowing-line,
+                .dots-loader-container {
+                    display: none;
+                }
             `}
         </style>
     </div>

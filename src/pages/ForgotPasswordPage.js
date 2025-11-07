@@ -1,4 +1,4 @@
-// src/pages/ForgotPasswordPage.js - FINAL CODE WITH CORRECTED INPUT THEMEING
+// src/pages/ForgotPasswordPage.js - FINAL CODE WITH LOGIN APPEARANCE
 
 import React, { useState } from 'react';
 import { FaArrowLeft, FaEnvelope, FaLockOpen, FaSun, FaMoon } from 'react-icons/fa'; 
@@ -8,6 +8,8 @@ const ForgotPasswordPage = () => {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    // NOTE: If your main app context manages dark mode, you should fetch this state from context.
+    // Keeping local state for isolated testing:
     const [isDarkMode, setIsDarkMode] = useState(true); 
     const navigate = useNavigate();
 
@@ -32,11 +34,21 @@ const ForgotPasswordPage = () => {
     };
 
     const toggleDarkMode = () => {
-        setIsDarkMode(prev => !prev);
+        // This will toggle the .dark-theme class on the body (if implemented globally)
+        // or just update this page's theme.
+        setIsDarkMode(prev => {
+            const newMode = !prev;
+            // Best practice: Toggle global theme class on the body element
+            document.body.classList.toggle('dark-theme', newMode);
+            return newMode;
+        });
     };
-
-    // Use the class to control background and text
-    const pageClass = isDarkMode ? 'forgot-password-page dark-mode' : 'forgot-password-page light-mode';
+    
+    // Use the class to set the page theme and apply the auth styles from App.css
+    // We add the 'auth-page' class to hook into the new global auth styles.
+    const pageClass = isDarkMode 
+        ? 'forgot-password-page dark-theme auth-page' 
+        : 'forgot-password-page auth-page';
 
     return (
         <div className={pageClass}>
@@ -64,6 +76,7 @@ const ForgotPasswordPage = () => {
                 </ul>
             )}
 
+            {/* login-box and input-group classes now use styles from App.css */}
             <div className="login-box forgot-box">
                 <h2 className="forgot-title">
                     <FaLockOpen style={{ marginRight: '10px' }} />
@@ -87,6 +100,7 @@ const ForgotPasswordPage = () => {
                         />
                     </div>
                     
+                    {/* error-message and success-message are still locally styled */}
                     {error && <p className="error-message">{error}</p>}
                     {message && <p className="success-message">{message}</p>}
 
@@ -104,14 +118,14 @@ const ForgotPasswordPage = () => {
                 </p>
             </div>
 
-            {/* CSS Styling (UPDATED for Theme Switching and Toggle) */}
+            {/* CSS Styling (REDUCED TO ONLY ESSENTIAL LOCAL STYLES) */}
             <style>{`
                 /* ----------------------------------------------------------------- */
-                /* GLOBAL STYLES & THEME SWITCHING (Added Input Variables) */
+                /* LOCAL VARIABLES (Error/Success) & PAGE CONTAINERS */
                 /* ----------------------------------------------------------------- */
                 
                 :root {
-                    --primary-color: #00bfff;
+                    --primary-color-auth: #00bfff; /* Local color for primary elements */
                     --error-color: #e74c3c;
                     --success-color: #2ecc71;
                 }
@@ -124,49 +138,62 @@ const ForgotPasswordPage = () => {
                     font-family: 'Inter', sans-serif;
                     position: relative; 
                     overflow: hidden;
+                    /* Page background and text color are now inherited from App.css body/dark-theme */
+                    background-color: var(--background-secondary, #08111a); 
+                    color: var(--text-color, #ecf0f1);
                     transition: background 0.5s, color 0.5s; 
                 }
                 
-                /* New Theme Variables */
-                .dark-mode {
-                    background: #08111a; 
-                    color: #ecf0f1;
-                    --box-bg: #18222c;
-                    --box-border: #3f5469;
-                    --text-muted: #7f8c8d;
-                    --input-bg: #0f1c2b;
-                    --input-border: #34495e;
-                    --input-color: #ecf0f1;
-                    --title-color: #00bfff;
+                /* Title Styles - Using Global App.css variables for consistency */
+                .forgot-title {
+                    color: var(--primary-color-auth); 
+                    margin-bottom: 20px; font-weight: 500; font-size: 26px; padding-bottom: 15px;
+                    text-align: center;
                 }
+                .dark-theme .forgot-title { border-bottom: 1px solid var(--border-color); }
+                .light-mode .forgot-title { border-bottom: 1px solid var(--border-color); }
                 
-                .light-mode {
-                    background: #f0f4f8; 
-                    color: #34495e; 
-                    --box-bg: #ffffff;
-                    --box-border: #c9d7e5;
-                    --text-muted: #55606d;
-                    --input-bg: #ffffff;
-                    --input-border: #c9d7e5;
-                    --input-color: #2c3e50;
-                    --title-color: #2c3e50;
+                /* Instruction Styles */
+                .forgot-instruction {
+                    font-size: 15px; text-align: center; margin-bottom: 30px; line-height: 1.5;
+                    color: var(--text-muted);
                 }
 
+                .success-message {
+                    color: var(--success-color); 
+                    margin-bottom: 20px; font-size: 15px; text-align: center; font-weight: 600;
+                }
+                .error-message { 
+                    color: var(--error-color); 
+                    margin-bottom: 20px; 
+                    font-size: 15px; 
+                    text-align: center; 
+                }
+                
+                /* Link Color Themeing */
+                .back-link {
+                    font-size: 14px; margin-top: 30px; cursor: pointer; text-align: center;
+                    transition: color 0.2s;
+                    color: var(--text-muted);
+                }
+                .back-link:hover { color: var(--primary-color-auth); }
+
+
                 /* ----------------------------------------------------------------- */
-                /* CUSTOM THEME SWITCH STYLES */
+                /* CUSTOM THEME SWITCH STYLES (Retained locally for complexity) */
                 /* ----------------------------------------------------------------- */
                 .theme-switch {
                     position: absolute; top: 25px; left: 25px; width: 100px; height: 45px; 
-                    background-color: #34495e; border-radius: 50px; display: flex;
+                    background-color: var(--border-color-darker); border-radius: 50px; display: flex;
                     align-items: center; justify-content: space-between; padding: 5px; 
                     cursor: pointer; transition: background-color 0.3s ease;
                     box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10;
                 }
 
-                .theme-switch.light { background-color: #d9e2ec; }
+                .theme-switch.light { background-color: var(--border-color); }
 
                 .switch-handle {
-                    position: absolute; width: 40px; height: 40px; background-color: var(--primary-color); 
+                    position: absolute; width: 40px; height: 40px; background-color: var(--primary-color-auth); 
                     border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
                     transition: transform 0.3s ease, background-color 0.3s ease; left: 5px; 
                 }
@@ -179,13 +206,14 @@ const ForgotPasswordPage = () => {
                 }
                 /* Icon Colors - Dark Mode */
                 .theme-switch.dark .sun-icon { color: rgba(255,255,255,0.4); }
-                .theme-switch.dark .moon-icon { color: var(--primary-color); }
+                .theme-switch.dark .moon-icon { color: var(--primary-color-auth); }
                 /* Icon Colors - Light Mode */
-                .theme-switch.light .sun-icon { color: var(--primary-color); }
+                .theme-switch.light .sun-icon { color: var(--primary-color-auth); }
                 .theme-switch.light .moon-icon { color: rgba(0,0,0,0.4); }
 
+
                 /* ----------------------------------------------------------------- */
-                /* ANIMATED BACKGROUND STYLES */
+                /* ANIMATED BACKGROUND STYLES (Retained locally) */
                 /* ----------------------------------------------------------------- */
                 .animated-background-circles {
                     position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;
@@ -213,87 +241,6 @@ const ForgotPasswordPage = () => {
                     100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
                 }
 
-                /* ----------------------------------------------------------------- */
-                /* FORGOT BOX STYLES (Theme Dependent) */
-                /* ----------------------------------------------------------------- */
-
-                /* Box Styles */
-                .forgot-box {
-                    padding: 40px; border-radius: 16px; width: 400px; max-width: 90%;
-                    z-index: 1; transition: all 0.5s ease;
-                    background: var(--box-bg);
-                    border: 1px solid var(--box-border);
-                }
-                /* Box Shadows */
-                .dark-mode .forgot-box {
-                    box-shadow: inset 0 0 10px rgba(0, 191, 255, 0.05), 0 20px 50px rgba(0, 0, 0, 0.8);
-                }
-                .light-mode .forgot-box {
-                    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
-                }
-
-                /* Title Styles */
-                .forgot-title {
-                    color: var(--title-color); 
-                    margin-bottom: 20px; font-weight: 500; font-size: 26px; padding-bottom: 15px;
-                    text-align: center;
-                }
-                .dark-mode .forgot-title { border-bottom: 1px solid #34495e; }
-                .light-mode .forgot-title { border-bottom: 1px solid var(--box-border); }
-                
-
-                /* Instruction Styles */
-                .forgot-instruction {
-                    font-size: 15px; text-align: center; margin-bottom: 30px; line-height: 1.5;
-                    color: var(--text-muted);
-                }
-
-                .success-message {
-                    color: var(--success-color); 
-                    margin-bottom: 20px; font-size: 15px; text-align: center; font-weight: 600;
-                }
-                
-                /* ----------------------------------------------------------------- */
-                /* INPUT FIELD STYLING (THEMED) */
-                /* ----------------------------------------------------------------- */
-                .input-group { position: relative; margin-bottom: 30px; }
-                .input-icon { 
-                    position: absolute; left: 15px; top: 50%; transform: translateY(-50%); 
-                    font-size: 18px; pointer-events: none; 
-                    color: var(--text-muted); 
-                }
-                .forgot-password-page input { 
-                    width: 100%; padding: 16px 15px 16px 50px; border-radius: 10px; 
-                    font-size: 17px; box-sizing: border-box; 
-                    /* --- KEY CHANGE: Use Theme Variables --- */
-                    border: 1px solid var(--input-border); 
-                    background-color: var(--input-bg); 
-                    color: var(--input-color); 
-                    /* --------------------------------------- */
-                    transition: border-color 0.3s, box-shadow 0.3s;
-                }
-                .forgot-password-page input:focus { 
-                    border-color: var(--primary-color); box-shadow: 0 0 10px rgba(0, 191, 255, 0.5); outline: none; 
-                }
-                .error-message { color: var(--error-color); margin-bottom: 20px; font-size: 15px; text-align: center; }
-                
-                /* Link Color Themeing */
-                .back-link {
-                    font-size: 14px; margin-top: 30px; cursor: pointer; text-align: center;
-                    transition: color 0.2s;
-                    color: var(--text-muted);
-                }
-                .back-link:hover { color: var(--primary-color); }
-
-
-                /* Button Styling (Stays blue in both modes) */
-                .login-button { 
-                    width: 100%; padding: 16px; background-color: var(--primary-color); color: white; border: none; 
-                    border-radius: 10px; font-size: 19px; font-weight: 700; cursor: pointer; 
-                    letter-spacing: 0.8px; transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s; margin-top: 5px; 
-                }
-                .login-button:hover:not(:disabled) { background-color: #0099e6; box-shadow: 0 5px 20px rgba(0, 191, 255, 0.4); transform: translateY(-1px); }
-                .login-button:disabled { background-color: #555; cursor: not-allowed; }
             `}</style>
         </div>
     );
