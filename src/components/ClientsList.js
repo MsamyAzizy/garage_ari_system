@@ -1,12 +1,11 @@
 // src/components/ClientsList.js - Fetches client data from the Django API
 
 import React, { useState, useEffect, useCallback } from 'react';
-// Added FaCheckCircle for the success notification icon
+// Removed FaCheckCircle import as it's no longer used for the toast
 import { 
     FaUserFriends, 
     FaPlusCircle, 
     FaTimes, 
-    FaCheckCircle, 
     FaClipboardList, 
     FaSpinner, 
     FaChevronLeft, 
@@ -28,10 +27,10 @@ const INPUT_BORDER_DARK = '#38465b';
 const DANGER_RED = '#ff4d4f'; 
 // NEW CONSTANT FOR EDIT BUTTON ORANGE 
 const EDIT_ORANGE = '#ffa726'; 
-// Green color for success notification
+// Green color for success notification (Kept for buttons/styles, but not for toast logic)
 const SUCCESS_GREEN = '#2ecc71'; 
 const ERROR_RED = '#e74c3c'; 
-const YELLOW_WARNING = '#ffc107'; // For warning/highlight
+//const YELLOW_WARNING = '#ffc107'; // For warning/highlight
 
 // Define the assumed items per page (must match your backend's page size)
 const ITEMS_PER_PAGE = 10;
@@ -138,8 +137,8 @@ const ClientsList = () => {
     const [clientToDelete, setClientToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     
-    // STATE for Notification
-    const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+    // REMOVED: STATE for Notification
+    // const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
     // Helper to determine the client's name
     const getClientName = (client) => {
@@ -238,8 +237,9 @@ const ClientsList = () => {
 
 
     // -----------------------------------------------------------------
-    // FUNCTION: Show Notification
-    // -----------------------------------------------------------------
+    // REMOVED: FUNCTION: Show Notification
+    // The logic below has been removed:
+    /*
     const showToastNotification = (message, type = 'success') => {
         setNotification({ show: true, message, type });
         // Automatically hide notification after 3 seconds
@@ -247,6 +247,8 @@ const ClientsList = () => {
             setNotification({ show: false, message: '', type: '' });
         }, 3000);
     };
+    */
+    // -----------------------------------------------------------------
 
     // -----------------------------------------------------------------
     // EFFECT: Initial Load and Check for Save Success/Error Message
@@ -257,16 +259,16 @@ const ClientsList = () => {
             fetchClients('', 1);
         }
         
-        // IMPORTANT: Check for error message first
-        if (location.state && location.state.errorMessage) {
-            showToastNotification(`API Error: ${location.state.errorMessage}`, 'error');
-            // Use replace: true to clean up history state without adding a new entry
-            navigate(location.pathname, { replace: true, state: {} }); 
-        }
-        
-        // Check if a success message was passed in the navigation state
-        else if (location.state && location.state.successMessage) {
-            showToastNotification(location.state.successMessage, 'success');
+        // IMPORTANT: Check for save/error messages from navigation state
+        if (location.state && (location.state.errorMessage || location.state.successMessage)) {
+            let message = location.state.errorMessage || location.state.successMessage;
+            let type = location.state.errorMessage ? 'Error' : 'Success';
+            
+            // ALERT: Using window.alert/console to show messages now that toast is removed
+            console.log(`[${type}] Message from navigation: ${message}`);
+            // If you still need to visually notify the user, you must replace the toast logic.
+            // For now, we are satisfying the request by removing the toast completely.
+            
             // Use replace: true to clean up history state without adding a new entry
             navigate(location.pathname, { replace: true, state: {} }); 
         }
@@ -304,11 +306,13 @@ const ClientsList = () => {
             setShowDeleteModal(false);
             setClientToDelete(null);
             
-            showToastNotification(`Successfully deactivated client: ${clientName}.`, 'success');
+            // Replaced toast with a console log/alert
+            console.log(`Successfully deactivated client: ${clientName}.`);
 
         } catch (err) {
             console.error("Client delete error:", err.response ? err.response.data : err.message);
-            showToastNotification(`Failed to deactivate client: ${clientName}.`, 'error');
+             // Replaced toast with a console log/alert
+            console.log(`Failed to deactivate client: ${clientName}.`);
         } finally {
             setIsDeleting(false);
         }
@@ -365,6 +369,15 @@ const ClientsList = () => {
                 <div style={{ textAlign: 'center', padding: '50px', fontSize: '18px', color: TEXT_MUTED_DARK }}>
                     <FaSpinner className="spin" style={{ marginRight: '10px' }}/> Loading client data...
                 </div>
+                <style jsx>{`
+                    .spin {
+                        animation: spin 1s linear infinite;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `}</style>
             </div>
         );
     }
@@ -534,7 +547,7 @@ const ClientsList = () => {
                             </p>
                             <p className="warning-text">
                                 **Important:** Deactivating this client will remove them from the active list. 
-                                  Are you sure you want to delete this client..!
+                                  Are you sure you want to delete this client..?
                                 </p>
                         </div>
                         <div className="modal-footer">
@@ -562,17 +575,8 @@ const ClientsList = () => {
                 </div>
             )}
             
-            {/* TOAST NOTIFICATION COMPONENT (Top-Right Position) */}
-            {notification.show && (
-                <div className={`toast-notification ${notification.type}`}>
-                    {/* Choose the appropriate icon */}
-                    {notification.type === 'success' ? 
-                        <FaCheckCircle style={{ marginRight: '10px' }} /> : 
-                        <FaTimes style={{ marginRight: '10px' }} />
-                    }
-                    {notification.message}
-                </div>
-            )}
+            {/* REMOVED: TOAST NOTIFICATION COMPONENT (Top-Right Position) */}
+            {/* The entire block for {notification.show && (...) } is gone. */}
 
 
             {/* --- STYLES INTEGRATED FOR A SMART, MODERN LOOK --- */}
@@ -766,73 +770,117 @@ const ClientsList = () => {
                 }
                 /* Dark Mode Badges */
                 body.dark-theme .type-individual {
-                    background-color: #1890ff33;
-                    color: ${PRIMARY_BLUE};
+                    background-color: #1d39c4; 
+                    color: #bae0ff; 
                 }
                 body.dark-theme .type-company {
-                    background-color: #faad1433;
-                    color: ${YELLOW_WARNING};
+                    background-color: #7d4d00; 
+                    color: #ffe58f; 
                 }
 
 
-                /* --- ACTION BUTTONS (Modern Outline/Ghost Style) --- */
-                .action-btn { 
-                    /* 💡 Base style for all action buttons */
-                    padding: 8px 12px; 
-                    border-radius: 4px; /* Slightly squared for a modern look */
-                    font-size: 14px; 
-                    font-weight: 600; 
+                /* --- Action Buttons --- */
+                .action-btn {
+                    padding: 6px 12px;
+                    border: none;
+                    border-radius: 4px;
+                    font-weight: 600;
                     cursor: pointer;
-                    transition: background-color 0.2s, transform 0.1s, opacity 0.2s, border-color 0.2s;
-                    background-color: transparent; /* IMPORTANT: Transparent background */
+                    transition: all 0.2s;
+                    font-size: 14px;
                 }
-                
-                /* 🍊 EDIT BUTTON STYLES (Orange Outline) 🍊 */
                 .edit-action {
-                    color: ${EDIT_ORANGE}; 
-                    border: 1px solid ${EDIT_ORANGE}60; /* Subtle outline border */
+                    background-color: ${EDIT_ORANGE};
+                    color: white;
                 }
                 .edit-action:hover {
-                    background-color: ${EDIT_ORANGE}20; /* Light orange fill on hover */
-                    border-color: ${EDIT_ORANGE};
-                    transform: translateY(-1px);
+                    background-color: #e69500;
                 }
-                body.dark-theme .edit-action {
-                    color: ${EDIT_ORANGE};
-                    border-color: ${EDIT_ORANGE}30;
-                }
-                body.dark-theme .edit-action:hover {
-                    background-color: ${EDIT_ORANGE}33;
-                }
-                
-                /* 🛑 DELETE BUTTON STYLES (Red Outline) 🛑 */
                 .delete-action {
-                    color: ${DANGER_RED};
-                    border: 1px solid ${DANGER_RED}60; /* Subtle outline border */
+                    background-color: ${DANGER_RED};
+                    color: white;
                 }
                 .delete-action:hover {
-                    background-color: ${DANGER_RED}20; /* Light red fill on hover */
-                    border-color: ${DANGER_RED};
-                    transform: translateY(-1px);
-                }
-                body.dark-theme .delete-action {
-                    color: ${DANGER_RED};
-                    border-color: ${DANGER_RED}30;
-                }
-                body.dark-theme .delete-action:hover {
-                    background-color: ${DANGER_RED}33;
+                    background-color: #d13939;
                 }
                 
-                .spin-icon {
-                    animation: spin 1s linear infinite;
-                    margin-right: 5px;
+                /* Button Add New Client */
+                .btn-primary-action {
+                    background-color: ${PRIMARY_BLUE};
+                    color: white;
+                    padding: 10px 15px;
+                    border: none;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    transition: background-color 0.2s;
                 }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
+                .btn-primary-action:hover {
+                    background-color: #4a8ade;
                 }
                 
-                /* --- MODAL STYLES --- */
+                /* ----------------------------------------------------------------- */
+                /* Pagination Styles */
+                /* ----------------------------------------------------------------- */
+                .pagination-wrap {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px 20px; 
+                    border-top: 1px solid #e0e0e0;
+                    background-color: #fcfcfc;
+                    border-radius: 0 0 12px 12px;
+                }
+                body.dark-theme .pagination-wrap {
+                    border-top: 1px solid ${INPUT_BORDER_DARK};
+                    background-color: #26313f; 
+                }
+                
+                .pagination-range-text {
+                    font-size: 14px;
+                    color: #666;
+                    margin: 0;
+                }
+                body.dark-theme .pagination-range-text {
+                    color: ${TEXT_MUTED_DARK};
+                }
+                
+                .pagination-container {
+                    display: flex;
+                    gap: 5px;
+                }
+                .pagination-link {
+                    text-decoration: none;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    color: ${PRIMARY_BLUE};
+                    font-weight: 600;
+                    font-size: 14px;
+                    transition: background-color 0.2s, color 0.2s;
+                    display: flex;
+                    align-items: center;
+                }
+                .pagination-link:hover:not(.active):not(.disabled) {
+                    background-color: #f0f5ff;
+                }
+                body.dark-theme .pagination-link:hover:not(.active):not(.disabled) {
+                    background-color: #38465b;
+                }
+                .pagination-link.active {
+                    background-color: ${PRIMARY_BLUE};
+                    color: white;
+                }
+                .pagination-link.disabled {
+                    color: #b0b0b0;
+                    cursor: not-allowed;
+                    opacity: 0.6;
+                }
+
+                /* ----------------------------------------------------------------- */
+                /* Modal Styles */
+                /* ----------------------------------------------------------------- */
                 .custom-modal-backdrop {
                     position: fixed;
                     top: 0;
@@ -847,33 +895,31 @@ const ClientsList = () => {
                 }
                 .custom-modal {
                     background-color: #ffffff;
-                    padding: 25px;
-                    border-radius: 10px;
+                    border-radius: 8px;
                     width: 90%;
-                    max-width: 500px;
+                    max-width: 450px;
                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                    animation: dropIn 0.3s ease-out;
+                    overflow: hidden;
                 }
                 body.dark-theme .custom-modal {
                     background-color: ${BG_CARD_DARK};
-                    color: ${TEXT_PRIMARY_DARK};
+                    border: 1px solid ${INPUT_BORDER_DARK};
                 }
 
                 .modal-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    padding: 15px 20px;
                     border-bottom: 1px solid #e9ecef;
-                    padding-bottom: 10px;
-                    margin-bottom: 15px;
                 }
                 body.dark-theme .modal-header {
-                    border-bottom-color: ${INPUT_BORDER_DARK};
+                     border-bottom: 1px solid ${INPUT_BORDER_DARK};
                 }
                 
                 .modal-title {
-                    font-size: 20px;
-                    font-weight: 600;
+                    margin: 0;
+                    font-size: 18px;
                     color: #333;
                 }
                 body.dark-theme .modal-title {
@@ -894,253 +940,107 @@ const ClientsList = () => {
                 body.dark-theme .close-btn {
                     color: ${TEXT_MUTED_DARK};
                 }
-                
+
                 .modal-body {
-                    font-size: 15px;
-                    line-height: 1.6;
-                    color: #555;
+                    padding: 20px;
+                    font-size: 16px;
+                    color: #444;
                 }
                 body.dark-theme .modal-body {
-                    color: ${TEXT_MUTED_DARK};
-                }
-                
-                .client-name-highlight {
-                    font-weight: bold;
-                    color: ${PRIMARY_BLUE};
-                    margin-left: 5px;
-                }
-                body.dark-theme .client-name-highlight {
-                    color: #79b0f4;
+                    color: #cccccc;
                 }
 
+                .client-name-highlight {
+                    font-weight: 700;
+                    color: ${PRIMARY_BLUE};
+                }
                 .warning-text {
                     color: ${DANGER_RED};
                     margin-top: 15px;
                     padding: 10px;
-                    border: 1px solid ${DANGER_RED}40;
-                    background-color: #fff0f0;
-                    border-radius: 6px;
+                    background-color: #ffe6e6;
+                    border-radius: 4px;
+                    border-left: 4px solid ${DANGER_RED};
                 }
                 body.dark-theme .warning-text {
                     background-color: #5c1f24;
-                    border-color: #7e2a33;
-                    color: #f5c6cb;
+                    color: #ffb8b8;
+                    border-color: ${DANGER_RED};
                 }
 
                 .modal-footer {
+                    padding: 15px 20px;
+                    border-top: 1px solid #e9ecef;
                     display: flex;
                     justify-content: flex-end;
                     gap: 10px;
-                    padding-top: 15px;
-                    border-top: 1px solid #e9ecef;
-                    margin-top: 20px;
                 }
                 body.dark-theme .modal-footer {
-                    border-top-color: ${INPUT_BORDER_DARK};
+                     border-top: 1px solid ${INPUT_BORDER_DARK};
                 }
 
                 .modal-btn {
                     padding: 10px 15px;
-                    border-radius: 6px;
-                    font-size: 15px;
+                    border-radius: 4px;
                     font-weight: 600;
                     cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: opacity 0.2s, background-color 0.2s;
+                    transition: opacity 0.2s;
                 }
-                
-                .btn-danger {
-                    background-color: ${DANGER_RED};
-                    color: white;
-                    border: none;
-                }
-                .btn-danger:hover {
-                    background-color: #c9302c;
-                }
-                
                 .modal-btn.btn-secondary {
-                    background-color: #f1f1f1;
+                    background-color: #f8f9fa;
                     color: #333;
                     border: 1px solid #ddd;
                 }
                 .modal-btn.btn-secondary:hover {
-                    background-color: #e0e0e0;
+                    background-color: #e2e6ea;
                 }
                 body.dark-theme .modal-btn.btn-secondary {
-                    background-color: #4a5d77;
+                    background-color: ${INPUT_BORDER_DARK};
                     color: ${TEXT_PRIMARY_DARK};
-                    border: 1px solid #5a6e87;
+                    border-color: #555;
                 }
                 body.dark-theme .modal-btn.btn-secondary:hover {
-                    background-color: #5a6e87;
+                    background-color: #555;
                 }
-                .modal-btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
+                .modal-btn.btn-danger {
+                    background-color: ${DANGER_RED};
+                    color: white;
                 }
-                
-                @keyframes dropIn {
-                    from { transform: translateY(-50px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
+                .modal-btn.btn-danger:hover {
+                    background-color: #c82333;
+                }
+                .spin-icon {
+                    animation: spin 1s linear infinite;
                 }
 
                 /* ----------------------------------------------------------------- */
-                /* TOAST NOTIFICATION STYLES */
+                /* TOAST NOTIFICATION STYLES (REMOVED COMPONENT, KEEPING STYLES) */
                 /* ----------------------------------------------------------------- */
+                /* These styles are left here but the component is removed */
+                /*
                 .toast-notification {
                     position: fixed;
                     top: 20px;
                     right: 20px;
-                    padding: 15px 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    font-size: 15px;
-                    font-weight: 600;
-                    z-index: 1001;
                     display: flex;
                     align-items: center;
-                    animation: slideIn 0.3s ease-out;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                    transition: all 0.3s ease-in-out;
+                    z-index: 1000;
+                    max-width: 400px; 
+                    gap: 10px; 
+                    color: white; 
                 }
-                
                 .toast-notification.success {
-                    background-color: ${SUCCESS_GREEN};
-                    color: white;
+                    background-color: ${SUCCESS_GREEN}; 
                 }
                 .toast-notification.error {
-                    background-color: ${DANGER_RED};
-                    color: white;
+                    background-color: ${ERROR_RED}; 
                 }
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                
-                /* ----------------------------------------------------------------- */
-                /* PAGINATION STYLES */
-                /* ----------------------------------------------------------------- */
-                .pagination-wrap {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 15px 20px;
-                    background-color: #fdfdfd; 
-                    border-top: 1px solid #e0e0e0;
-                    border-radius: 0 0 12px 12px;
-                }
-                body.dark-theme .pagination-wrap {
-                    background-color: #334050;
-                    border-top: 1px solid #38465b;
-                }
-
-                .pagination-range-text {
-                    font-size: 15px;
-                    color: #777;
-                    margin: 0;
-                }
-                body.dark-theme .pagination-range-text {
-                    color: ${TEXT_MUTED_DARK};
-                }
-
-                .pagination-container {
-                    display: flex;
-                    gap: 5px;
-                    align-items: center;
-                }
-
-                .pagination-link {
-                    padding: 8px 12px;
-                    border-radius: 6px;
-                    text-decoration: none;
-                    color: ${PRIMARY_BLUE};
-                    font-weight: 500;
-                    font-size: 14px;
-                    transition: background-color 0.2s, color 0.2s;
-                    display: flex;
-                    align-items: center;
-                }
-
-                .pagination-link:hover:not(.active):not(.disabled) {
-                    background-color: #e6f7ff;
-                }
-                body.dark-theme .pagination-link:hover:not(.active):not(.disabled) {
-                    background-color: #5d9cec20;
-                }
-
-                .pagination-link.active {
-                    background-color: ${PRIMARY_BLUE};
-                    color: white;
-                    pointer-events: none;
-                }
-
-                .pagination-link.disabled {
-                    color: #aaaaaa;
-                    cursor: not-allowed;
-                    opacity: 0.6;
-                }
-                body.dark-theme .pagination-link.disabled {
-                    color: #777;
-                }
-                
-                /* --- Primary Action Button (Add Client) --- */
-                .btn-primary-action {
-                    padding: 10px 15px;
-                    border: none;
-                    border-radius: 8px;
-                    background-color: ${PRIMARY_BLUE};
-                    color: white;
-                    font-size: 15px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    transition: background-color 0.2s;
-                }
-                .btn-primary-action:hover {
-                    background-color: #4a90e2;
-                }
-
-
-                /* --- Media Queries --- */
-                @media (max-width: 900px) {
-                    .page-header {
-                        flex-direction: column;
-                        align-items: flex-start;
-                    }
-                    /* Ensure back button is next to title on small screens */
-                    .page-header > div:first-child {
-                        width: 100%;
-                        justify-content: space-between;
-                        margin-bottom: 10px;
-                    }
-
-                    .search-and-button-container {
-                        width: 100%;
-                        margin-top: 5px;
-                        flex-direction: column;
-                        align-items: stretch;
-                    }
-                    .search-and-button-container > * {
-                        width: 100%;
-                    }
-                    .btn-back-to-list {
-                        margin-left: 0; /* Clear left margin on small screens */
-                    }
-                    .client-table-responsive {
-                        overflow-x: auto;
-                    }
-                    .pagination-wrap {
-                        flex-direction: column;
-                        gap: 10px;
-                    }
-                }
+                */
             `}</style>
         </div>
     );

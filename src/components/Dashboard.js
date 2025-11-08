@@ -1,8 +1,5 @@
-// src/components/Dashboard.js - COMPLETE FILE (Now with CORRECTED API Integration Paths)
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FaArrowUp, FaArrowDown, FaUsers, FaCar, FaFileInvoiceDollar, FaCalendarCheck } from 'react-icons/fa'; 
-import apiClient from '../utils/apiClient'; // 🛑 Import apiClient
 
 // ----------------------------------------------------
 // 1. StatCard Component (Defined locally)
@@ -17,14 +14,15 @@ const StatCard = ({ title, value, change, unit, color, icon: Icon }) => {
 
     return (
         <div className="stat-card-container">
-            <div className={`stat-card-icon ${color}`}>
-                <Icon size={24} />
+            {/* Icon is placed next to the title */}
+            <div className="stat-card-header">
+                <div className={`stat-card-icon ${color}`}>
+                    <Icon size={20} /> 
+                </div>
+                <div className="stat-title">{title}</div>
             </div>
             
-            <div className="stat-card-content">
-                <div className="stat-title">{title}</div>
-                <div className="stat-value">{value}</div>
-            </div>
+            <div className="stat-value">{value}</div>
 
             <div className="stat-card-footer">
                 <span className={`stat-change ${changeClass}`}>
@@ -41,69 +39,24 @@ const StatCard = ({ title, value, change, unit, color, icon: Icon }) => {
 // 2. Main Dashboard Component
 // ----------------------------------------------------
 const Dashboard = ({ isSidebarCollapsed }) => { 
-    // State to hold actual metric values
-    const [stats, setStats] = useState({
-        totalClients: '...',
-        totalVehicles: '...',
-        totalSales: '...',
-        totalAppointments: '...',
+    // State is clean for static display
+    const [stats] = useState({
+        totalClients: '2,500', 
+        totalVehicles: '1,800',
+        totalSales: 'Tsh 1,240,000',
+        totalAppointments: '15',
     });
     
-    // State for loading and errors
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    // 🛑 EFFECT: Fetch data from the backend when the component mounts
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                // 1. Fetching client count - Path is correct: /api/clients/
-                const clientsRes = await apiClient.get('/clients/');
-                // Assuming clientsRes.data is an array and we take its length for count
-                const clientCount = clientsRes.data.length; 
-
-                // 2. Fetching vehicle count - ✅ FIX APPLIED: Corrected path to /api/clients/vehicles/
-                const vehiclesRes = await apiClient.get('/clients/vehicles/'); 
-                const vehicleCount = vehiclesRes.data.length;
-                
-                // Mocking sales and appointments until proper endpoints are available
-                // In a real app, this would be: await apiClient.get('/invoices/revenue/')
-                const mockSales = 'Tsh 1,240,000'; 
-                const mockAppointments = 15;
-
-                setStats({
-                    totalClients: clientCount.toLocaleString(),
-                    totalVehicles: vehicleCount.toLocaleString(),
-                    totalSales: mockSales,
-                    totalAppointments: mockAppointments.toLocaleString(),
-                });
-                
-            } catch (err) {
-                // Log the detailed error (which might show a 401 if authentication fails)
-                console.error("Failed to fetch dashboard metrics:", err.response ? err.response.data : err.message);
-                setError("Failed to load dashboard data. Check API endpoints or Authentication.");
-                setStats({
-                    totalClients: 'Error',
-                    totalVehicles: 'Error',
-                    totalSales: 'Error',
-                    totalAppointments: 'Error',
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchDashboardData();
-    }, []); // Empty dependency array ensures it runs once on mount
+    const [error] = useState(null); 
     
-    // Prepare the stat cards using the fetched state
+    // Prepare the stat cards
     const displayStats = [
         { 
             title: 'Total Clients', 
             value: stats.totalClients, 
             change: '+5.7%', 
             unit: 'than last month', 
-            color: 'bg-info', 
+            color: 'text-info', 
             icon: FaUsers 
         },
         { 
@@ -111,7 +64,7 @@ const Dashboard = ({ isSidebarCollapsed }) => {
             value: stats.totalVehicles, 
             change: '-1.5%', 
             unit: 'in inventory', 
-            color: 'bg-warning', 
+            color: 'text-warning', 
             icon: FaCar 
         },
         { 
@@ -119,7 +72,7 @@ const Dashboard = ({ isSidebarCollapsed }) => {
             value: stats.totalSales, 
             change: '+7.5%', 
             unit: 'This Month Revenue', 
-            color: 'bg-success', 
+            color: 'text-success', 
             icon: FaFileInvoiceDollar 
         },
         { 
@@ -127,7 +80,7 @@ const Dashboard = ({ isSidebarCollapsed }) => {
             value: stats.totalAppointments, 
             change: '+3.7%', 
             unit: 'Next 7 Days', 
-            color: 'bg-primary', 
+            color: 'text-primary', 
             icon: FaCalendarCheck 
         },
     ];
@@ -135,17 +88,15 @@ const Dashboard = ({ isSidebarCollapsed }) => {
     return (
         <div className={`dashboard-page ${isSidebarCollapsed ? 'shifted' : ''}`}>
             <div className="dashboard-header-path">
-                <span className="path-home">/ Dashboard</span>
-                <span className="path-current">Dashboard</span>
+                <span className="path-home">Home</span>
+                <span className="path-current">/ Dashboard</span>
             </div>
             
             {/* 1. Quick Statistics */}
             <div className="dashboard-stats">
                 <div className="stat-card-grid">
-                    {isLoading ? (
-                        <p style={{ gridColumn: '1 / -1', textAlign: 'center' }}>Loading metrics...</p>
-                    ) : error ? (
-                        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'red' }}>{error}</p>
+                    {error ? (
+                        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'red' }}>Error: {error}</p>
                     ) : (
                         displayStats.map((stat) => (
                             <StatCard 
@@ -162,159 +113,146 @@ const Dashboard = ({ isSidebarCollapsed }) => {
                 <p>Welcome to your Auto Repair Shop dashboard. Real charts and tables coming soon...</p>
             </div>
 
-            {/* ... (STYLE TAG REMAINS UNCHANGED) ... */}
+            {/* ----------------------------------------------------------------- */}
+            {/* FINAL PREMIUM STYLES */}
+            {/* ----------------------------------------------------------------- */}
             <style>{`
                 /* ----------------------------------------------------------------- */
-                /* DASHBOARD LAYOUT & BASE STYLES (Material Design Look) */
+                /* DASHBOARD LAYOUT & BASE STYLES */
                 /* ----------------------------------------------------------------- */
                 .dashboard-page {
-                    padding: 20px 30px;
-                    background-color: #ffffffff; 
+                    padding: 30px; 
+                    background-color: #F8FAFC; /* Very light, cool gray page background */
                     min-height: 100vh;
-                    font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
-                    
-                    /* 🚀 FLEXIBILITY FIX 1: Assume this is the content area */
-                    margin-left: 10px; /* Default margin for expanded sidebar (300px) */
+                    font-family: 'Inter', sans-serif, 'Helvetica Neue', Arial; 
+                    margin-left: 10px;
                     transition: margin-left 0.3s ease;
                 }
                 
-                /* 🚀 FLEXIBILITY FIX 2: Style applied when the sidebar is collapsed */
                 .dashboard-page.shifted {
-                     margin-left: 80px; /* Margin for collapsed sidebar (80px) */
+                     margin-left: 80px; 
                 }
 
-
                 .dashboard-header-path {
-                    font-size: 14px;
-                    margin-bottom: 20px;
-                    color: #6c757d;
+                    font-size: 16px;
+                    margin-bottom: 30px; 
+                    color: #94A3B8; /* Muted path color */
+                    font-weight: 500;
                 }
                 
                 .path-current {
-                    font-weight: 600;
-                    color: #344767;
+                    font-weight: 700;
+                    color: #1E293B; /* Darker current path */
                     margin-left: 5px;
                 }
 
                 .stat-card-grid {
                     display: grid;
-                    /* 🚀 FLEXIBILITY FIX 3: Use auto-fit with a smaller minimum size (220px) 
-                       to ensure smooth shrinking/expanding of the grid columns. */
-                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
-                    gap: 20px;
-                    margin-bottom: 30px;
-                }
-                
-                @media (max-width: 768px) {
-                    .stat-card-grid {
-                        grid-template-columns: 1fr;
-                    }
-                }
-                
-                .main-content-placeholder {
-                    background-color: #fff;
-                    border-radius: 10px;
-                    padding: 40px;
-                    min-height: 300px;
-                    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-                    color: #344767;
+                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+                    gap: 25px; 
+                    margin-bottom: 40px;
                 }
 
                 /* ----------------------------------------------------------------- */
                 /* STAT CARD STYLES */
                 /* ----------------------------------------------------------------- */
                 .stat-card-container {
-                    background-color: #ffffff;
-                    border-radius: 10px;
-                    padding: 10px 20px 20px 20px;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); 
+                    background-color: #FFFFFF; /* Pure white card background */
+                    border-radius: 12px; 
+                    padding: 25px; 
+                    /* Layered shadow for depth: Subtle inner shadow + soft outer shadow */
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 15px 30px rgba(0, 0, 0, 0.05);
                     position: relative;
                     display: flex;
                     flex-direction: column;
-                    min-height: 120px;
+                    min-height: 140px;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    border: 1px solid #E2E8F0; /* Very subtle border for definition */
+                }
+                
+                .stat-card-container:hover {
+                    transform: translateY(-5px); /* Stronger lift on hover */
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08), 0 20px 40px rgba(0, 0, 0, 0.08); /* Highlighted shadow */
+                }
+                
+                .stat-card-header {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 5px;
                 }
 
                 .stat-card-icon {
-                    position: absolute;
-                    top: -20px; 
-                    left: 20px;
-                    width: 70px;
-                    height: 70px;
-                    border-radius: 8px;
+                    width: 32px;
+                    height: 32px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    color: #ffffff;
-                    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.14), 0 7px 10px -5px rgba(0, 0, 0, 0.4);
+                    border-radius: 6px;
+                    color: #FFFFFF; /* White icon always */
+                    margin-right: 10px;
+                    opacity: 1;
                 }
                 
-                .stat-card-content {
-                    margin-left: 80px; 
-                    text-align: right;
-                    margin-top: 10px;
-                    flex-grow: 1;
-                }
-
                 .stat-title {
                     font-size: 14px;
-                    color: #6c757d;
-                    text-transform: capitalize;
-                    font-weight: 300;
-                    word-wrap: break-word; /* Ensure title fits */
+                    color: #64748B; /* Muted gray for title */
+                    font-weight: 500; 
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
-
+                
                 .stat-value {
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #344767;
-                    line-height: 1.5;
-                    word-wrap: break-word; /* Ensure value fits */
+                    font-size: 38px; /* Bigger, bolder value */
+                    font-weight: 800; 
+                    color: #1E293B; /* High-contrast text */
+                    line-height: 1.1;
+                    margin: 8px 0 10px 0; /* Tighter spacing to header/footer */
                 }
 
                 .stat-card-footer {
-                    border-top: 1px solid #dee2e6;
-                    padding-top: 8px;
-                    margin-top: 8px;
-                    font-size: 13px;
+                    border-top: 1px solid #F1F5F9; /* Very light divider */
+                    padding-top: 15px;
+                    margin-top: auto; /* Push footer to bottom */
+                    font-size: 14px;
+                    display: flex;
+                    justify-content: space-between;
                 }
 
                 .stat-change {
                     font-weight: 600;
-                    margin-right: 5px;
-                    display: inline-flex;
-                    align-items: center;
+                    margin-right: 8px;
                 }
                 
                 .text-positive {
-                    color: #4CAF50; 
+                    color: #10B981; /* Tailwind Emerald Green */
                 }
                 .text-negative {
-                    color: #F44336; 
+                    color: #EF4444; /* Tailwind Red */
                 }
                 
                 .stat-unit {
-                    color: #6c757d;
-                }
-                
-                .change-icon {
-                    margin-left: 4px;
-                    font-size: 10px;
+                    color: #64748B;
+                    font-weight: 400;
                 }
 
                 /* ----------------------------------------------------------------- */
-                /* COLOR UTILITIES */
+                /* COLOR UTILITIES (Used for ICON BACKGROUND) */
                 /* ----------------------------------------------------------------- */
-                .bg-primary { 
-                    background: linear-gradient(195deg, #EC407A, #D81B60);
-                }
-                .bg-warning { 
-                    background: linear-gradient(195deg, #FFA726, #FB8C00);
-                }
-                .bg-success { 
-                    background: linear-gradient(195deg, #66BB6A, #43A047);
-                }
-                .bg-info { 
-                    background: linear-gradient(195deg, #42A5F5, #2196F3);
+                .text-primary { background-color: #6366F1; } /* Indigo */
+                .text-warning { background-color: #FBBF24; } /* Amber */
+                .text-success { background-color: #10B981; } /* Emerald */
+                .text-info { background-color: #06B6D4; } /* Cyan */
+                
+                /* Main Content Placeholder style refined */
+                .main-content-placeholder {
+                    background-color: #FFFFFF;
+                    border-radius: 12px;
+                    padding: 40px;
+                    min-height: 300px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 15px 30px rgba(0, 0, 0, 0.05);
+                    color: #64748B;
+                    text-align: center;
+                    border: 1px solid #E2E8F0;
                 }
             `}</style>
         </div>

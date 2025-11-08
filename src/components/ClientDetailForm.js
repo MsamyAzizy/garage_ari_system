@@ -39,12 +39,21 @@ const SUCCESS_GREEN = '#2ecc71';
 const EDIT_ORANGE = '#ffa726'; // Defined a color for consistent button styling
 
 // --- CITY OPTIONS FOR TANZANIA (Curated List) ---
+// --- CITY OPTIONS FOR TANZANIA (Curated List) ---
 const TANZANIA_CITIES = [
     "Dar es Salaam", "Mwanza", "Dodoma", "Arusha", "Mbeya", "Morogoro", 
     "Tanga", "Kahama", "Tabora", "Zanzibar City", "Kigoma", "Sumbawanga", 
     "Kasulu", "Songea", "Moshi", "Musoma", "Shinyanga", "Iringa", "Singida", 
     "Njombe", "Bukoba", "Kibaha", "Mtwara", "Mpanda", "Tunduma", "Makambako", 
     "Babati", "Handeni", "Lindi", "Korogwe"
+];
+
+// 💰 CUSTOM PAYMENT TERMS OPTIONS (Defined as requested)
+const PAYMENT_TERMS_OPTIONS = [
+    "Immediately payment",
+    "15 Days Payment",
+    "30 Days of Payment",
+    "7 Days of payment",
 ];
 
 // Helper function to extract name for messages
@@ -215,17 +224,26 @@ const ClientForm = () => {
 
 
     // Handle change for standard and custom inputs
+  // Handle change for standard and custom inputs
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         
         // Handle input for custom fields (ensure correct type conversion for API if needed later)
         if (name.startsWith('custom')) {
-            // For decimal inputs, allow empty string but ensure valid characters
-            const cleanedValue = value.replace(/[^0-9.]/g, ''); 
-            setFormData(prev => ({
-                ...prev,
-                [name]: cleanedValue,
-            }));
+            // Only Labor Rate and Markup are numeric/decimal fields, Terms is a string (from select)
+            if (name === 'customLaborRate' || name === 'customMarkupPercentage') {
+                // For decimal inputs, allow empty string but ensure valid characters
+                const cleanedValue = value.replace(/[^0-9.]/g, ''); 
+                setFormData(prev => ({
+                    ...prev,
+                    [name]: cleanedValue,
+                }));
+            } else {
+                 setFormData(prev => ({
+                    ...prev,
+                    [name]: value, // Terms is a string (from the select dropdown)
+                }));
+            }
         } else {
             setFormData(prev => ({
                 ...prev,
@@ -233,14 +251,26 @@ const ClientForm = () => {
             }));
         }
     };
-    
     // Handle change for the toggle switches (update boolean state)
+   // Handle change for the toggle switches (update boolean state)
     const handleSettingsChange = (e) => {
         const { id, checked } = e.target;
+        
         setClientSettings(prev => ({
             ...prev,
             [id]: checked,
         }));
+        
+        // Reset custom field value if the toggle is turned OFF
+        if (!checked) {
+            if (id === 'laborRateOverride') {
+                setFormData(prev => ({ ...prev, customLaborRate: '' }));
+            } else if (id === 'partsMarkupOverride') {
+                setFormData(prev => ({ ...prev, customMarkupPercentage: '' }));
+            } else if (id === 'paymentTermsOverride') {
+                setFormData(prev => ({ ...prev, customPaymentTerms: '' })); // Reset selection
+            }
+        }
     };
     
     const handleModeChange = (e) => {
@@ -257,7 +287,7 @@ const ClientForm = () => {
     };
 
 
-    const handlePhoneChange = (value, country) => {
+   const handlePhoneChange = (value, country) => {
         setPhoneError('');
         
         setFormData(prev => ({
@@ -268,13 +298,15 @@ const ClientForm = () => {
         setCountryCode(country.countryCode);
     };
 
+    // 🚩 UPDATED: Enforce that the phone number must be provided and not just the country code.
     const isPhoneValid = (value, country) => {
         const MIN_LOCAL_DIGITS = 6; 
         const MAX_TOTAL_DIGITS = 15; 
-
-        if (!value || value.length === country.dialCode.length) {
-            setPhoneError('');
-            return true;
+        
+        // 1. Check for required field
+        if (!value || value.length <= country.dialCode.length) {
+            setPhoneError('Primary Phone Number is required.'); // Set error for required
+            return 'Primary Phone Number is required.';
         }
 
         const localNumber = value.slice(country.dialCode.length);
@@ -309,8 +341,14 @@ const ClientForm = () => {
     const handleSubmit = async (e) => { 
         e.preventDefault();
         
-        if (phoneError) {
-            showToastNotification("Please fix the client-side error in the phone number field.", 'error');
+        // Check 1: Phone number client-side validation
+        // We use isPhoneValid to check if the current state of formData.phone is valid
+        // Check 1: Phone number client-side validation
+        const cleanPhoneNumber = String(formData.phone || '').replace('+', '');
+
+        if (isPhoneValid(cleanPhoneNumber, { dialCode: countryCode, countryCode: countryCode }) !== true) {
+            // isPhoneValid already set the error state
+            showToastNotification("Please correct the **Primary Phone Number** field.", 'error');
             return; 
         }
         
@@ -323,10 +361,17 @@ const ClientForm = () => {
             validationError = "Company Name is required for a Company client.";
         } 
         
-        if (!formData.email || formData.email.trim() === '') {
+       if (!formData.email || formData.email.trim() === '') {
              validationError = validationError ? 
                                `${validationError} Also, Email Address is required.` : 
                                "Email Address is required.";
+        }
+        
+        // 💰 Check if Custom Payment Terms are overridden but not selected
+        if (clientSettings.paymentTermsOverride && !formData.customPaymentTerms) {
+            validationError = validationError ? 
+                               `${validationError} Also, a Custom Payment Term must be selected.` : 
+                               "A Custom Payment Term must be selected when the override is active.";
         }
         
         if (validationError) {
@@ -593,8 +638,8 @@ const ClientForm = () => {
                 {/* Phone and Email - Always visible */}
                 <div className="form-grid-2">
                     {/* PHONE INPUT */}
-                    <div className="form-group">
-                        <label htmlFor="phone">Primary Phone</label> 
+                   <div className="form-group">
+                        <label htmlFor="phone">Primary Phone *</label> {/* 🚩 REQUIRED LABEL ADDED */}
                         <PhoneInput
                             country={countryCode} 
                             value={formData.phone ? formData.phone.slice(1) : ''}
@@ -602,7 +647,7 @@ const ClientForm = () => {
                             isValid={isPhoneValid}
                             inputProps={{
                                 name: 'phone',
-                                required: false, 
+                                required: true, // 🚩 SET REQUIRED TRUE HERE
                                 autoFocus: false,
                             }}
                             inputStyle={{
@@ -734,83 +779,83 @@ const ClientForm = () => {
                     />
                     
                     {/* LABOR RATE OVERRIDE */}
-                    <div className="setting-group">
+                 <div className="setting-group">
                         <ToggleSwitch 
                             id="laborRateOverride"
                             label="Labor Rate Override"
-                            description="If activated, a different labor rate will be applied when creating an invoice."
+                            description="If activated, a different labor rate will be applied for this client."
                             checked={clientSettings.laborRateOverride}
                             onChange={handleSettingsChange}
                         />
                         {clientSettings.laborRateOverride && (
-                            <div className="override-input-field">
-                                <label htmlFor="customLaborRate"><FaDollarSign /> Custom Labor Rate (e.g., 55.00) *</label>
+                            <div className="form-group override-input" style={{ marginLeft: '40px', marginTop: '10px' }}>
+                                <label htmlFor="customLaborRate"><FaDollarSign /> Custom Labor Rate ($)</label>
                                 <input 
-                                    type="number" 
+                                    type="text" 
                                     id="customLaborRate" 
                                     name="customLaborRate" 
-                                    placeholder="Enter custom rate per hour"
-                                    required 
-                                    step="0.01" 
-                                    min="0"
-                                    onChange={handleChange} 
+                                    placeholder="e.g., 50.00" 
                                     value={formData.customLaborRate}
+                                    onChange={handleChange}
                                 />
                             </div>
                         )}
                     </div>
                     
                     {/* PARTS MARKUP OVERRIDE (Added the missing JSX input) */}
-                    <div className="setting-group">
+                   <div className="setting-group">
                         <ToggleSwitch 
                             id="partsMarkupOverride"
                             label="Parts Markup Override"
-                            description="If activated, a custom parts markup percentage will be used for this client."
+                            description="If activated, a different parts markup percentage will be applied for this client."
                             checked={clientSettings.partsMarkupOverride}
                             onChange={handleSettingsChange}
                         />
                         {clientSettings.partsMarkupOverride && (
-                            <div className="override-input-field">
-                                <label htmlFor="customMarkupPercentage"><FaPercent /> Custom Markup Percentage (e.g., 20) *</label>
+                            <div className="form-group override-input" style={{ marginLeft: '40px', marginTop: '10px' }}>
+                                <label htmlFor="customMarkupPercentage"><FaPercent /> Custom Markup Percentage (%)</label>
                                 <input 
-                                    type="number" 
+                                    type="text" 
                                     id="customMarkupPercentage" 
                                     name="customMarkupPercentage" 
-                                    placeholder="Enter custom markup (e.g., 20 for 20%)"
-                                    required 
-                                    step="0.01" 
-                                    min="0"
-                                    onChange={handleChange} 
+                                    placeholder="e.g., 10.5" 
                                     value={formData.customMarkupPercentage}
+                                    onChange={handleChange}
                                 />
                             </div>
                         )}
                     </div>
 
                     {/* PAYMENT TERMS OVERRIDE (Added the missing JSX input) */}
-                    <div className="setting-group">
+                   <div className="setting-group">
                         <ToggleSwitch 
                             id="paymentTermsOverride"
                             label="Payment Terms Override"
-                            description="Set specific payment terms (e.g., Net 15, Net 30) for this client."
+                            description="If activated, custom payment terms will be used for this client's invoices."
                             checked={clientSettings.paymentTermsOverride}
                             onChange={handleSettingsChange}
                         />
                         {clientSettings.paymentTermsOverride && (
-                            <div className="override-input-field">
-                                <label htmlFor="customPaymentTerms">Custom Payment Terms *</label>
-                                <input 
-                                    type="text" 
+                            <div className="form-group override-input" style={{ marginLeft: '40px', marginTop: '10px' }}>
+                                <label htmlFor="customPaymentTerms"><FaFileAlt /> Custom Payment Terms *</label>
+                                <select 
                                     id="customPaymentTerms" 
                                     name="customPaymentTerms" 
-                                    placeholder="e.g., Net 15 Days, Due Upon Receipt"
-                                    required 
-                                    onChange={handleChange} 
                                     value={formData.customPaymentTerms}
-                                />
+                                    onChange={handleChange}
+                                    required // Ensures a selection is made if the toggle is on
+                                >
+                                    <option value="">-- Select Payment Term --</option>
+                                    {PAYMENT_TERMS_OPTIONS.map(term => (
+                                        <option key={term} value={term}>
+                                            {term}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         )}
-                    </div>
+                    </div> 
+
                 </div>
 
                 {/* 6. Form Actions */}
