@@ -1,28 +1,49 @@
-import React, { useState } from 'react';
-import { FaArrowUp, FaArrowDown, FaUsers, FaCar, FaFileInvoiceDollar, FaCalendarCheck } from 'react-icons/fa'; 
+import React, { useState, useEffect } from 'react'; 
+import { FaArrowUp, FaArrowDown, FaUsers, FaCar, FaFileInvoiceDollar, FaCalendarCheck, FaExclamationTriangle } from 'react-icons/fa'; 
+import apiClient from '../utils/apiClient'; 
+
+// --- Kanban Statuses for Display ---
+const KANBAN_STATUSES = [
+    { title: "Open Jobs", color: "#F59E0B" }, 
+    { title: "In Progress", color: "#6366F1" }, 
+    { title: "Ready for Pickup", color: "#10B981" }, 
+    { title: "Paid/Closed", color: "#94A3B8" } 
+];
 
 // ----------------------------------------------------
-// 1. StatCard Component (Defined locally)
+// 1. StatCard Component (Unchanged functionality)
 // ----------------------------------------------------
-const StatCard = ({ title, value, change, unit, color, icon: Icon }) => {
-    // Handling cases where change might be null or zero
+const StatCard = ({ title, value, change, unit, color, icon: Icon, statusAlert }) => {
     const changeValue = change !== null && change !== undefined ? change : '+0%';
+    
     const isPositive = changeValue.startsWith('+');
+    
     const ChangeIcon = isPositive ? FaArrowUp : FaArrowDown;
     const changeClass = isPositive ? 'text-positive' : 'text-negative';
-    const displayChange = changeValue === '+0%' ? '' : changeValue; // Don't show '+0%'
+    
+    const displayChange = changeValue === '+0.0%' ? '' : changeValue; 
+    
+    const cardClass = statusAlert === 'RED_ALERT' 
+        ? `stat-card-container alert-red` 
+        : `stat-card-container ${color}`; 
 
     return (
-        <div className="stat-card-container">
-            {/* Icon is placed next to the title */}
+        <div className={cardClass}>
             <div className="stat-card-header">
-                <div className={`stat-card-icon ${color}`}>
-                    <Icon size={20} /> 
-                </div>
                 <div className="stat-title">{title}</div>
+                <div className={`stat-card-icon ${color}`}> 
+                    <Icon size={18} /> {/* Reduced icon size */}
+                </div>
             </div>
             
-            <div className="stat-value">{value}</div>
+            <div className="stat-value-group">
+                <div className="stat-value">
+                    {value}
+                </div>
+                {statusAlert === 'RED_ALERT' && (
+                    <FaExclamationTriangle className="alert-icon" title="Client Count is Low!" />
+                )}
+            </div>
 
             <div className="stat-card-footer">
                 <span className={`stat-change ${changeClass}`}>
@@ -36,51 +57,123 @@ const StatCard = ({ title, value, change, unit, color, icon: Icon }) => {
 
 
 // ----------------------------------------------------
-// 2. Main Dashboard Component
+// 2. Kanban Board Placeholder Component
+// ----------------------------------------------------
+const KanbanBoardPlaceholder = () => (
+    <div className="kanban-section">
+        <h2 className="kanban-title">Job Card Workflow Status</h2>
+        <div className="kanban-grid-placeholder">
+            {KANBAN_STATUSES.map((status) => (
+                <div key={status.title} className="kanban-column-placeholder"> {/* Border removed here */}
+                    {/* Title color remains to distinguish columns */}
+                    <h3 className="column-title" style={{ color: status.color }}>
+                        {status.title} (0)
+                    </h3>
+                    <div className="column-content">
+                        <p>No active job cards in this stage.</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+        <p className="kanban-info">The full, interactive Job Card Kanban board will be implemented here for easy workflow management.</p>
+    </div>
+);
+
+
+// ----------------------------------------------------
+// 3. Main Dashboard Component (Unchanged functionality)
 // ----------------------------------------------------
 const Dashboard = ({ isSidebarCollapsed }) => { 
-    // State is clean for static display
-    const [stats] = useState({
-        totalClients: '2,500', 
-        totalVehicles: '1,800',
-        totalSales: 'Tsh 1,240,000',
-        totalAppointments: '15',
+    const [stats, setStats] = useState({ 
+        totalClients: '...', 
+        totalVehicles: '...',
+        totalSales: '...',
+        totalAppointments: '...',
+        clientChange: '+0.0%',
+        salesChange: '+0.0%', 
+        appointmentChange: '+0.0%', 
+        clientStatusAlert: 'OK',
     });
     
-    const [error] = useState(null); 
+    const [isLoading, setIsLoading] = useState(true); 
+    const [error, setError] = useState(null); 
     
-    // Prepare the stat cards
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            setIsLoading(true);
+            setError(null);
+            
+            try {
+                const metricsRes = await apiClient.get('/dashboard/metrics/'); 
+                const data = metricsRes.data;
+
+                setStats({
+                    totalClients: data.total_clients.toLocaleString(),
+                    totalVehicles: data.total_vehicles.toLocaleString(),
+                    totalSales: data.total_sales, 
+                    totalAppointments: data.total_appointments.toLocaleString(),
+                    clientChange: data.client_percentage_change, 
+                    salesChange: data.sales_percentage_change, 
+                    appointmentChange: data.appointment_percentage_change,
+                    clientStatusAlert: data.client_status_alert,
+                });
+                
+            } catch (err) {
+                console.error("Failed to fetch dashboard metrics:", err.response ? err.response.data : err.message);
+                
+                const status = err.response ? err.response.status : 'N/A';
+                setError(`Failed to load data. Status: ${status}. Check API or Auth.`);
+                
+                setStats({
+                    totalClients: 'Error',
+                    totalVehicles: 'Error',
+                    totalSales: 'Error',
+                    totalAppointments: 'Error',
+                    clientChange: '+0.0%',
+                    salesChange: '+0.0%',
+                    appointmentChange: '+0.0%',
+                    clientStatusAlert: 'ERROR',
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, []); 
+    
     const displayStats = [
         { 
             title: 'Total Clients', 
             value: stats.totalClients, 
-            change: '+5.7%', 
-            unit: 'than last month', 
-            color: 'text-info', 
-            icon: FaUsers 
+            change: stats.clientChange, 
+            unit: 'MoM New Clients', 
+            color: 'border-info', 
+            icon: FaUsers,
+            statusAlert: stats.clientStatusAlert,
         },
         { 
             title: 'Total Vehicles', 
             value: stats.totalVehicles, 
-            change: '-1.5%', 
-            unit: 'in inventory', 
-            color: 'text-warning', 
+            change: '+0.0%', 
+            unit: 'MoM Vehicle Adds', 
+            color: 'border-warning', 
             icon: FaCar 
         },
         { 
             title: 'Total Sales Orders', 
             value: stats.totalSales, 
-            change: '+7.5%', 
-            unit: 'This Month Revenue', 
-            color: 'text-success', 
+            change: stats.salesChange, 
+            unit: 'MoM Revenue Change', 
+            color: 'border-success', 
             icon: FaFileInvoiceDollar 
         },
         { 
             title: 'Total Appointments', 
             value: stats.totalAppointments, 
-            change: '+3.7%', 
-            unit: 'Next 7 Days', 
-            color: 'text-primary', 
+            change: stats.appointmentChange, 
+            unit: 'MoM Appointment Change', 
+            color: 'border-primary', 
             icon: FaCalendarCheck 
         },
     ];
@@ -88,15 +181,16 @@ const Dashboard = ({ isSidebarCollapsed }) => {
     return (
         <div className={`dashboard-page ${isSidebarCollapsed ? 'shifted' : ''}`}>
             <div className="dashboard-header-path">
-                <span className="path-home">Home</span>
-                <span className="path-current">/ Dashboard</span>
+                <h1 className="dashboard-title">Dashboard Overview</h1>
             </div>
             
             {/* 1. Quick Statistics */}
             <div className="dashboard-stats">
                 <div className="stat-card-grid">
-                    {error ? (
-                        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'red' }}>Error: {error}</p>
+                    {isLoading ? (
+                         <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748B' }}>Loading data...</p>
+                    ) : error ? (
+                        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#DC2626', fontWeight: 'bold' }}>{error}</p>
                     ) : (
                         displayStats.map((stat) => (
                             <StatCard 
@@ -108,151 +202,215 @@ const Dashboard = ({ isSidebarCollapsed }) => {
                 </div>
             </div>
             
-            {/* Placeholder for Main Content/Charts/Tables */}
-            <div className="main-content-placeholder">
-                <p>Welcome to your Auto Repair Shop dashboard. Real charts and tables coming soon...</p>
-            </div>
+            {/* 2. Kanban Board View */}
+            <KanbanBoardPlaceholder />
+            
 
             {/* ----------------------------------------------------------------- */}
-            {/* FINAL PREMIUM STYLES */}
+            {/* STYLES (MINIMAL & COMPACT) */}
             {/* ----------------------------------------------------------------- */}
             <style>{`
-                /* ----------------------------------------------------------------- */
-                /* DASHBOARD LAYOUT & BASE STYLES */
-                /* ----------------------------------------------------------------- */
                 .dashboard-page {
-                    padding: 30px; 
-                    background-color: #F8FAFC; /* Very light, cool gray page background */
+                    padding: 20px; /* Reduced padding */
+                    background-color: #F8F9FA; 
                     min-height: 100vh;
                     font-family: 'Inter', sans-serif, 'Helvetica Neue', Arial; 
-                    margin-left: 10px;
+                    margin-left: 0; /* Let main layout handle margin */
                     transition: margin-left 0.3s ease;
                 }
                 
                 .dashboard-page.shifted {
-                     margin-left: 80px; 
+                     margin-left: 70px; /* Reduced shift margin */
                 }
 
                 .dashboard-header-path {
-                    font-size: 16px;
-                    margin-bottom: 30px; 
-                    color: #94A3B8; /* Muted path color */
-                    font-weight: 500;
+                    margin-bottom: 20px; /* Reduced margin */
                 }
                 
-                .path-current {
+                .dashboard-title {
+                    font-size: 22px; /* Reduced title size */
                     font-weight: 700;
-                    color: #1E293B; /* Darker current path */
-                    margin-left: 5px;
+                    color: #1E293B;
                 }
 
                 .stat-card-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-                    gap: 25px; 
-                    margin-bottom: 40px;
-                }
-
-                /* ----------------------------------------------------------------- */
-                /* STAT CARD STYLES */
-                /* ----------------------------------------------------------------- */
-                .stat-card-container {
-                    background-color: #FFFFFF; /* Pure white card background */
-                    border-radius: 12px; 
-                    padding: 25px; 
-                    /* Layered shadow for depth: Subtle inner shadow + soft outer shadow */
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 15px 30px rgba(0, 0, 0, 0.05);
-                    position: relative;
-                    display: flex;
-                    flex-direction: column;
-                    min-height: 140px;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    border: 1px solid #E2E8F0; /* Very subtle border for definition */
+                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Minimized card width */
+                    gap: 15px; /* Reduced gap */
+                    margin-bottom: 30px;
                 }
                 
+                /* KANBAN STYLES (Minimized and Borderless) */
+                .kanban-section {
+                    background-color: #FFFFFF;
+                    border-radius: 8px; /* Slightly smaller radius */
+                    padding: 20px; /* Reduced padding */
+                    margin-bottom: 30px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); 
+                    border: 1px solid #E5E7EB; 
+                }
+
+                .kanban-title {
+                    color: #1E293B;
+                    font-size: 18px; /* Reduced size */
+                    font-weight: 700;
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid #F3F4F6;
+                    padding-bottom: 10px;
+                }
+                
+                .kanban-grid-placeholder {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Minimized column width */
+                    gap: 15px;
+                }
+
+                .kanban-column-placeholder {
+                    background-color: #FAFAFA;
+                    border-radius: 6px; 
+                    padding: 0;
+                    min-height: 150px; /* Reduced min height */
+                    border-left: none; /* --- REMOVED BORDER --- */
+                    border: 1px solid #F3F4F6; /* Light surrounding border */
+                    overflow: hidden;
+                    box-shadow: none; 
+                }
+                
+                .column-title {
+                    background-color: transparent; 
+                    padding: 10px 15px; /* Reduced padding */
+                    margin-top: 0;
+                    font-size: 14px; 
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    border-bottom: 1px solid #E5E7EB;
+                }
+                
+                .column-content {
+                    padding: 10px;
+                    color: #6B7280;
+                    font-size: 13px; /* Reduced size */
+                    text-align: center;
+                }
+                
+                .kanban-info {
+                    margin-top: 15px;
+                    font-style: italic;
+                    color: #9CA3AF;
+                    font-size: 12px;
+                }
+                
+                /* STAT CARD STYLES (COMPACT) */
+                .stat-card-container {
+                    background-color: #FFFFFF; 
+                    border-radius: 8px; /* Reduced radius */
+                    padding: 15px; /* Reduced padding */
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); 
+                    border: 1px solid #E5E7EB; 
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 120px; /* Reduced min height */
+                    transition: all 0.2s ease-in-out;
+                    border-left: 4px solid #E5E7EB; /* Reduced border thickness */
+                }
+                
+                /* Dynamic Left Borders based on passed color class */
+                .stat-card-container.border-primary { border-left-color: #6366F1; } 
+                .stat-card-container.border-warning { border-left-color: #F59E0B; } 
+                .stat-card-container.border-success { border-left-color: #10B981; } 
+                .stat-card-container.border-info { border-left-color: #0EA5E9; } 
+
                 .stat-card-container:hover {
-                    transform: translateY(-5px); /* Stronger lift on hover */
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08), 0 20px 40px rgba(0, 0, 0, 0.08); /* Highlighted shadow */
+                    transform: translateY(-3px); /* Reduced lift */
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* Reduced shadow */
                 }
                 
                 .stat-card-header {
                     display: flex;
-                    align-items: center;
-                    margin-bottom: 5px;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 5px; /* Reduced margin */
                 }
 
                 .stat-card-icon {
-                    width: 32px;
-                    height: 32px;
+                    width: 36px; /* Reduced size */
+                    height: 36px; 
+                    font-size: 18px; 
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    border-radius: 6px;
-                    color: #FFFFFF; /* White icon always */
-                    margin-right: 10px;
-                    opacity: 1;
+                    border-radius: 50%; 
                 }
                 
+                /* Icon colors */
+                .stat-card-icon.border-primary { color: #6366F1; background-color: #EEF2FF; } 
+                .stat-card-icon.border-warning { color: #F59E0B; background-color: #FFFBEB; } 
+                .stat-card-icon.border-success { color: #10B981; background-color: #ECFDF5; } 
+                .stat-card-icon.border-info { color: #0EA5E9; background-color: #EFF6FF; } 
+
+
                 .stat-title {
-                    font-size: 14px;
-                    color: #64748B; /* Muted gray for title */
-                    font-weight: 500; 
+                    font-size: 12px; /* Reduced size */
+                    font-weight: 600; 
                     text-transform: uppercase;
-                    letter-spacing: 0.5px;
+                    letter-spacing: 0.5px; 
                 }
                 
+                .stat-value-group {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 8px; /* Reduced margin */
+                }
+
                 .stat-value {
-                    font-size: 38px; /* Bigger, bolder value */
-                    font-weight: 800; 
-                    color: #1E293B; /* High-contrast text */
-                    line-height: 1.1;
-                    margin: 8px 0 10px 0; /* Tighter spacing to header/footer */
+                    font-size: 32px; /* Significantly reduced value size */
+                    font-weight: 900; 
+                    color: #1F2937; 
+                    line-height: 1;
+                }
+
+                .alert-icon {
+                    font-size: 18px; /* Reduced size */
+                    margin-left: 8px;
                 }
 
                 .stat-card-footer {
-                    border-top: 1px solid #F1F5F9; /* Very light divider */
-                    padding-top: 15px;
-                    margin-top: auto; /* Push footer to bottom */
-                    font-size: 14px;
+                    border-top: 1px dashed #F3F4F6; 
+                    padding-top: 10px; /* Reduced padding */
+                    margin-top: auto; 
+                    font-size: 12px; /* Reduced size */
                     display: flex;
                     justify-content: space-between;
+                    align-items: center;
+                }
+                
+                .change-icon {
+                    font-size: 8px; /* Reduced size */
+                    margin-left: 4px;
                 }
 
                 .stat-change {
-                    font-weight: 600;
-                    margin-right: 8px;
+                    font-weight: 700; 
+                    margin-right: 5px;
                 }
                 
-                .text-positive {
-                    color: #10B981; /* Tailwind Emerald Green */
-                }
-                .text-negative {
-                    color: #EF4444; /* Tailwind Red */
-                }
+                .text-positive { color: #10B981; }
+                .text-negative { color: #EF4444; }
                 
                 .stat-unit {
-                    color: #64748B;
-                    font-weight: 400;
+                    color: #9CA3AF; 
+                    font-weight: 500;
                 }
 
-                /* ----------------------------------------------------------------- */
-                /* COLOR UTILITIES (Used for ICON BACKGROUND) */
-                /* ----------------------------------------------------------------- */
-                .text-primary { background-color: #6366F1; } /* Indigo */
-                .text-warning { background-color: #FBBF24; } /* Amber */
-                .text-success { background-color: #10B981; } /* Emerald */
-                .text-info { background-color: #06B6D4; } /* Cyan */
+                .stat-card-container.alert-red {
+                    border: 2px solid #EF4444; 
+                    box-shadow: 0 0 10px rgba(248, 113, 113, 0.4); 
+                }
                 
-                /* Main Content Placeholder style refined */
-                .main-content-placeholder {
-                    background-color: #FFFFFF;
-                    border-radius: 12px;
-                    padding: 40px;
-                    min-height: 300px;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 15px 30px rgba(0, 0, 0, 0.05);
-                    color: #64748B;
-                    text-align: center;
-                    border: 1px solid #E2E8F0;
+                @keyframes pulse {
+                  0% { opacity: 0.6; }
+                  50% { opacity: 1.0; }
+                  100% { opacity: 0.6; }
                 }
             `}</style>
         </div>

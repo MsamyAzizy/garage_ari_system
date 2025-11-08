@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'; 
 // 🛑 Added useLocation to read state from navigation
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom'; 
-import { FaCar, FaPlusCircle, FaPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'; // 🛑 Added icons
+import { FaCar, FaPlusCircle, FaPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'; // 🛑 Added FaWrench for Job Card
 
 // 🛑 IMPORTANT: Import the apiClient instance
 import apiClient from '../utils/apiClient';
@@ -18,7 +18,6 @@ import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';         
 import ClientsList from '../components/ClientsList';     
 import ClientForm from '../components/ClientDetailForm';   
-// Importing all sub-components
 import VehicleForm from '../components/VehicleForm'; 
 import InventoryForm from '../components/InventoryForm'; 
 import TireForm from '../components/TireForm'; 
@@ -30,6 +29,11 @@ import VendorForm from '../components/VendorForm';
 import AppointmentForm from '../components/AppointmentForm';
 // 🏆 NEW: Import the Footer component
 import Footer from '../components/Footer';
+
+// 🚀 NEW: Import the Kanban Component
+import JobCardKanban from '../components/JobCardKanban';
+// 🏆 NEW: Import the Job Card Form Component
+import JobCardForm from '../components/JobCardForm';
 
 
 // Define common colors for the Toast
@@ -105,7 +109,7 @@ const ToastNotification = ({ message, type, duration = 2000, onClose }) => {
 const VehicleList = ({ navigateTo, vehicles }) => (
     <div className="list-page-container">
         <header className="page-header vehicle-list-header">
-            <h2 style={{ flexGrow: 1 }}><FaCar style={{ marginRight: '8px' }}/> Vehicle List ({vehicles.length})</h2>
+            <h2 style={{ flexGrow: 1 }}><FaCar style={{ marginRight: '8px' }}/> Customer Vehicles ({vehicles.length})</h2>
             <button 
                 className="btn-primary-action" 
                 onClick={() => navigateTo('/vehicles/new')}
@@ -173,7 +177,6 @@ const Home = () => {
         if (location.state?.successMessage) {
             setAppToast({ message: location.state.successMessage, type: 'success' });
             // Clear the state so the message doesn't reappear on subsequent visits
-            // This requires modifying the history state manually
             navigate(location.pathname, { replace: true, state: {} });
         } else if (location.state?.errorMessage) {
             setAppToast({ message: location.state.errorMessage, type: 'error' });
@@ -405,6 +408,7 @@ const Home = () => {
 
     const handleVendorSave = (data) => {
         console.log("Vendor Saved!", data);
+        // Note: The inventory path is '/inventory/vendors', but the sidebar uses '/vendors/add'
         navigate('/inventory/vendors');
     };
 
@@ -421,6 +425,12 @@ const Home = () => {
         navigate('/appointments'); 
     };
 
+    // Note: JobCardForm handles its own submission/navigation internally,
+    // but these mock handlers are provided for consistency if needed later.
+    const handleJobCardCancel = () => {
+        navigate('/jobcards/kanban'); 
+    };
+
 
     // Dynamic Props for TopNavBar
     const navBarProps = {
@@ -430,7 +440,7 @@ const Home = () => {
             : 'Loading User...',
         shopLocation: user?.email || "No Email Provided", 
     };
-
+    
     // RENDER MAIN APPLICATION LAYOUT
     return (
         <div className="app-container"> 
@@ -491,16 +501,25 @@ const Home = () => {
                             element={<AppointmentForm onSave={handleAppointmentSave} onCancel={handleAppointmentCancel} />} 
                         />
                         
-                        {/* JOB CARDS ROUTE */}
+                        {/* JOB CARDS ROUTES */}
+                        {/* 1. Redirect /jobcards to the primary Kanban view */}
                         <Route 
                             path="/jobcards" 
-                            element={
-                                <div className="list-page-container">
-                                    <header className="page-header"><h2>Job Card List</h2></header>
-                                    <p style={{padding: '20px'}}>Job Card List Page Content Placeholder - Will integrate with Django API soon.</p>
-                                </div>
-                            } 
+                            element={<Navigate to="/jobcards/kanban" replace />}
                         />
+
+                        {/* 2. Kanban Board Route */}
+                        <Route 
+                            path="/jobcards/kanban" 
+                            element={<JobCardKanban />} 
+                        />
+
+                        {/* 3. 🏆 NEW: Route for creating a new job card */}
+                        <Route 
+                            path="/jobcards/new" 
+                            element={<JobCardForm onCancel={handleJobCardCancel} />} 
+                        />
+
 
                         {/* Clients Routes */}
                         <Route path="/clients" element={<ClientsList />} />
@@ -543,19 +562,19 @@ const Home = () => {
                         
                         {/* INVENTORY SUB-ROUTES (Adding Items) */}
                         <Route 
-                            path="/inventory/parts/add" 
+                            path="/inventory/parts" 
                             element={<InventoryForm onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} />} 
                         />
                         <Route 
-                            path="/inventory/labor/add" 
+                            path="/inventory/labor" 
                             element={<LaborForm onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} navigateTo={handleNavigate} />} 
                         />
                         <Route 
-                            path="/inventory/tires/add" 
+                            path="/inventory/tires" 
                             element={<TireForm onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} navigateTo={handleNavigate} />} 
                         />
                         <Route 
-                            path="/inventory/canned-jobs/add" 
+                            path="/inventory/canned-jobs" 
                             element={<CannedJobForm onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} navigateTo={handleNavigate} />} 
                         />
                         
@@ -586,9 +605,13 @@ const Home = () => {
                         
                         
                         {/* Other Placeholder Routes */}
-                        <Route path="/invoices" element={<div className="list-page-container"><header className="page-header"><h2>Invoices</h2></header></div>} />
-                        <Route path="/reports" element={<div className="list-page-container"><header className="page-header"><h2>Reports</h2></header></div>} />
-                        <Route path="/settings" element={<div className="list-page-container"><header className="page-header"><h2>Settings</h2></header></div>} />
+                        <Route path="/invoices-estimates" element={<div className="list-page-container"><header className="page-header"><h2>Invoices & Estimates</h2></header></div>} />
+                        <Route path="/payments" element={<div className="list-page-container"><header className="page-header"><h2>Payments</h2></header></div>} />
+                        <Route path="/accounting" element={<div className="list-page-container"><header className="page-header"><h2>Accounting</h2></header></div>} />
+                        <Route path="/reminders" element={<div className="list-page-container"><header className="page-header"><h2>Service Reminders</h2></header></div>} />
+                        <Route path="/purchaseorder" element={<div className="list-page-container"><header className="page-header"><h2>Purchase Order</h2></header></div>} />
+                        <Route path="/reports" element={<div className="list-page-container"><header className="page-header"><h2>Reports Analysis</h2></header></div>} />
+                        <Route path="/configuration" element={<div className="list-page-container"><header className="page-header"><h2>Configuration</h2></header></div>} />
                         
                         {/* 🛑 Fallback Route (Catch-all for mistyped paths) */}
                         <Route path="*" element={<Navigate to="/dashboard" replace />} /> 
@@ -634,14 +657,14 @@ const Home = () => {
                 /* CRITICAL LAYOUT FIX (Main Content Positioning) */
                 /* ----------------------------------------------------------------- */
                 .main-content-wrapper {
-                    /* Start content right after the sidebar's default width (220px) */
-                    margin-left: 220px; 
+                    /* 🔑 FIX: Start content right after the sidebar's default width (250px) */
+                    margin-left: 250px; 
                     /* Pushes the content away from the fixed TopNavBar (60px tall, plus buffer) */
                     padding-top: 70px; 
                     flex-grow: 1;
                     min-height: 100vh; 
                     transition: margin-left 0.3s ease;
-                    width: calc(100% - 220px); /* Adjust width to fit the margin */
+                    width: calc(100% - 250px); /* Adjust width to fit the margin */
                     box-sizing: border-box;
 
                     /* 🏆 STICKY FOOTER FIX: Make wrapper a flex container */
