@@ -1,7 +1,4 @@
-// src/components/ClientsList.js - Fetches client data from the Django API
-
-import React, { useState, useEffect, useCallback } from 'react';
-// Removed FaCheckCircle import as it's no longer used for the toast
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
     FaUserFriends, 
     FaPlusCircle, 
@@ -10,7 +7,14 @@ import {
     FaSpinner, 
     FaChevronLeft, 
     FaChevronRight,
-    FaArrowLeft // Added icon for "Back" button
+    FaArrowLeft, 
+    FaCheckCircle, 
+    FaExclamationTriangle, 
+    FaEdit, 
+    FaTrashAlt, 
+    // 🏆 NEW ICONS FOR IMPORT/EXPORT
+    FaFileImport, 
+    FaFileExport,
 } from 'react-icons/fa'; 
 // Use useLocation to read navigation state
 import { useNavigate, useLocation } from 'react-router-dom'; 
@@ -20,17 +24,27 @@ import apiClient from '../utils/apiClient';
 
 // Define theme colors for consistency (Used in static styling)
 const PRIMARY_BLUE = '#5d9cec';
-const BG_CARD_DARK = '#2c3848';
-const TEXT_PRIMARY_DARK = '#ffffff';
-const TEXT_MUTED_DARK = '#aeb8c8';
-const INPUT_BORDER_DARK = '#38465b'; 
+// 🏆 UPDATED FOR LIGHT THEME (Keep these for the main app)
+const BG_MAIN_LIGHT = '#f4f7f9'; // Very light grey/white background
+const BG_CARD_LIGHT = '#ffffff'; // White background for the card
+const TEXT_PRIMARY_LIGHT = '#333333'; // Dark text
+const TEXT_MUTED_LIGHT = '#6c757d'; // Muted grey text
+const INPUT_BORDER_LIGHT = '#e5e5e5'; // Light border
+
+// 🏆 ADDED DARK MODE CONSTANTS ONLY FOR MODAL 🏆
+const BG_MODAL_DARK = '#252524ff'; // Slightly lighter dark for the modal card
+const TEXT_PRIMARY_DARK = '#ffffff'; // White text for modal content
+const TEXT_MUTED_DARK = '#aeb8c8'; // Light grey muted text for modal content
+const INPUT_BORDER_DARK = '#4a5568'; // Dark border for modal elements
+
 const DANGER_RED = '#ff4d4f'; 
 // NEW CONSTANT FOR EDIT BUTTON ORANGE 
 const EDIT_ORANGE = '#ffa726'; 
-// Green color for success notification (Kept for buttons/styles, but not for toast logic)
+// Green color for success notification (UNCOMMENTED/ADDED BACK)
 const SUCCESS_GREEN = '#2ecc71'; 
 const ERROR_RED = '#e74c3c'; 
-//const YELLOW_WARNING = '#ffc107'; // For warning/highlight
+// Grey/Silver color for secondary actions (UNCOMMENTED/ADDED BACK)
+//const SECONDARY_ACTION_COLOR = '#95a5a6'; // Re-adding a clear color for light mode secondary actions, or using a specific dark shade for the modal cancel button.
 
 // Define the assumed items per page (must match your backend's page size)
 const ITEMS_PER_PAGE = 10;
@@ -43,10 +57,25 @@ const ITEMS_PER_PAGE = 10;
  * Renders the Google-style numbered pagination control.
  */
 const PaginationControl = ({ currentPage, totalPages, totalItems, onPageChange }) => {
-    if (totalPages <= 1) return null;
+    if (totalPages <= 1 && totalItems <= ITEMS_PER_PAGE) return null; // Hide if less than or equal to one page
 
     // Generate visible page numbers (e.g., [1, 2, 3, 4, 5])
-    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+    // Instead of showing all, let's limit it for cleaner design, typically 5 pages centered around the current page
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    if (currentPage <= 3) {
+        endPage = Math.min(totalPages, 5);
+        startPage = 1;
+    } else if (currentPage > totalPages - 2) {
+        startPage = Math.max(1, totalPages - 4);
+        endPage = totalPages;
+    }
+
+    const pageNumbers = [];
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+    }
     
     // 🏆 CORRECTED LOGIC FOR PER-PAGE RANGE DISPLAY 🏆
     // Page 1: (1-1) * 10 + 1 = 1
@@ -79,10 +108,10 @@ const PaginationControl = ({ currentPage, totalPages, totalItems, onPageChange }
                 <a 
                     href="/#" 
                     onClick={(e) => handlePageClick(currentPage - 1, e)}
-                    className={`pagination-link ${currentPage === 1 ? 'disabled' : ''}`}
+                    className={`pagination-link prev-next-link ${currentPage === 1 ? 'disabled' : ''}`}
                     aria-disabled={currentPage === 1}
                 >
-                    <FaChevronLeft size={10} style={{marginRight: '3px'}}/> Previous
+                    <FaChevronLeft size={10} style={{marginRight: '5px'}}/> Previous
                 </a>
 
                 {/* Page Numbers */}
@@ -96,15 +125,30 @@ const PaginationControl = ({ currentPage, totalPages, totalItems, onPageChange }
                         {number}
                     </a>
                 ))}
+                
+                {/* Optional Dots (if total pages is large and not all pages are shown) */}
+                {totalPages > 5 && endPage < totalPages && <span className="pagination-dots">...</span>}
+                
+                {/* Optional Last Page Link (if dots are showing) */}
+                {totalPages > 5 && endPage < totalPages && !pageNumbers.includes(totalPages) && (
+                    <a 
+                        href="/#"
+                        onClick={(e) => handlePageClick(totalPages, e)}
+                        className={`pagination-link ${totalPages === currentPage ? 'active' : ''}`}
+                    >
+                        {totalPages}
+                    </a>
+                )}
+
 
                 {/* 'Next' Button */}
                 <a 
                     href="/#" 
                     onClick={(e) => handlePageClick(currentPage + 1, e)}
-                    className={`pagination-link ${currentPage === totalPages ? 'disabled' : ''}`}
+                    className={`pagination-link prev-next-link ${currentPage === totalPages ? 'disabled' : ''}`}
                     aria-disabled={currentPage === totalPages}
                 >
-                    Next <FaChevronRight size={10} style={{marginLeft: '3px'}}/>
+                    Next <FaChevronRight size={10} style={{marginLeft: '5px'}}/>
                 </a>
             </div>
         </div>
@@ -116,6 +160,9 @@ const PaginationControl = ({ currentPage, totalPages, totalItems, onPageChange }
 // CLIENTS LIST COMPONENT (Main)
 // -----------------------------------------------------------------
 const ClientsList = () => {
+    // 🏆 NEW: useRef to reference the hidden file input
+    const fileInputRef = useRef(null);
+    
     // Client data
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -130,15 +177,18 @@ const ClientsList = () => {
     const [searchTerm, setSearchTerm] = useState(''); 
 
     const navigate = useNavigate();
-    const location = useLocation();
+    const location = useLocation(); 
     
     // Custom Delete Modal State
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [clientToDelete, setClientToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     
-    // REMOVED: STATE for Notification
-    // const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+    // 🏆 ADDED: STATE for Notification
+    const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+    
+    // 🏆 NEW: State for tracking import progress/status
+    const [isImporting, setIsImporting] = useState(false);
 
     // Helper to determine the client's name
     const getClientName = (client) => {
@@ -158,6 +208,19 @@ const ClientsList = () => {
         }
         return cleanedNotes;
     };
+
+
+    // -----------------------------------------------------------------
+    // 🏆 FUNCTION: Show Notification
+    // -----------------------------------------------------------------
+    const showToastNotification = (message, type = 'success') => {
+        setNotification({ show: true, message, type });
+        // Automatically hide notification after 4 seconds
+        setTimeout(() => {
+            setNotification({ show: false, message: '', type: '' });
+        }, 4000); 
+    };
+    // -----------------------------------------------------------------
 
 
     // -----------------------------------------------------------------
@@ -237,21 +300,103 @@ const ClientsList = () => {
 
 
     // -----------------------------------------------------------------
-    // REMOVED: FUNCTION: Show Notification
-    // The logic below has been removed:
-    /*
-    const showToastNotification = (message, type = 'success') => {
-        setNotification({ show: true, message, type });
-        // Automatically hide notification after 3 seconds
-        setTimeout(() => {
-            setNotification({ show: false, message: '', type: '' });
-        }, 3000);
+    // 🏆 UPDATED: IMPORT HANDLERS (Directly opens file dialog and uploads)
+    // -----------------------------------------------------------------
+    
+    const handleImport = () => {
+        // Only allow import if no other import is currently in progress
+        if (!isImporting) {
+            // Programmatically trigger the click on the hidden file input
+            fileInputRef.current.click();
+        } else {
+            showToastNotification('An import is already in progress.', 'info');
+        }
     };
-    */
+
+    const handleFileSelection = async (event) => {
+        const file = event.target.files[0];
+
+        if (!file) {
+            // User cancelled the file selection
+            event.target.value = null; 
+            return;
+        }
+
+        const clientName = file.name;
+        
+        // Reset the file input value so selecting the same file again triggers onChange
+        event.target.value = null; 
+        
+        setIsImporting(true);
+        showToastNotification(`Processing file **${clientName}**... Uploading to API.`, 'info');
+        
+        // 🏆 ACTUAL FILE UPLOAD LOGIC 🏆
+        const formData = new FormData();
+        // IMPORTANT: 'file' must match the field name your backend expects for the uploaded file
+        formData.append('file', file); 
+        
+        try {
+            // Perform the file upload using the POST method
+            const response = await apiClient.post('/clients/import/', formData, {
+                headers: { 
+                    // This header tells the backend it's a file upload
+                    'Content-Type': 'multipart/form-data' 
+                },
+            });
+            
+            // Assume the API returns { message: "..." } on success
+            const successMsg = response.data.message || `Client data successfully imported from **${clientName}**!`;
+
+            showToastNotification(successMsg, 'success');
+            // Refresh the client list after a successful import
+            await fetchClients(searchTerm, currentPage); 
+
+        } catch (err) {
+            console.error("Client import error:", err.response ? err.response.data : err.message);
+            
+            // Attempt to extract a meaningful error message from the backend response
+            let errorMsg = err.response?.data?.detail || err.response?.data?.error || err.response?.data?.file?.[0] || 'Unknown error occurred.';
+            
+            // Fallback for network issues
+            if (!err.response) {
+                errorMsg = 'Network Error. Could not connect to API.';
+            }
+
+            showToastNotification(`Failed to import client data from **${clientName}**. ${errorMsg}`, 'error');
+        } finally {
+            setIsImporting(false);
+        }
+    };
+    
+    const handleExport = async () => {
+        try {
+            // Assuming your Django API has an endpoint that returns a file stream (e.g., CSV)
+            const response = await apiClient.get('/clients/export/', {
+                responseType: 'blob', // Important for handling file downloads
+            });
+            
+            // Create a blob URL and trigger download
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'clients_export.csv'); // Default filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToastNotification('Client data export successfully started!', 'success');
+
+        } catch (err) {
+            console.error("Client export error:", err.response ? err.response.data : err.message);
+            showToastNotification('Failed to export client data. Check API endpoint.', 'error');
+        }
+    };
+    
     // -----------------------------------------------------------------
 
+
     // -----------------------------------------------------------------
-    // EFFECT: Initial Load and Check for Save Success/Error Message
+    // EFFECT TO CONSUME AND CLEAR NAVIGATION STATE
     // -----------------------------------------------------------------
     useEffect(() => {
         // Initial fetch on mount (only if search is empty, otherwise search does the initial fetch)
@@ -259,20 +404,26 @@ const ClientsList = () => {
             fetchClients('', 1);
         }
         
-        // IMPORTANT: Check for save/error messages from navigation state
-        if (location.state && (location.state.errorMessage || location.state.successMessage)) {
-            let message = location.state.errorMessage || location.state.successMessage;
-            let type = location.state.errorMessage ? 'Error' : 'Success';
+        // IMPORTANT: Check for error messages from navigation state (SUCCESS MESSAGE IGNORED)
+        const navState = location.state;
+
+        if (navState && navState.errorMessage) {
+            const message = navState.errorMessage;
+            const type = 'error';
+
+            // 1. CRITICAL: Clear the state *first* and synchronously (as much as possible)
+            navigate(location.pathname, { replace: true, state: {} }); 
             
-            // ALERT: Using window.alert/console to show messages now that toast is removed
-            console.log(`[${type}] Message from navigation: ${message}`);
-            // If you still need to visually notify the user, you must replace the toast logic.
-            // For now, we are satisfying the request by removing the toast completely.
+            // 2. Now show the notification using the cached message/type.
+            showToastNotification(message, type);
             
-            // Use replace: true to clean up history state without adding a new entry
+        } else if (navState && navState.successMessage) {
+             // Clears success message immediately without showing the toast here
             navigate(location.pathname, { replace: true, state: {} }); 
         }
-    }, [location.state, navigate, location.pathname, fetchClients, searchTerm]); 
+        
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigate, location.pathname, fetchClients, searchTerm]); 
 
     const navigateToAddClient = () => {
         navigate('/clients/add');
@@ -296,23 +447,23 @@ const ClientsList = () => {
         setIsDeleting(true);
         
         try {
+            // Assuming this DELETE endpoint performs the 'deactivation' (soft delete)
             await apiClient.delete(`/clients/${clientToDelete.id}/`);
             
             // After successful deletion, refresh the current page 
-            // Use Math.max(1, currentPage) to ensure we don't land on page 0 if the last item of a page was deleted.
-            const pageToFetch = clients.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+            const pageToFetch = clients.length === 1 && totalClients > 1 && currentPage > 1 ? currentPage - 1 : currentPage;
             await fetchClients(searchTerm, pageToFetch);
             
             setShowDeleteModal(false);
             setClientToDelete(null);
             
-            // Replaced toast with a console log/alert
-            console.log(`Successfully deactivated client: ${clientName}.`);
+            // Show success notification for deactivation
+            showToastNotification(`Successfully deactivated client: **${clientName}**.`);
 
         } catch (err) {
             console.error("Client delete error:", err.response ? err.response.data : err.message);
-             // Replaced toast with a console log/alert
-            console.log(`Failed to deactivate client: ${clientName}.`);
+            // Show error notification
+            showToastNotification(`Failed to deactivate client: **${clientName}**. ${err.message || ''}`, 'error');
         } finally {
             setIsDeleting(false);
         }
@@ -323,6 +474,14 @@ const ClientsList = () => {
         setShowDeleteModal(false);
         setClientToDelete(null);
     };
+    
+    // -----------------------------------------------------------------
+    // HELPER: Navigate to Edit Client (used by the new link)
+    // -----------------------------------------------------------------
+    const navigateToEditClient = (clientId) => {
+        navigate(`/clients/${clientId}`);
+    };
+    // -----------------------------------------------------------------
 
 
     // -----------------------------------------------------------------
@@ -354,6 +513,38 @@ const ClientsList = () => {
                     initialTerm={searchTerm} // Added to keep search term visible in search box
                     placeholder="Search by name, email, tax ID..."
                 />
+                
+                {/* 🏆 NEW: Hidden File Input (For import dialog) */}
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelection}
+                    // IMPORTANT: Accept CSV/Excel file types
+                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    style={{ display: 'none' }} 
+                />
+
+                {/* 🏆 NEW: Import Button (Triggers hidden input click) */}
+                <button 
+                    className="btn-secondary-action import-export-btn" 
+                    onClick={handleImport} 
+                    title="Import Clients from CSV/Excel"
+                    disabled={isImporting} // Disable button while import is running
+                >
+                    {isImporting ? (
+                        <FaSpinner className="spin-icon" style={{ marginRight: '5px' }} />
+                    ) : (
+                        <FaFileImport style={{ marginRight: '5px' }} />
+                    )}
+                    {isImporting ? 'Importing...' : 'Import'}
+                </button>
+                
+                {/* 🏆 NEW: Export Button */}
+                <button className="btn-secondary-action import-export-btn" onClick={handleExport} title="Export All Clients to CSV/Excel">
+                    <FaFileExport style={{ marginRight: '5px' }} /> Export
+                </button>
+                
+                {/* Original Add Button */}
                 <button className="btn-primary-action" onClick={navigateToAddClient}>
                     <FaPlusCircle style={{ marginRight: '5px' }} /> Add New Client
                 </button>
@@ -366,7 +557,7 @@ const ClientsList = () => {
         return (
             <div className="list-page-container">
                 {renderHeader()}
-                <div style={{ textAlign: 'center', padding: '50px', fontSize: '18px', color: TEXT_MUTED_DARK }}>
+                <div style={{ textAlign: 'center', padding: '50px', fontSize: '18px', color: TEXT_MUTED_LIGHT }}>
                     <FaSpinner className="spin" style={{ marginRight: '10px' }}/> Loading client data...
                 </div>
                 <style jsx>{`
@@ -401,11 +592,6 @@ const ClientsList = () => {
                         background-color: #fdd; 
                         font-size: 18px;
                     }
-                    body.dark-theme .error-message-box {
-                        background-color: #5c1f24;
-                        color: #f5c6cb;
-                        border-color: #7e2a33;
-                    }
                 `}</style>
             </div>
         );
@@ -433,13 +619,9 @@ const ClientsList = () => {
                         padding: 50px; 
                         color: #999999; 
                         font-size: 18px; 
-                        background-color: #ffffff;
+                        background-color: ${BG_CARD_LIGHT};
                         border-radius: 8px;
                         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                    }
-                    body.dark-theme .list-empty-state {
-                        background-color: ${BG_CARD_DARK};
-                        color: ${TEXT_MUTED_DARK};
                     }
                 `}</style>
             </div>
@@ -474,9 +656,14 @@ const ClientsList = () => {
                                 return (
                                 <tr key={client.id} className="client-row">
                                     <td>
-                                        <span className="client-name-cell">
+                                        {/* Client Name Link */}
+                                        <button 
+                                            className="client-name-link"
+                                            onClick={() => navigateToEditClient(client.id)}
+                                            title={`View/Edit ${clientName}`}
+                                        >
                                             {clientName}
-                                        </span>
+                                        </button>
                                     </td>
                                     <td>
                                         {client.email}<br />
@@ -501,18 +688,23 @@ const ClientsList = () => {
                                             {truncateNotes(client.notes)}
                                         </span>
                                     </td>
-                                    <td style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}> 
+                                    <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}> 
+                                        {/* 🏆 UPDATED: Edit Button with Icon */}
                                         <button 
-                                            className="action-btn edit-action" 
+                                            className="icon-action-btn edit-icon" 
                                             onClick={() => navigate(`/clients/${client.id}`)}
+                                            title="Edit Client Profile"
                                         >
-                                            Edit
+                                            <FaEdit size={14} />
                                         </button>
+                                        
+                                        {/* 🏆 UPDATED: Delete Button with Icon */}
                                         <button 
-                                            className="action-btn delete-action" 
+                                            className="icon-action-btn delete-icon" 
                                             onClick={() => prepareDelete(client)}
+                                            title="Deactivate Client"
                                         >
-                                            Delete
+                                            <FaTrashAlt size={14} />
                                         </button>
                                     </td>
                                 </tr>
@@ -521,7 +713,7 @@ const ClientsList = () => {
                     </table>
                 </div>
                 
-                {/* 🏆 PAGINATION CONTROL INTEGRATION 🏆 */}
+                {/* PAGINATION CONTROL INTEGRATION */}
                 <PaginationControl 
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -530,44 +722,48 @@ const ClientsList = () => {
                 />
             </div>
             
-            {/* CUSTOM DELETE MODAL STRUCTURE */}
+            {/* CUSTOM DELETE MODAL STRUCTURE - UPDATED TEXT */}
             {showDeleteModal && clientToDelete && (
                 <div className="custom-modal-backdrop">
                     <div className="custom-modal">
-                        <div className="modal-header">
-                            <h4 className="modal-title">Confirm Client Deactivation</h4>
-                            <button className="close-btn" onClick={cancelDelete}>
-                                <FaTimes />
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <p>
-                                You are about to **deactivate** the client: 
-                                <span className="client-name-highlight"> {getClientName(clientToDelete)}</span>.
+                        {/* Close button at the top right */}
+                        <button className="modal-close-icon" onClick={cancelDelete}>
+                            <FaTimes />
+                        </button>
+
+                        <div className="modal-body-content">
+                            {/* Caution Icon */}
+                            <FaExclamationTriangle className="modal-caution-icon" size={30} />
+                            
+                            {/* UPDATED: Main Question */}
+                            <h4 className="modal-title-bold">Do you want to remove client?</h4>
+                            
+                            {/* UPDATED: Warning Text with Client Name */}
+                            <p className="modal-warning-secondary">
+                                If you remove client ({getClientName(clientToDelete)}), you cannot undo.
                             </p>
-                            <p className="warning-text">
-                                **Important:** Deactivating this client will remove them from the active list. 
-                                  Are you sure you want to delete this client..?
-                                </p>
                         </div>
+                        
                         <div className="modal-footer">
+                            {/* Button 1: Cancel (Secondary action) */}
                             <button 
-                                className="modal-btn btn-secondary" 
+                                className="modal-btn btn-secondary-action-styled" 
                                 onClick={cancelDelete} 
                                 disabled={isDeleting}
                             >
                                 Cancel
                             </button>
+                            {/* Button 2: Remove (Primary/Danger action) - Text changed to "Remove" */}
                             <button 
-                                className="modal-btn btn-danger" 
+                                className="modal-btn btn-danger-action-styled" 
                                 onClick={executeDelete}
                                 disabled={isDeleting}
                             >
                                 {isDeleting ? 
                                     (<>
-                                        <FaSpinner className="spin-icon" /> Deactivating...
+                                        <FaSpinner className="spin-icon" /> Removing...
                                     </>)
-                                    : 'Deactivate Client'
+                                    : 'Remove'
                                 }
                             </button>
                         </div>
@@ -575,472 +771,435 @@ const ClientsList = () => {
                 </div>
             )}
             
-            {/* REMOVED: TOAST NOTIFICATION COMPONENT (Top-Right Position) */}
-            {/* The entire block for {notification.show && (...) } is gone. */}
+            {/* TOAST NOTIFICATION COMPONENT (Top-Right Position) */}
+            {notification.show && (
+                <div className={`toast-notification ${notification.type}`}>
+                    {notification.type === 'success' ? <FaCheckCircle /> : <FaExclamationTriangle />}
+                    <span>{notification.message}</span>
+                </div>
+            )}
 
 
-            {/* --- STYLES INTEGRATED FOR A SMART, MODERN LOOK --- */}
-            <style jsx>{`
-                /* ----------------------------------------------------------------- */
-                /* Base Styles & Typography */
-                /* ----------------------------------------------------------------- */
-                
+            {/* --- STYLES INTEGRATED FOR A SMART, MODERN LOOK (UPDATED ONLY MODAL STYLES) --- */}
+            <style>{`
+                /* General Page Layout - Keep Light */
                 .list-page-container {
-                    padding: 0 10px 40px 20px;
-                    max-width: 2800px;
-                    margin: 0 auto;
-                    font-family: 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+                    padding: 25px;
+                    background-color: ${BG_MAIN_LIGHT}; /* Keep Light */
+                    min-height: 100vh;
+                    font-family: 'Inter', sans-serif, 'Helvetica Neue', Arial; 
                 }
                 
                 .page-header {
                     display: flex;
-                    align-items: center;
                     justify-content: space-between;
-                    padding: 0 0 15px 0;
-                    border-bottom: 1px solid #e0e0e0;
+                    align-items: center;
                     margin-bottom: 25px;
+                    padding-bottom: 15px;
+                    border-bottom: 1px solid ${INPUT_BORDER_LIGHT}; 
                 }
+
                 .page-header h2 {
-                    font-size: 15px; 
-                    font-weight: 700; 
-                    color: #333333;
-                }
-                body.dark-theme .page-header {
-                    border-bottom: 1px solid rgba(255,255,255,0.1);
-                }
-                body.dark-theme .page-header h2 {
-                    color: ${TEXT_PRIMARY_DARK};
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: ${TEXT_PRIMARY_LIGHT}; 
+                    display: flex;
+                    align-items: center;
                 }
                 
-                /* Search bar and button layout */
                 .search-and-button-container {
                     display: flex;
-                    gap: 15px;
                     align-items: center;
+                    gap: 10px;
                 }
                 
-                /* 🏆 UPDATED STYLE: Back to All Clients Button (GREEN) */
                 .btn-back-to-list {
-                    padding: 5px 10px;
-                    background-color: ${SUCCESS_GREEN}; /* Green background */
-                    color: white; /* White text for contrast */
-                    border: 1px solid ${SUCCESS_GREEN}; 
-                    border-radius: 4px;
-                    font-size: 14px;
-                    font-weight: 600; /* Bolder font weight */
+                    background: none;
+                    border: none;
+                    color: ${TEXT_MUTED_LIGHT}; 
                     cursor: pointer;
+                    padding: 8px 15px;
+                    border-radius: 6px;
+                    transition: background-color 0.2s;
+                    font-size: 14px;
+                    font-weight: 600;
                     display: flex;
                     align-items: center;
-                    transition: background-color 0.2s, opacity 0.2s;
-                    box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3); /* Subtle green shadow */
                 }
                 .btn-back-to-list:hover {
-                    background-color: #27ae60; /* Darker green on hover */
-                    border-color: #27ae60;
+                    background-color: #e9ecef; 
+                    color: ${TEXT_PRIMARY_LIGHT};
                 }
-                body.dark-theme .btn-back-to-list {
-                    background-color: ${SUCCESS_GREEN};
+                
+                /* Action Buttons (General) */
+                .btn-primary-action {
+                    background-color: ${PRIMARY_BLUE};
                     color: white;
-                    border-color: ${SUCCESS_GREEN};
+                    border: none;
+                    padding: 10px 18px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: background-color 0.2s;
+                    display: flex;
+                    align-items: center;
                 }
-                body.dark-theme .btn-back-to-list:hover {
-                    background-color: #27ae60;
+
+                .btn-primary-action:hover {
+                    background-color: #4a89dc;
                 }
                 
+                .btn-secondary-action {
+                    background-color: #f0f0f0; 
+                    color: ${TEXT_PRIMARY_LIGHT}; 
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: background-color 0.2s;
+                }
                 
-                /* Main Content Card */
+                .btn-secondary-action:hover {
+                    background-color: #e5e5e5; 
+                }
+                
+                /* Client Table Styles - Keep Light */
                 .client-list-container {
-                    padding: 0; 
-                    background-color: #ffffff;
-                    border-radius: 12px; 
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.08); 
-                    overflow: hidden; /* To handle table borders/shadows */
-                    border: 1px solid #e0e0e0; /* Added a subtle border */
+                    background-color: ${BG_CARD_LIGHT}; 
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+                    padding: 20px;
                 }
-                body.dark-theme .client-list-container {
-                    background-color: ${BG_CARD_DARK};
-                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-                    border: 1px solid ${INPUT_BORDER_DARK};
+
+                .client-table-responsive {
+                    overflow-x: auto;
                 }
 
                 .client-table {
                     width: 100%;
-                    border-collapse: collapse;
-                    border-spacing: 0;
-                }
-                
-                /* --- Table Cells & Headers --- */
-                .client-table th, .client-table td {
-                    padding: 15px 20px; /* Adjusted padding */
-                    text-align: left;
+                    border-collapse: separate;
+                    border-spacing: 0; 
                     font-size: 15px; 
-                    border-bottom: 1px solid #f0f0f0;
-                    color: #444444; 
-                    vertical-align: middle;
-                }
-                
-                body.dark-theme .client-table th, 
-                body.dark-theme .client-table td {
-                    border-bottom: 1px solid ${INPUT_BORDER_DARK}; 
-                    color: #cccccc; 
-                }
-                
-                .client-table th {
-                    background-color: #f8f8f8; 
-                    font-weight: 700; 
-                    color: #666666;
-                    text-transform: uppercase;
-                    font-size: 13px; 
-                    letter-spacing: 0.5px; 
-                }
-                body.dark-theme .client-table th {
-                    background-color: #38465b; /* Darker header background */
-                    color: ${TEXT_MUTED_DARK};
-                }
-                
-                /* Hover effect for rows */
-                .client-table tbody tr:hover {
-                    background-color: #f5f8ff; /* Lighter hover */
-                    cursor: default;
-                }
-                body.dark-theme .client-table tbody tr:hover {
-                    background-color: #334050;
                 }
 
-                /* --- ROW CONTENT STYLING --- */
-                .client-name-cell {
-                    font-weight: 200; 
-                    color: #222222; 
+                .client-table th {
+                    text-align: left;
+                    padding: 12px 15px;
+                    background-color: #f7f7f7; /* Light header background */
+                    color: ${TEXT_MUTED_LIGHT}; 
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    border-bottom: 2px solid ${INPUT_BORDER_LIGHT};
+                }
+
+                .client-table td {
+                    padding: 12px 15px;
+                    border-bottom: 1px solid ${INPUT_BORDER_LIGHT}; 
+                    vertical-align: middle;
+                    color: ${TEXT_PRIMARY_LIGHT}; 
+                }
+
+                .client-row:hover {
+                    background-color: #fafafa; 
+                }
+                
+                /* Client Name Link Styles */
+                .client-name-link {
+                    background: none;
+                    border: none;
+                    padding: 0;
+                    font-weight: 700; 
+                    color: ${PRIMARY_BLUE}; 
+                    cursor: pointer;
+                    text-align: left;
+                    transition: color 0.2s;
+                    text-decoration: none; 
                     font-size: 15px; 
                 }
-                body.dark-theme .client-name-cell {
-                    color: #ffffff;
+                
+                .client-name-link:hover {
+                    color: #4a89dc; 
                 }
 
                 .client-phone-small, .client-address-small {
-                    font-size: 15px; 
-                    color: #888888; 
-                    font-weight: 400;
+                    font-size: 13px; 
+                    color: ${TEXT_MUTED_LIGHT}; 
                     display: block;
-                }
-                body.dark-theme .client-phone-small, body.dark-theme .client-address-small {
-                    color: ${TEXT_MUTED_DARK};
+                    margin-top: 2px;
                 }
                 
-                /* Tax ID cell (New Style) */
-                .client-tax-id-cell {
-                    font-size: 15px;
-                    font-weight: 500;
-                    color: #555;
-                }
-                body.dark-theme .client-tax-id-cell {
-                    color: #ccc;
+                .client-tax-id-cell, .client-notes-cell {
+                    color: ${TEXT_MUTED_LIGHT}; 
                 }
                 
-                /* Notes cell styling (Truncation) */
-                .client-notes-cell {
-                    font-size: 14px;
-                    color: #666666;
-                    max-width: 180px; /* Adjusted max-width */
-                    overflow: hidden;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
-                }
-                body.dark-theme .client-notes-cell {
-                    color: #aeb8c8;
-                }
-
-                /* --- TYPE BADGES (Smart Look) --- */
+                /* Badges */
                 .client-type-badge {
                     display: inline-block;
-                    padding: 4px 10px; /* Reduced padding */
-                    border-radius: 14px; 
-                    font-size: 12px; /* Reduced font size */
-                    font-weight: 700;
-                    text-transform: capitalize; 
-                    letter-spacing: 0.2px;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px; 
+                    font-weight: 600;
+                    text-transform: uppercase;
                 }
                 .type-individual {
-                    background-color: #e6f7ff; 
-                    color: #1890ff; 
+                    background-color: #e3f2fd; 
+                    color: #1565c0; 
                 }
                 .type-company {
-                    background-color: #fffbe6; 
-                    color: #faad14; 
+                    background-color: #fffde7; 
+                    color: #fbc02d; 
                 }
-                /* Dark Mode Badges */
-                body.dark-theme .type-individual {
-                    background-color: #1d39c4; 
-                    color: #bae0ff; 
-                }
-                body.dark-theme .type-company {
-                    background-color: #7d4d00; 
-                    color: #ffe58f; 
-                }
-
-
-                /* --- Action Buttons --- */
-                .action-btn {
-                    padding: 6px 12px;
-                    border: none;
+                
+                /* Action Icons */
+                .icon-action-btn {
+                    background: none;
+                    border: 1px solid ${INPUT_BORDER_LIGHT};
+                    width: 30px;
+                    height: 30px;
                     border-radius: 4px;
-                    font-weight: 600;
                     cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                     transition: all 0.2s;
-                    font-size: 14px;
-                }
-                .edit-action {
-                    background-color: ${EDIT_ORANGE};
-                    color: white;
-                }
-                .edit-action:hover {
-                    background-color: #e69500;
-                }
-                .delete-action {
-                    background-color: ${DANGER_RED};
-                    color: white;
-                }
-                .delete-action:hover {
-                    background-color: #d13939;
-                }
-                
-                /* Button Add New Client */
-                .btn-primary-action {
-                    background-color: ${PRIMARY_BLUE};
-                    color: white;
-                    padding: 10px 15px;
-                    border: none;
-                    border-radius: 6px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    transition: background-color 0.2s;
-                }
-                .btn-primary-action:hover {
-                    background-color: #4a8ade;
-                }
-                
-                /* ----------------------------------------------------------------- */
-                /* Pagination Styles */
-                /* ----------------------------------------------------------------- */
-                .pagination-wrap {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 15px 20px; 
-                    border-top: 1px solid #e0e0e0;
-                    background-color: #fcfcfc;
-                    border-radius: 0 0 12px 12px;
-                }
-                body.dark-theme .pagination-wrap {
-                    border-top: 1px solid ${INPUT_BORDER_DARK};
-                    background-color: #26313f; 
-                }
-                
-                .pagination-range-text {
-                    font-size: 14px;
-                    color: #666;
-                    margin: 0;
-                }
-                body.dark-theme .pagination-range-text {
-                    color: ${TEXT_MUTED_DARK};
-                }
-                
-                .pagination-container {
-                    display: flex;
-                    gap: 5px;
-                }
-                .pagination-link {
-                    text-decoration: none;
-                    padding: 8px 12px;
-                    border-radius: 6px;
-                    color: ${PRIMARY_BLUE};
-                    font-weight: 600;
-                    font-size: 14px;
-                    transition: background-color 0.2s, color 0.2s;
-                    display: flex;
-                    align-items: center;
-                }
-                .pagination-link:hover:not(.active):not(.disabled) {
-                    background-color: #f0f5ff;
-                }
-                body.dark-theme .pagination-link:hover:not(.active):not(.disabled) {
-                    background-color: #38465b;
-                }
-                .pagination-link.active {
-                    background-color: ${PRIMARY_BLUE};
-                    color: white;
-                }
-                .pagination-link.disabled {
-                    color: #b0b0b0;
-                    cursor: not-allowed;
-                    opacity: 0.6;
+                    color: ${TEXT_MUTED_LIGHT};
                 }
 
-                /* ----------------------------------------------------------------- */
-                /* Modal Styles */
-                /* ----------------------------------------------------------------- */
+                .icon-action-btn:hover {
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                }
+
+                .edit-icon {
+                    color: ${EDIT_ORANGE};
+                }
+                .edit-icon:hover {
+                    background-color: #fff3e0; 
+                    border-color: ${EDIT_ORANGE};
+                }
+
+                .delete-icon {
+                    color: ${DANGER_RED};
+                }
+                .delete-icon:hover {
+                    background-color: #ffebee; 
+                    border-color: ${DANGER_RED};
+                }
+                
+                /* 🏆 Custom Modal Styles (UPDATED FOR DARK MODE) 🏆 */
                 .custom-modal-backdrop {
                     position: fixed;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background-color: rgba(0, 0, 0, 0.6);
+                    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker backdrop */
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    z-index: 1050;
+                    z-index: 1050; 
                 }
+
                 .custom-modal {
-                    background-color: #ffffff;
-                    border-radius: 8px;
+                    background-color: ${BG_MODAL_DARK}; /* 🏆 DARK MODAL BACKGROUND 🏆 */
+                    padding: 30px;
+                    border-radius: 10px;
                     width: 90%;
-                    max-width: 450px;
-                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                    overflow: hidden;
-                }
-                body.dark-theme .custom-modal {
-                    background-color: ${BG_CARD_DARK};
-                    border: 1px solid ${INPUT_BORDER_DARK};
+                    max-width: 400px;
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+                    position: relative;
                 }
 
-                .modal-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 15px 20px;
-                    border-bottom: 1px solid #e9ecef;
-                }
-                body.dark-theme .modal-header {
-                     border-bottom: 1px solid ${INPUT_BORDER_DARK};
-                }
-                
-                .modal-title {
-                    margin: 0;
-                    font-size: 18px;
-                    color: #333;
-                }
-                body.dark-theme .modal-title {
-                    color: ${TEXT_PRIMARY_DARK};
-                }
-
-                .close-btn {
+                .modal-close-icon {
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
                     background: none;
                     border: none;
-                    font-size: 20px;
+                    font-size: 18px;
                     cursor: pointer;
-                    color: #aaa;
-                    transition: color 0.2s;
+                    color: ${TEXT_MUTED_DARK}; /* Light grey text */
                 }
-                .close-btn:hover {
-                    color: #555;
-                }
-                body.dark-theme .close-btn {
-                    color: ${TEXT_MUTED_DARK};
+                .modal-close-icon:hover {
+                    color: ${TEXT_PRIMARY_DARK}; 
                 }
 
-                .modal-body {
-                    padding: 20px;
-                    font-size: 16px;
-                    color: #444;
-                }
-                body.dark-theme .modal-body {
-                    color: #cccccc;
+
+                .modal-body-content {
+                    text-align: center;
+                    margin-bottom: 20px;
                 }
 
-                .client-name-highlight {
-                    font-weight: 700;
-                    color: ${PRIMARY_BLUE};
-                }
-                .warning-text {
+                .modal-caution-icon {
                     color: ${DANGER_RED};
-                    margin-top: 15px;
-                    padding: 10px;
-                    background-color: #ffe6e6;
-                    border-radius: 4px;
-                    border-left: 4px solid ${DANGER_RED};
-                }
-                body.dark-theme .warning-text {
-                    background-color: #5c1f24;
-                    color: #ffb8b8;
-                    border-color: ${DANGER_RED};
+                    margin-bottom: 15px;
                 }
 
+                .modal-title-bold {
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: ${TEXT_PRIMARY_DARK}; /* White text */
+                    margin: 0 0 10px 0;
+                }
+
+                .modal-warning-secondary {
+                    color: ${TEXT_MUTED_DARK}; /* Muted light text */
+                    font-size: 14px;
+                    margin: 0;
+                }
+                
                 .modal-footer {
-                    padding: 15px 20px;
-                    border-top: 1px solid #e9ecef;
                     display: flex;
                     justify-content: flex-end;
                     gap: 10px;
-                }
-                body.dark-theme .modal-footer {
-                     border-top: 1px solid ${INPUT_BORDER_DARK};
+                    border-top: 1px solid ${INPUT_BORDER_DARK}; /* Dark border line */
+                    padding-top: 20px;
                 }
 
                 .modal-btn {
-                    padding: 10px 15px;
-                    border-radius: 4px;
-                    font-weight: 600;
+                    padding: 10px 18px;
+                    border: none;
+                    border-radius: 6px;
                     cursor: pointer;
-                    transition: opacity 0.2s;
+                    font-weight: 600;
+                    transition: background-color 0.2s;
                 }
-                .modal-btn.btn-secondary {
-                    background-color: #f8f9fa;
-                    color: #333;
-                    border: 1px solid #ddd;
+
+                /* 🏆 Cancel Button Updated for Dark Mode 🏆 */
+                .btn-secondary-action-styled {
+                    background-color: ${INPUT_BORDER_DARK}; /* Dark grey background */
+                    color: ${TEXT_PRIMARY_DARK}; /* White text */
                 }
-                .modal-btn.btn-secondary:hover {
-                    background-color: #e2e6ea;
+                .btn-secondary-action-styled:hover {
+                    background-color: #6a7488;
                 }
-                body.dark-theme .modal-btn.btn-secondary {
-                    background-color: ${INPUT_BORDER_DARK};
-                    color: ${TEXT_PRIMARY_DARK};
-                    border-color: #555;
-                }
-                body.dark-theme .modal-btn.btn-secondary:hover {
-                    background-color: #555;
-                }
-                .modal-btn.btn-danger {
+
+                .btn-danger-action-styled {
                     background-color: ${DANGER_RED};
                     color: white;
                 }
-                .modal-btn.btn-danger:hover {
-                    background-color: #c82333;
+                .btn-danger-action-styled:hover {
+                    background-color: #cc0000;
                 }
-                .spin-icon {
-                    animation: spin 1s linear infinite;
-                }
-
-                /* ----------------------------------------------------------------- */
-                /* TOAST NOTIFICATION STYLES (REMOVED COMPONENT, KEEPING STYLES) */
-                /* ----------------------------------------------------------------- */
-                /* These styles are left here but the component is removed */
-                /*
+                
+                /* Toast Notification Styles */
                 .toast-notification {
                     position: fixed;
                     top: 20px;
                     right: 20px;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    color: white;
                     display: flex;
                     align-items: center;
-                    padding: 12px 20px;
-                    border-radius: 8px;
+                    gap: 10px;
                     font-weight: 600;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-                    transition: all 0.3s ease-in-out;
-                    z-index: 1000;
-                    max-width: 400px; 
-                    gap: 10px; 
-                    color: white; 
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+                    z-index: 1100;
+                    animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 3.5s forwards;
                 }
+
                 .toast-notification.success {
                     background-color: ${SUCCESS_GREEN}; 
                 }
+
                 .toast-notification.error {
                     background-color: ${ERROR_RED}; 
                 }
-                */
+                
+                .toast-notification.info {
+                    background-color: ${PRIMARY_BLUE}; 
+                }
+                
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+
+                @keyframes fadeOut {
+                    to { opacity: 0; }
+                }
+
+                /* Spin icon for loading states */
+                .spin-icon {
+                    animation: spin 1s linear infinite;
+                    margin-right: 5px;
+                }
+                
+                /* ---------------------------------------------------- */
+                /* PAGINATION STYLES (Keep Light) */
+                /* ---------------------------------------------------- */
+                
+                .pagination-wrap {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding-top: 15px;
+                    margin-top: 20px;
+                    border-top: 1px solid ${INPUT_BORDER_LIGHT};
+                }
+
+                .pagination-range-text {
+                    font-size: 14px;
+                    color: ${TEXT_MUTED_LIGHT};
+                    font-weight: 500;
+                    margin: 0;
+                }
+
+                .pagination-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px; 
+                }
+
+                .pagination-link {
+                    text-decoration: none;
+                    color: ${PRIMARY_BLUE};
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: background-color 0.2s, color 0.2s;
+                    display: flex;
+                    align-items: center;
+                    line-height: 1; 
+                }
+                
+                .pagination-link:hover:not(.active):not(.disabled) {
+                    background-color: #e3f2fd; 
+                }
+
+                .pagination-link.active {
+                    background-color: ${PRIMARY_BLUE};
+                    color: white;
+                    font-weight: 60;
+                }
+
+                .pagination-link.disabled {
+                    color: #bdbdbd; 
+                    opacity: 0.8;
+                    cursor: not-allowed;
+                    pointer-events: none; 
+                }
+                
+                /* Style for "Previous" and "Next" to be slightly different if desired */
+                .pagination-link.prev-next-link {
+                    padding: 8px 15px; 
+                    border: 1px solid ${INPUT_BORDER_LIGHT};
+                }
+                
+                .pagination-link.prev-next-link:hover:not(.disabled) {
+                    border-color: #c0c0c0;
+                }
+
+                .pagination-dots {
+                    font-size: 16px;
+                    color: ${TEXT_MUTED_LIGHT};
+                    padding: 0 5px;
+                }
+                
+                /* ---------------------------------------------------- */
             `}</style>
         </div>
     );

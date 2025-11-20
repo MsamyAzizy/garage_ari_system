@@ -6,9 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; 
 
 // Define the main active colors (Based on your current input, but defining SUCCESS_COLOR)
-const ACTIVE_COLOR = '#2c3e50'; 
-const ACCENT_PANEL_COLOR = '#2c3e50'; 
-const PRIMARY_TEXT_COLOR = '#2c3e50'; 
+const ACTIVE_COLOR = '#3a3a37ff'; 
+const ACCENT_PANEL_COLOR = '#3a3a37ff'; 
+const PRIMARY_TEXT_COLOR = '#3a3a37ff'; 
 const SUCCESS_COLOR = '#2ecc71'; // Green for success toast
 const ERROR_COLOR = '#e74c3c';
 

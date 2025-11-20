@@ -36,7 +36,7 @@ const TEXT_MUTED_DARK = '#aeb8c8';
 const INPUT_BORDER_DARK = '#38465b';  
 const DANGER_RED = '#ff4d4f'; 
 const SUCCESS_GREEN = '#2ecc71'; 
-const EDIT_ORANGE = '#ffa726'; // Defined a color for consistent button styling
+//const EDIT_ORANGE = '#ffa726'; // Defined a color for consistent button styling
 
 // --- CITY OPTIONS FOR TANZANIA (Curated List) ---
 // --- CITY OPTIONS FOR TANZANIA (Curated List) ---
@@ -213,7 +213,8 @@ const ClientForm = () => {
             setIsLoading(false);
         } catch (err) {
             console.error("Failed to fetch client data:", err);
-            showToastNotification("Failed to load client data. Please try again.", 'error');
+            // NOTE: Keep error notification here for fetch failures
+            //showToastNotification("Failed to load client data. Please try again.", 'error'); 
             setIsLoading(false);
         }
     }, [clientId, isEditMode]); 
@@ -375,7 +376,8 @@ const ClientForm = () => {
         }
         
         if (validationError) {
-            showToastNotification(validationError, 'error');
+            // NOTE: Keep error notification here for client-side validation failures
+            showToastNotification(validationError, 'error'); 
             return;
         } 
         
@@ -445,7 +447,9 @@ const ClientForm = () => {
                 ? `Successfully updated client: **${getClientName(savedClientData)}**.`
                 : `Successfully added new client: **${getClientName(savedClientData)}**!`;
             
-            navigate('/clients', { state: { successMessage: successMessage } });
+            // 🚨 SUCCESS NOTIFICATION REMOVED FROM HERE
+            // The notification logic is now only passed to the next route via state
+            navigate('/clients', { state: { successMessage: successMessage } }); 
 
         } catch (err) {
             // ERROR BLOCK
@@ -491,7 +495,8 @@ const ClientForm = () => {
                 errorMessage = `Network Error: ${err.message}`;
             }
 
-            showToastNotification(errorMessage, 'error');
+            // NOTE: Keep error notification here for API failures
+            showToastNotification(errorMessage, 'error'); 
             
         } finally {
             setIsLoading(false);
@@ -511,8 +516,8 @@ const ClientForm = () => {
             // Navigate to the vehicle creation form, passing the client ID via the URL
             navigate(`/vehicles/new/${clientId}`);
         } else {
-             // If trying to add a vehicle to a new client (who hasn't been saved yet)
-             showToastNotification("Please save the client details before adding a vehicle.", 'error');
+             // NOTE: Keep error notification here for user action requirement
+             showToastNotification("Please save the client details before adding a vehicle.", 'error'); 
         }
     };
 
@@ -564,7 +569,7 @@ const ClientForm = () => {
 
     return (
         <div className="client-form-container">
-            {/* Notification Toast */}
+            {/* Notification Toast (Only shows for errors/warnings in this component) */}
             {notification.show && (
                 <div className={`toast-notification ${notification.type}`}>
                     {notification.type === 'success' ? <FaCheckCircle /> : <FaExclamationTriangle />}
@@ -736,360 +741,431 @@ const ClientForm = () => {
                         <label htmlFor="state">State/Province</label>
                         <input type="text" id="state" name="state" onChange={handleChange} value={formData.state} />
                     </div>
+                    
                     <div className="form-group">
                         <label htmlFor="zip">Zip/Postal Code</label>
                         <input type="text" id="zip" name="zip" onChange={handleChange} value={formData.zip} />
                     </div>
                 </div>
                 
-                {/* 4. Internal Notes */}
-                <h4 className="form-section-title"><FaFileAlt /> Internal Notes</h4>
+                
+                {/* 4. Pricing & Payment Settings */}
+                <h4 className="form-section-title"><FaTools /> Custom Client Settings</h4>
+                
                 <div className="form-grid-1">
-                    <div className="form-group">
-                        <label htmlFor="notes">Client Notes</label>
-                        <textarea
-                            id="notes"
-                            name="notes"
-                            rows="4" 
-                            placeholder="Add any internal notes or special instructions for this client."
+                    <div className="form-group notes-group">
+                        <label htmlFor="notes"><FaFileAlt /> Internal Notes</label>
+                        <textarea 
+                            id="notes" 
+                            name="notes" 
+                            rows="3" 
+                            placeholder="Add internal notes about this client (e.g., preferred contact method, pricing agreements, historical details)."
                             onChange={handleChange} 
                             value={formData.notes}
                         ></textarea>
                     </div>
                 </div>
                 
-                {/* 5. Client Settings & Configuration */}
-                <h4 className="form-section-title"><FaTools /> Client Settings & Configuration</h4>
-                <div className="detail-card-section settings-section">
-                    
-                    <ToggleSwitch 
-                        id="isTaxExempt"
-                        label="Tax Exempt"
-                        description="If activated, no taxes will be added to this client's future invoices."
-                        checked={clientSettings.isTaxExempt}
-                        onChange={handleSettingsChange}
-                    />
-
-                    <ToggleSwitch 
-                        id="applyDiscount"
-                        label="Apply Discount"
-                        description="If activated, a discount will be applied to all future invoices."
-                        checked={clientSettings.applyDiscount}
-                        onChange={handleSettingsChange}
-                    />
-                    
-                    {/* LABOR RATE OVERRIDE */}
-                 <div className="setting-group">
-                        <ToggleSwitch 
+                <div className="settings-grid">
+                    {/* --- TOGGLES --- */}
+                    <div className="settings-toggles">
+                        <ToggleSwitch
+                            id="isTaxExempt"
+                            label="Tax Exempt Status"
+                            description="Toggle if this client should not be charged sales tax on parts or labor."
+                            checked={clientSettings.isTaxExempt}
+                            onChange={handleSettingsChange}
+                        />
+                        <ToggleSwitch
+                            id="applyDiscount"
+                            label="Apply Default Discount"
+                            description="Apply a system-wide default discount to this client's invoices."
+                            checked={clientSettings.applyDiscount}
+                            onChange={handleSettingsChange}
+                        />
+                        <ToggleSwitch
                             id="laborRateOverride"
-                            label="Labor Rate Override"
-                            description="If activated, a different labor rate will be applied for this client."
+                            label="Override Labor Rate"
+                            description="Use a specific, custom labor rate for this client."
                             checked={clientSettings.laborRateOverride}
                             onChange={handleSettingsChange}
                         />
-                        {clientSettings.laborRateOverride && (
-                            <div className="form-group override-input" style={{ marginLeft: '40px', marginTop: '10px' }}>
-                                <label htmlFor="customLaborRate"><FaDollarSign /> Custom Labor Rate ($)</label>
-                                <input 
-                                    type="text" 
-                                    id="customLaborRate" 
-                                    name="customLaborRate" 
-                                    placeholder="e.g., 50.00" 
-                                    value={formData.customLaborRate}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                        )}
-                    </div>
-                    
-                    {/* PARTS MARKUP OVERRIDE (Added the missing JSX input) */}
-                   <div className="setting-group">
-                        <ToggleSwitch 
+                        <ToggleSwitch
                             id="partsMarkupOverride"
-                            label="Parts Markup Override"
-                            description="If activated, a different parts markup percentage will be applied for this client."
+                            label="Override Parts Markup"
+                            description="Use a specific, custom percentage markup for parts."
                             checked={clientSettings.partsMarkupOverride}
                             onChange={handleSettingsChange}
                         />
-                        {clientSettings.partsMarkupOverride && (
-                            <div className="form-group override-input" style={{ marginLeft: '40px', marginTop: '10px' }}>
-                                <label htmlFor="customMarkupPercentage"><FaPercent /> Custom Markup Percentage (%)</label>
-                                <input 
-                                    type="text" 
-                                    id="customMarkupPercentage" 
-                                    name="customMarkupPercentage" 
-                                    placeholder="e.g., 10.5" 
-                                    value={formData.customMarkupPercentage}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* PAYMENT TERMS OVERRIDE (Added the missing JSX input) */}
-                   <div className="setting-group">
-                        <ToggleSwitch 
+                        <ToggleSwitch
                             id="paymentTermsOverride"
-                            label="Payment Terms Override"
-                            description="If activated, custom payment terms will be used for this client's invoices."
+                            label="Override Payment Terms"
+                            description="Set custom payment terms (e.g., Net 7, Net 30) for this client."
                             checked={clientSettings.paymentTermsOverride}
                             onChange={handleSettingsChange}
                         />
-                        {clientSettings.paymentTermsOverride && (
-                            <div className="form-group override-input" style={{ marginLeft: '40px', marginTop: '10px' }}>
-                                <label htmlFor="customPaymentTerms"><FaFileAlt /> Custom Payment Terms *</label>
-                                <select 
-                                    id="customPaymentTerms" 
-                                    name="customPaymentTerms" 
-                                    value={formData.customPaymentTerms}
-                                    onChange={handleChange}
-                                    required // Ensures a selection is made if the toggle is on
-                                >
-                                    <option value="">-- Select Payment Term --</option>
-                                    {PAYMENT_TERMS_OPTIONS.map(term => (
-                                        <option key={term} value={term}>
-                                            {term}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                    </div> 
+                    </div>
+                    
+                    {/* --- CUSTOM VALUE INPUTS (CONDITIONAL) --- */}
+                    <div className="custom-value-inputs">
+                        {/* Custom Labor Rate Input */}
+                        <div className={`form-group ${clientSettings.laborRateOverride ? 'active' : 'inactive'}`}>
+                            <label htmlFor="customLaborRate">
+                                <FaDollarSign /> Custom Labor Rate (per hour)
+                            </label>
+                            <input
+                                type="text" 
+                                id="customLaborRate"
+                                name="customLaborRate" 
+                                placeholder="e.g., 50.00"
+                                onChange={handleChange}
+                                value={formData.customLaborRate}
+                                disabled={!clientSettings.laborRateOverride}
+                                required={clientSettings.laborRateOverride}
+                                style={{ 
+                                    opacity: clientSettings.laborRateOverride ? 1 : 0.5,
+                                    transition: 'opacity 0.3s'
+                                }}
+                            />
+                        </div>
 
+                        {/* Custom Markup Percentage Input */}
+                        <div className={`form-group ${clientSettings.partsMarkupOverride ? 'active' : 'inactive'}`}>
+                            <label htmlFor="customMarkupPercentage">
+                                <FaPercent /> Custom Markup Percentage 
+                            </label>
+                            <input
+                                type="text" 
+                                id="customMarkupPercentage"
+                                name="customMarkupPercentage" 
+                                placeholder="e.g., 10"
+                                onChange={handleChange}
+                                value={formData.customMarkupPercentage}
+                                disabled={!clientSettings.partsMarkupOverride}
+                                required={clientSettings.partsMarkupOverride}
+                                style={{ 
+                                    opacity: clientSettings.partsMarkupOverride ? 1 : 0.5,
+                                    transition: 'opacity 0.3s'
+                                }}
+                            />
+                        </div>
+                        
+                        {/* Custom Payment Terms Dropdown */}
+                        <div className={`form-group ${clientSettings.paymentTermsOverride ? 'active' : 'inactive'}`}>
+                            <label htmlFor="customPaymentTerms">
+                                <FaTags /> Custom Payment Terms *
+                            </label>
+                            <select
+                                id="customPaymentTerms"
+                                name="customPaymentTerms"
+                                onChange={handleChange}
+                                value={formData.customPaymentTerms}
+                                disabled={!clientSettings.paymentTermsOverride}
+                                required={clientSettings.paymentTermsOverride}
+                                style={{ 
+                                    opacity: clientSettings.paymentTermsOverride ? 1 : 0.5,
+                                    transition: 'opacity 0.3s'
+                                }}
+                            >
+                                <option value="">-- Select Terms --</option>
+                                {PAYMENT_TERMS_OPTIONS.map(term => (
+                                    <option key={term} value={term}>{term}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                 </div>
-
-                {/* 6. Form Actions */}
-                <div className="form-actions">
+                
+                {/* --- Form Actions --- */}
+                <footer className="form-actions">
                     <button 
                         type="button" 
                         onClick={handleCancel} 
-                        className="btn-secondary"
+                        className="btn-cancel" 
+                        disabled={isLoading}
                     >
-                        <FaTimes style={{ marginRight: '8px' }}/> Cancel
+                        <FaTimes style={{ marginRight: '5px' }} /> Cancel
                     </button>
                     <button 
                         type="submit" 
-                        className="btn-primary" 
+                        className="btn-save" 
                         disabled={isLoading}
-                        style={{ backgroundColor: PRIMARY_BLUE }}
                     >
-                        {isLoading 
-                            ? (
-                                <>
-                                    <FaSpinner className="spinner" /> 
-                                    {isEditMode ? ' Updating...' : ' Saving...'}
-                                </>
-                            )
-                            : (
-                                <>
-                                    <FaSave style={{ marginRight: '8px' }}/> 
-                                    {isEditMode ? 'Update Client' : 'Save New Client'}
-                                </>
-                            )
-                        }
+                        {isLoading ? (
+                            <>
+                                <FaSpinner className="spinner-icon" /> Saving...
+                            </>
+                        ) : (
+                            <>
+                                <FaSave style={{ marginRight: '5px' }} /> 
+                                {isEditMode ? 'Update Client' : 'Save Client'}
+                            </>
+                        )}
                     </button>
-                </div>
+                </footer>
             </form>
-
+            
+            
+            {/* --- STYLES INTEGRATED FOR A SMART, MODERN LOOK --- */}
             <style jsx>{`
-                /* General Form Styling */
+                /* ----------------------------------------------------------------- */
+                /* Base Styles & Typography */
+                /* ----------------------------------------------------------------- */
+                
                 .client-form-container {
-                    max-width: 1600px;
-                    margin: 0 auto;
+                    max-width: 1900px;
+                    margin: 20px auto;
+                    padding: 0 20px;
+                    font-family: 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
                 }
-                .form-card {
-                    background-color: ${document.body.classList.contains('dark-theme') ? BG_CARD_DARK : '#ffffff'};
-                    padding: 30px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, ${document.body.classList.contains('dark-theme') ? '0.2' : '0.1'});
-                }
+                
                 .page-header {
                     display: flex;
-                    justify-content: space-between;
                     align-items: center;
-                    padding-bottom: 15px;
-                    margin-bottom: 20px;
-                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#eeeeee'};
+                    justify-content: space-between;
+                    padding: 0 0 15px 0;
+                    border-bottom: 1px solid #e0e0e0;
+                    margin-bottom: 25px;
                 }
                 .page-header h2 {
-                    margin: 0;
-                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
+                    font-size: 24px; 
+                    font-weight: 700; 
+                    color: #333333;
                 }
+                body.dark-theme .page-header {
+                    border-bottom: 1px solid rgba(255,255,255,0.1);
+                }
+                body.dark-theme .page-header h2 {
+                    color: ${TEXT_PRIMARY_DARK};
+                }
+                
+                .form-card {
+                    background-color: #ffffff;
+                    padding: 30px;
+                    border-radius: 12px; 
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.08); 
+                    border: 1px solid #e0e0e0;
+                }
+                body.dark-theme .form-card {
+                    background-color: ${BG_CARD_DARK};
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                    border: 1px solid ${INPUT_BORDER_DARK};
+                }
+
                 .form-section-title {
-                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#dddddd'};
-                    padding-bottom: 10px;
-                    margin-top: 25px;
-                    margin-bottom: 15px;
-                    color: ${PRIMARY_BLUE};
+                    font-size: 18px;
                     font-weight: 600;
-                    font-size: 1.1em;
+                    color: ${PRIMARY_BLUE};
+                    margin-top: 30px;
+                    margin-bottom: 15px;
+                    padding-bottom: 5px;
+                    border-bottom: 2px solid ${PRIMARY_BLUE}10;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
                 }
+                body.dark-theme .form-section-title {
+                    color: ${PRIMARY_BLUE};
+                    border-bottom: 2px solid ${PRIMARY_BLUE}30;
+                }
+                
                 .form-grid-1, .form-grid-2, .form-grid-3 {
                     display: grid;
                     gap: 20px;
                     margin-bottom: 20px;
                 }
-                .form-grid-2 {
-                    grid-template-columns: 1fr 1fr;
+                .form-grid-1 { grid-template-columns: 1fr; }
+                .form-grid-2 { grid-template-columns: 1fr 1fr; }
+                .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+                
+                @media (max-width: 768px) {
+                    .form-grid-2, .form-grid-3 {
+                        grid-template-columns: 1fr;
+                    }
                 }
-                .form-grid-3 {
-                    grid-template-columns: repeat(3, 1fr);
-                }
+                
                 .form-group label {
                     display: block;
-                    margin-bottom: 5px;
-                    font-weight: 600;
-                    color: ${document.body.classList.contains('dark-theme') ? TEXT_MUTED_DARK : '#555555'};
+                    margin-bottom: 8px;
+                    font-weight: 500;
+                    color: #555555;
+                    font-size: 14px;
                 }
-                .form-group input[type="text"],
-                .form-group input[type="email"],
-                .form-group input[type="number"],
-                .form-group select,
-                .form-group textarea {
+                body.dark-theme .form-group label {
+                    color: ${TEXT_MUTED_DARK};
+                }
+
+                .form-group input, .form-group select, .form-group textarea {
                     width: 100%;
                     padding: 10px 12px;
-                    border: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#dddddd'};
-                    border-radius: 4px;
+                    border: 1px solid #dddddd;
+                    border-radius: 6px;
+                    font-size: 15px;
                     box-sizing: border-box;
-                    background-color: ${document.body.classList.contains('dark-theme') ? TOP_NAV_COLOR : '#ffffff'};
-                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
-                    transition: border-color 0.2s;
+                    transition: border-color 0.2s, box-shadow 0.2s;
                 }
+                
+                body.dark-theme .form-group input, 
+                body.dark-theme .form-group select, 
+                body.dark-theme .form-group textarea {
+                    background-color: ${TOP_NAV_COLOR};
+                    border: 1px solid ${INPUT_BORDER_DARK};
+                    color: ${TEXT_PRIMARY_DARK};
+                }
+                
                 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
                     border-color: ${PRIMARY_BLUE};
+                    box-shadow: 0 0 0 3px ${PRIMARY_BLUE}30;
                     outline: none;
                 }
                 
-                .name-mode-selector select {
-                    background-color: ${document.body.classList.contains('dark-theme') ? TOP_NAV_COLOR : '#f4f4f4'};
-                    font-weight: bold;
-                }
-                .mode-description {
-                    font-size: 0.85em;
-                    color: ${TEXT_MUTED_DARK};
-                    margin-top: 5px;
-                }
-
-                /* Phone Input Error */
+                /* Phone Input specific styling adjustments */
                 .phone-validation-error {
                     color: ${DANGER_RED};
-                    font-size: 0.8em;
+                    font-size: 13px;
                     margin-top: 5px;
+                    font-weight: 500;
+                }
+                
+                /* Name Mode Selector */
+                .name-mode-selector select {
+                    background-color: #f7f9fa;
+                }
+                body.dark-theme .name-mode-selector select {
+                    background-color: #38465b;
+                }
+                .mode-description {
+                    font-size: 13px;
+                    color: #888;
+                    margin-top: 5px;
+                }
+                body.dark-theme .mode-description {
+                    color: ${TEXT_MUTED_DARK};
                 }
                 
                 /* Form Actions */
                 .form-actions {
                     display: flex;
                     justify-content: flex-end;
-                    gap: 10px;
+                    gap: 15px;
+                    padding-top: 30px;
+                    border-top: 1px solid #eee;
                     margin-top: 30px;
-                    padding-top: 20px;
-                    border-top: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#dddddd'};
                 }
-                .btn-primary, .btn-secondary {
+                body.dark-theme .form-actions {
+                    border-top: 1px solid ${INPUT_BORDER_DARK};
+                }
+
+                .btn-save, .btn-cancel {
                     padding: 10px 20px;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
+                    border-radius: 6px;
                     font-weight: 600;
+                    font-size: 15px;
+                    cursor: pointer;
                     transition: background-color 0.2s;
                     display: flex;
                     align-items: center;
                 }
-                .btn-primary {
+
+                .btn-save {
                     background-color: ${PRIMARY_BLUE};
-                    color: #ffffff;
+                    color: white;
+                    border: 1px solid ${PRIMARY_BLUE};
                 }
-                .btn-primary:hover:not(:disabled) {
-                    background-color: #4a82c4;
-                }
-                .btn-secondary {
-                    background-color: ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#e0e0e0'};
-                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
-                }
-                .btn-secondary:hover {
-                    background-color: ${document.body.classList.contains('dark-theme') ? '#44556b' : '#cccccc'};
-                }
-                .btn-primary:disabled {
-                    background-color: #8fa0c0;
-                    cursor: not-allowed;
-                }
-                .spinner {
-                    animation: spin 1s linear infinite;
-                    margin-right: 8px;
+                .btn-save:hover {
+                    background-color: #4a8ad8;
+                    border-color: #4a8ad8;
                 }
 
-                /* Toast Notification */
-                .toast-notification {
-                    position: fixed;
-                    top: 80px;
-                    right: 20px;
-                    padding: 15px 20px;
-                    border-radius: 8px;
-                    color: #ffffff;
-                    z-index: 1000;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    min-width: 300px;
+                .btn-cancel {
+                    background-color: #f0f0f0;
+                    color: #555;
+                    border: 1px solid #ccc;
                 }
-                .toast-notification.success {
-                    background-color: ${SUCCESS_GREEN};
+                .btn-cancel:hover {
+                    background-color: #e0e0e0;
                 }
-                .toast-notification.error {
-                    background-color: ${DANGER_RED};
+                body.dark-theme .btn-cancel {
+                    background-color: ${INPUT_BORDER_DARK};
+                    color: ${TEXT_MUTED_DARK};
+                    border-color: ${INPUT_BORDER_DARK};
+                }
+
+                .spinner-icon {
+                    animation: spin 1s linear infinite;
+                    margin-right: 5px;
                 }
                 
-                /* --- Settings Section & Toggles --- */
-                .settings-section {
+                /* ----------------------------------------------------------------- */
+                /* Toggle Switch & Settings Grid Styles */
+                /* ----------------------------------------------------------------- */
+                
+                .settings-grid {
                     display: grid;
-                    grid-template-columns: 1fr;
-                    gap: 20px;
-                    padding: 15px;
-                    border: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#f0f0f0'};
-                    border-radius: 6px;
-                    background-color: ${document.body.classList.contains('dark-theme') ? TOP_NAV_COLOR : '#fafafa'};
+                    grid-template-columns: 2fr 1fr;
+                    gap: 40px;
+                    margin-top: 20px;
                 }
+                
+                @media (max-width: 992px) {
+                    .settings-grid {
+                        grid-template-columns: 1fr;
+                        gap: 20px;
+                    }
+                }
+                
+                .settings-toggles {
+                    border-right: 1px solid #f0f0f0;
+                    padding-right: 40px;
+                }
+                @media (max-width: 992px) {
+                    .settings-toggles {
+                        border-right: none;
+                        border-bottom: 1px solid #f0f0f0;
+                        padding-right: 0;
+                        padding-bottom: 20px;
+                    }
+                }
+                body.dark-theme .settings-toggles,
+                @media (max-width: 992px) {
+                    body.dark-theme .settings-toggles {
+                        border-color: ${INPUT_BORDER_DARK};
+                    }
+                }
+
                 .toggle-setting-item {
-                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#e9e9e9'};
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid #f9f9f9;
                     padding-bottom: 15px;
                 }
                 .toggle-setting-item:last-child {
                     border-bottom: none;
                 }
+                body.dark-theme .toggle-setting-item {
+                    border-color: ${INPUT_BORDER_DARK};
+                }
+
                 .toggle-label {
                     display: flex;
                     align-items: flex-start;
                     cursor: pointer;
-                    position: relative;
-                }
-                .toggle-text-content {
-                    margin-left: 15px;
-                }
-                .toggle-title {
-                    font-weight: 700;
-                    color: ${document.body.classList.contains('dark-theme') ? TEXT_PRIMARY_DARK : '#333333'};
-                }
-                .toggle-description {
-                    font-size: 0.85em;
-                    color: ${TEXT_MUTED_DARK};
-                    margin-top: 2px;
+                    user-select: none;
                 }
 
-                /* Custom Toggle Switch Styling (re-used from previous component design) */
                 .toggle-switch-wrap {
                     position: relative;
-                    display: inline-block;
-                    width: 45px;
-                    height: 25px;
+                    min-width: 50px;
+                    height: 24px;
+                    margin-right: 15px;
                     flex-shrink: 0;
                 }
+
                 .toggle-checkbox {
                     opacity: 0;
                     width: 0;
                     height: 0;
                 }
+
                 .toggle-slider {
                     position: absolute;
                     cursor: pointer;
@@ -1097,56 +1173,123 @@ const ClientForm = () => {
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background-color: ${document.body.classList.contains('dark-theme') ? '#555' : '#ccc'};
+                    background-color: #ccc;
                     transition: .4s;
-                    border-radius: 25px;
+                    border-radius: 34px;
                 }
+
                 .toggle-slider:before {
                     position: absolute;
                     content: "";
-                    height: 17px;
-                    width: 17px;
+                    height: 16px;
+                    width: 16px;
                     left: 4px;
                     bottom: 4px;
                     background-color: white;
                     transition: .4s;
                     border-radius: 50%;
                 }
+                
                 .toggle-checkbox:checked + .toggle-slider {
+                    background-color: ${PRIMARY_BLUE};
+                }
+
+                .toggle-checkbox:checked + .toggle-slider:before {
+                    transform: translateX(26px);
+                }
+
+                .toggle-text-content {
+                    flex-grow: 1;
+                }
+
+                .toggle-title {
+                    font-weight: 600;
+                    color: #333;
+                    font-size: 15px;
+                    display: block;
+                    line-height: 24px; 
+                }
+                body.dark-theme .toggle-title {
+                    color: ${TEXT_PRIMARY_DARK};
+                }
+
+                .toggle-description {
+                    font-size: 13px;
+                    color: #777;
+                    margin: 0;
+                }
+                body.dark-theme .toggle-description {
+                    color: ${TEXT_MUTED_DARK};
+                }
+
+                .custom-value-inputs {
+                    padding-left: 20px;
+                }
+                @media (max-width: 992px) {
+                    .custom-value-inputs {
+                        padding-left: 0;
+                    }
+                }
+                
+                .custom-value-inputs .form-group {
+                    margin-bottom: 25px;
+                    transition: opacity 0.3s;
+                }
+                
+                .custom-value-inputs .form-group.inactive {
+                    opacity: 0.5;
+                    pointer-events: none; /* Disable interaction when inactive */
+                }
+                
+                /* Add Vehicle Button Specific Styling */
+                .btn-primary-action {
+                    position: relative; /* For the small plus icon positioning */
+                    padding-right: 25px; /* Added padding to accommodate the plus icon */
+                }
+
+
+                /* ----------------------------------------------------------------- */
+                /* Toast Notification Styles (Top Right) */
+                /* ----------------------------------------------------------------- */
+                .toast-notification {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-weight: 600;
+                    font-size: 15px;
+                    z-index: 1050;
+                    animation: slideInRight 0.5s ease-out, fadeOut 0.5s ease-in 3.5s forwards;
+                }
+
+                .toast-notification.success {
                     background-color: ${SUCCESS_GREEN};
                 }
-                .toggle-checkbox:focus + .toggle-slider {
-                    box-shadow: 0 0 1px ${SUCCESS_GREEN};
+
+                .toast-notification.error {
+                    background-color: ${DANGER_RED};
                 }
-                .toggle-checkbox:checked + .toggle-slider:before {
-                    transform: translateX(20px);
-                }
-                
-                /* Grouping for Override Settings */
-                .setting-group {
-                    padding-bottom: 15px;
-                    border-bottom: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#e9e9e9'};
-                }
-                .setting-group:last-child {
-                    border-bottom: none;
-                    padding-bottom: 0;
-                }
-                .override-input-field {
-                    background-color: ${document.body.classList.contains('dark-theme') ? BG_CARD_DARK : '#ffffff'};
-                    border: 1px solid ${document.body.classList.contains('dark-theme') ? INPUT_BORDER_DARK : '#cccccc'};
-                    border-radius: 4px;
-                    padding: 15px;
-                    margin-top: 15px;
-                }
-                .override-input-field label {
-                    color: ${EDIT_ORANGE};
-                }
-                
-                /* Responsive adjustments */
-                @media (max-width: 768px) {
-                    .form-grid-2, .form-grid-3 {
-                        grid-template-columns: 1fr;
+
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
                     }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
                 }
             `}</style>
         </div>

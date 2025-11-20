@@ -1,9 +1,10 @@
-// src/components/SplashLoader.js - Updated to use the premium Sky Blue theme and consolidated styles
+// src/components/SplashLoader.js - Updated to use the 4-dot spinner animation
 
 import React, { useEffect } from 'react';
 
 // Define the main colors
-const ACTIVE_COLOR = '#00bfff'; // Sky Blue
+const ACTIVE_COLOR = '#5d9cec'; // Primary Blue
+const MUTED_COLOR = '#aeb8c8';  // A lighter/muted version for contrast
 const BACKGROUND_COLOR = '#f0f4f8'; // Light background, similar to page body
 const PRIMARY_TEXT_COLOR = '#2c3e50';
 
@@ -11,7 +12,7 @@ const PRIMARY_TEXT_COLOR = '#2c3e50';
 // 1. SPLASH VISUAL COMPONENT 
 // -----------------------------------------------------------------
 /**
- * Animated circular spinner with four colored segments on a clean background.
+ * Animated 4-dot spinner (2x2 grid) with a pulsing color animation.
  */
 const SplashVisual = () => (
     <div className="app-splash"> 
@@ -22,11 +23,12 @@ const SplashVisual = () => (
             <p className="logo-sub-text">Auto Repair Management System</p>
         </div>
 
-        {/* Loader Content - The Enhanced Spinner */}
-        <div className="circular-spinner-container">
-            <div className="circular-spinner">
-                {/* Pure CSS creates the spinning segments */}
-            </div>
+        {/* Loader Content - The New 4-Dot Spinner */}
+        <div className="dots-loader-container">
+            <div className="dot dot-1"></div>
+            <div className="dot dot-2"></div>
+            <div className="dot dot-3"></div>
+            <div className="dot dot-4"></div>
         </div>
         
         {/* Loading Text */}
@@ -51,7 +53,7 @@ const SplashVisual = () => (
                     font-family: 'Inter', sans-serif;
                     overflow: hidden; 
                     
-                    /* Clean background to match the new app aesthetic */
+                    /* Clean background to match the application's light theme */
                     background-color: ${BACKGROUND_COLOR}; 
                     position: relative; 
                 }
@@ -65,10 +67,10 @@ const SplashVisual = () => (
                 }
                 .logo-main-text {
                     font-size: 56px;
-                    color: ${ACTIVE_COLOR}; /* Sky Blue */
+                    color: ${ACTIVE_COLOR}; /* Primary Blue */
                     font-weight: 900; 
                     margin: 0;
-                    text-shadow: 0 4px 10px rgba(0, 191, 255, 0.2);
+                    text-shadow: 0 4px 10px rgba(93, 156, 236, 0.2);
                     transition: all 0.5s ease;
                 }
                 .logo-sub-text {
@@ -79,87 +81,80 @@ const SplashVisual = () => (
                 }
 
                 /* ----------------------------------------------------------------- */
-                /* LOADER VISUAL STYLES (Circular Spinner - Enhanced) */
+                /* LOADER VISUAL STYLES (4-Dot Spinner) */
                 /* ----------------------------------------------------------------- */
-                .circular-spinner-container {
-                    z-index: 1;
-                    /* Apply subtle pulse animation to the container */
-                    animation: pulse 2s infinite ease-in-out;
+                .dots-loader-container {
+                    width: 60px; /* Container size */
+                    height: 60px;
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    grid-template-rows: repeat(2, 1fr);
+                    gap: 15px; /* Spacing between dots */
+                    justify-content: center;
+                    align-items: center;
+                    margin-bottom: 20px;
                 }
 
-                .circular-spinner {
-                    width: 70px; /* Larger spinner */
-                    height: 70px;
-                    position: relative;
-                    /* Base rotation */
-                    animation: spin 1.5s cubic-bezier(0.5, 0.2, 0.5, 0.8) infinite;
-                }
-
-                /* Create two overlapping segments for a complex look */
-                .circular-spinner::before,
-                .circular-spinner::after {
-                    content: '';
-                    position: absolute;
+                .dot {
+                    width: 100%;
+                    height: 100%;
                     border-radius: 50%;
-                    border: 5px solid transparent; /* Thicker border */
-                    box-sizing: border-box; 
-                }
-
-                /* Outer Segment (Red and Blue) */
-                .circular-spinner::before {
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    border-top-color: #e74c3c;    /* Red segment */
-                    border-right-color: ${ACTIVE_COLOR};  /* Blue segment */
-                    /* Separate animation for subtle effect */
-                    animation: dash-expand 3s ease-in-out infinite alternate;
+                    background-color: ${MUTED_COLOR}; /* Initial color: lighter blue */
+                    animation: dot-pulse 1.8s infinite ease-in-out;
                 }
                 
-                /* Inner Segment (Yellow and Green) */
-                .circular-spinner::after {
-                    top: 10px; left: 10px; right: 10px; bottom: 10px; /* Smaller inner ring */
-                    border-bottom-color: #f39c12; /* Yellow segment */
-                    border-left-color: #2ecc71;   /* Green segment */
-                    /* Rotate opposite to the main spin for dynamism */
-                    animation: spin-reverse 2.5s cubic-bezier(0.5, 0.2, 0.5, 0.8) infinite;
+                /* Stagger animation for the 2x2 grid pattern */
+                .dot-1 {
+                    animation-delay: 0s;
+                }
+                .dot-2 {
+                    animation-delay: 0.2s;
+                }
+                .dot-3 {
+                    animation-delay: 0.4s;
+                }
+                .dot-4 {
+                    animation-delay: 0.6s;
                 }
                 
                 .loading-text {
                     margin-top: 30px;
-                    font-size: 18px;
-                    color: #55606d;
+                    font-size: 24px; 
+                    color: ${ACTIVE_COLOR}; /* Blue text to match dots */
                     font-weight: 600;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.5px;
+                    /* Subtle animation on text */
+                    animation: text-pulse 2s infinite ease-in-out; 
                 }
                 
                 /* KEYFRAMES */
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
+                
+                /* Dot color change animation */
+                @keyframes dot-pulse {
+                    0%, 100% {
+                        background-color: ${MUTED_COLOR};
+                        transform: scale(0.9);
+                    }
+                    50% {
+                        background-color: ${ACTIVE_COLOR};
+                        transform: scale(1.1);
+                    }
                 }
 
-                @keyframes spin-reverse {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(-360deg); }
+                /* Subtle text pulse */
+                @keyframes text-pulse {
+                    0%, 100% {
+                        opacity: 0.8;
+                    }
+                    50% {
+                        opacity: 1;
+                    }
                 }
                 
-                @keyframes pulse {
-                    0% { transform: scale(1); }
-                    50% { transform: scale(1.02); }
-                    100% { transform: scale(1); }
-                }
-
-                @keyframes dash-expand {
-                    0% { border-width: 5px; opacity: 1; }
-                    50% { border-width: 6px; opacity: 0.9; }
-                    100% { border-width: 5px; opacity: 1; }
-                }
-
-                /* HIDE ALL UNNEEDED/LEGACY ELEMENTS */
-                .animated-background-circles,
-                .animated-background-circles li,
-                .glowing-line,
-                .dots-loader-container {
-                    display: none;
+                /* HIDE LEGACY ELEMENTS (If they were present in a previous version) */
+                .circular-spinner-container,
+                .circular-spinner {
+                    display: none !important;
                 }
             `}
         </style>

@@ -385,6 +385,11 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Light blue shadow */
 }
 
+/* 🔴 FIX: Ensures inline color (like red) is respected in select options 🔴 */
+select option[style*="color: red"] {
+    color: red !important;
+}
+
 /* Grid layout for forms (used in VehicleForm, ClientForm, VendorForm etc.) */
 .form-grid {
     display: grid;
@@ -465,7 +470,171 @@ select:focus {
 .login-button:disabled { background-color: #555; cursor: not-allowed; }
 
 /* ======================================================= */
-/* 🌟 JOB CARD LIST STYLES 🌟 (Remaining sections are unchanged) */
+/* 🌟 VEHICLE FORM SPECIFIC STYLES 🌟 (NEW/UPDATED)         */
+/* ======================================================= */
+
+.vehicle-form {
+    /* Ensure vehicle form takes up space */
+    position: relative;
+    padding-bottom: 90px; /* Space for fixed footer */
+    min-height: calc(100vh - 80px); /* Fill screen minus header/margin */
+}
+
+/* Image Upload/Action Bar */
+.vehicle-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.vehicle-header-actions .icon-group {
+    display: flex;
+    gap: 8px;
+    margin-left: auto; /* Push icons to the right */
+}
+
+.vehicle-header-actions .small-btn {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.icon-btn-form {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+.icon-btn-form:hover {
+    color: var(--primary-color);
+}
+
+/* Image Placeholder/Preview */
+.image-placeholder, .image-preview-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--border-radius-base);
+    border: 2px dashed var(--border-color-darker);
+    background-color: var(--hover-bg);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+.image-placeholder::before {
+    content: '+';
+    font-size: 40px;
+    color: var(--text-muted);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    line-height: 1;
+}
+
+.image-preview-wrapper {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: none;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Section Title */
+.form-section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-color-dark);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Form Grid Layouts */
+.form-grid-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px;
+}
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+/* Odometer/Unit Input Group */
+.reading-group .input-with-select {
+    display: flex;
+    gap: 5px;
+}
+
+.reading-group .unit-select {
+    width: auto;
+    flex-shrink: 0;
+    min-width: 80px; 
+    padding: 10px 8px;
+    text-align: center;
+}
+
+/* Notes Section */
+.note-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.placeholder-section {
+    padding: 20px;
+    background-color: var(--background-secondary);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius-base);
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+}
+
+/* Form Actions (Sticky Footer) */
+.page-form-actions {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    /* This assumes the form takes the full content width, excluding the sidebar */
+    left: var(--sidebar-width); 
+    padding: 15px 30px;
+    background-color: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: flex-end; /* Move buttons to the right (standard placement for form actions) */
+    gap: 15px;
+    z-index: 100;
+    transition: left 0.3s ease-in-out;
+}
+/* Re-adjust for collapsed sidebar */
+.main-content-wrapper.sidebar-collapsed ~ .page-content .page-form-actions {
+    left: 60px;
+}
+
+/* ======================================================= */
+/* 🌟 JOB CARD LIST STYLES 🌟 (Unchanged)                 */
 /* ======================================================= */
 
 .job-card-list-page {
@@ -636,7 +805,7 @@ select:focus {
 }
 
 /* ======================================================= */
-/* 🌟 JOBCARD FORM SPECIFIC STYLES 🌟                      */
+/* 🌟 JOBCARD FORM SPECIFIC STYLES 🌟 (Unchanged)          */
 /* ======================================================= */
 
 .jobcard-form {
@@ -690,16 +859,9 @@ select:focus {
 }
 
 /* Grid for the client/vehicle selection */
-.form-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-.form-grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-}
+/* .form-grid-2 is defined above */
+/* .form-grid-3 is defined above */
+
 
 /* --- Parts and Labor Table Styling --- */
 .sub-section-title {
@@ -826,27 +988,7 @@ select:focus {
 
 
 /* --- Fixed Footer Actions --- */
-.form-actions.fixed-footer {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    left: var(--sidebar-width); /* Default width */
-    padding: 15px 30px;
-    background-color: var(--card-bg);
-    border-top: 1px solid var(--border-color);
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
-    display: flex;
-    /* This ensures the Save button is on the left side */
-    justify-content: flex-start; 
-    gap: 15px;
-    z-index: 100;
-    transition: left 0.3s ease-in-out;
-}
-
-/* Adjust fixed footer when sidebar is collapsed (assumes 60px) */
-.main-content-wrapper.sidebar-collapsed + .page-content .form-actions.fixed-footer {
-    left: 60px;
-}
+/* .form-actions.fixed-footer is defined above in vehicle section for clarity */
 
 /* Badge Style */
 .badge {

@@ -1,24 +1,60 @@
 // src/components/AppointmentForm.js - UPDATED: Main page background (--bg-page) is now forced to white/light gray in both dark and light modes.
 
-import React from 'react';
-import { FaUser, FaCarSide, FaCalendarAlt, FaSave, FaSms, FaEnvelope, FaPhone, FaArrowLeft } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { 
+    FaUser, FaCarSide, FaCalendarAlt, FaSave, FaSms, FaEnvelope, FaPhone, 
+    FaArrowLeft, FaTag, FaWrench, FaMapMarkerAlt, FaBell 
+} from 'react-icons/fa';
 
-const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} }) => {
+// Mock data for dropdowns (in a real app, this would come from an API)
+const MOCK_TECHNICIANS = [
+    { id: 'T001', name: 'James K. (Lead Mech)' },
+    { id: 'T002', name: 'Mercy D. (Tech)' },
+];
+const MOCK_BAYS = ['Bay 1 - Lift 1', 'Bay 2 - Lift 2', 'Diagnostic Bay', 'Tire Bay'];
+
+const AppointmentForm = ({ onSave, onCancel, isDarkMode = false, toggleDarkMode = () => {} }) => {
+    // 🏆 New State: Initialize form data based on the requested fields
+    const [formData, setFormData] = useState({
+        appointmentDate: new Date().toISOString().substring(0, 10),
+        appointmentTime: '09:00',
+        checkInDateTime: '',
+        status: 'Pending',
+        priority: 'Normal',
+        appointmentType: 'Repair',
+        customerID: '',
+        customerName: 'Placeholder: Select Customer',
+        vehicleID: '',
+        vehicleMake: 'Placeholder: Select Vehicle',
+        requestedServices: '',
+        problemDescription: '',
+        estimatedDuration: '1.5', // Default 1.5 hours
+        estimatedCost: '',
+        assignedTechnicianID: '',
+        workshopBay: MOCK_BAYS[0],
+        preferredContactMethod: 'Call',
+        sendReminder: true,
+        confirmationStatus: 'Not Confirmed',
+        notes: '',
+    });
+
+    const handleChange = (e) => {
+        const { id, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [id]: type === 'checkbox' ? checked : value,
+        }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // In a real app, collect and validate the form data
-        const appointmentData = {
-            client: "Selected Client Name",
-            vehicle: "Selected Vehicle Details",
-            date: "10/19/2025",
-            isConfirmed: true,
-            // ... other fields
-        };
-        console.log("Saving new appointment:", appointmentData);
-        onSave(appointmentData);
+        // 🏆 In a real app, you would package the full formData for API submission.
+        console.log("Saving new appointment with full details:", formData);
+        
+        // Pass a summary back to Home.js for the toast message
+        onSave(formData);
     };
-
+    
     // Base class determines the theme
     const themeClass = isDarkMode ? 'dark-mode-form' : 'light-mode-form';
 
@@ -31,66 +67,114 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                     <button 
                         type="button" 
                         className="back-button"
-                        onClick={() => console.log('Go Back')} // Placeholder action
+                        onClick={onCancel} // Use onCancel prop for navigation back
                     >
                         <FaArrowLeft />
                     </button>
-                    <h2 className="page-title">Add New Appointment</h2>
+                    <h2 className="page-title">Book New Appointment</h2>
                 </div>
             </header>
             
             <form onSubmit={handleSubmit} className="form-card appointment-form">
                 
-                {/* General Information */}
-                <h3 className="section-title">General Information</h3>
+                {/* 1. Basic Appointment Details */}
+                <h3 className="section-title"><FaCalendarAlt /> Appointment Scheduling</h3>
+                <div className="form-grid-3">
+                    <div className="form-group">
+                        <label htmlFor="appointmentDate">Appointment Date</label>
+                        <input 
+                            type="date" 
+                            id="appointmentDate" 
+                            value={formData.appointmentDate}
+                            onChange={handleChange}
+                            required 
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="appointmentTime">Time Slot</label>
+                        <input 
+                            type="time" 
+                            id="appointmentTime" 
+                            value={formData.appointmentTime}
+                            onChange={handleChange}
+                            required 
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="priority">Priority</label>
+                        <select id="priority" value={formData.priority} onChange={handleChange} required>
+                            <option value="Normal">Normal</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="VIP">VIP</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="status">Status</label>
+                        <select id="status" value={formData.status} onChange={handleChange} required>
+                            <option value="Pending">Pending</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="No Show">No Show</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="appointmentType">Appointment Type</label>
+                        <select id="appointmentType" value={formData.appointmentType} onChange={handleChange} required>
+                            <option value="Repair">Repair</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Inspection">Inspection</option>
+                            <option value="Diagnostic">Diagnostic</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="checkInDateTime">Check-in Date/Time (Optional)</label>
+                        <input 
+                            type="datetime-local" 
+                            id="checkInDateTime" 
+                            value={formData.checkInDateTime}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
+
+                {/* 2. Customer Information (Uses Action Buttons for Lookup) */}
+                <h3 className="section-title"><FaUser /> Customer & Contact</h3>
                 <div className="form-grid-2">
                     {/* Select Client Button */}
                     <button type="button" className="large-action-btn primary-action-btn">
-                        <FaUser style={{ marginRight: '8px' }} /> Select Client
+                        <FaUser style={{ marginRight: '8px' }} /> Select Customer ({formData.customerID ? 'Selected' : 'Required'})
                     </button>
-                    
-                    {/* Select Vehicle Button */}
-                    <button type="button" className="large-action-btn primary-action-btn">
-                        <FaCarSide style={{ marginRight: '8px' }} /> Select Vehicle
-                    </button>
+                    {/* Display/Placeholder for Customer Name */}
+                    <div className="form-group">
+                        <label>Customer Name</label>
+                        <input type="text" readOnly value={formData.customerName} />
+                    </div>
                 </div>
 
-                {/* Schedule Date */}
-                <h3 className="section-title">Schedule Date</h3>
-                <div className="form-grid-2">
-                    {/* From Date/Time */}
+                <div className="form-grid-3">
                     <div className="form-group">
-                        <label htmlFor="scheduleFrom">From:</label>
-                        <input type="datetime-local" id="scheduleFrom" defaultValue="2025-10-19T10:00" required />
+                        <label htmlFor="phoneNumber">Phone Number</label>
+                        <input type="text" id="phoneNumber" readOnly value={'555-1234'} placeholder="From Customer Record" />
                     </div>
-                    
-                    {/* To Date/Time */}
                     <div className="form-group">
-                        <label htmlFor="scheduleTo">To:</label>
-                        <input type="datetime-local" id="scheduleTo" defaultValue="2025-10-19T12:00" required />
+                        <label htmlFor="emailAddress">Email Address</label>
+                        <input type="email" id="emailAddress" readOnly value={'client@example.com'} placeholder="From Customer Record" />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="preferredContactMethod">Preferred Contact</label>
+                        <select id="preferredContactMethod" value={formData.preferredContactMethod} onChange={handleChange}>
+                            <option value="Call">Call</option>
+                            <option value="SMS">SMS</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Email">Email</option>
+                        </select>
                     </div>
                 </div>
                 
-                <p className="booking-duration-text">
-                    Booking Duration: 2 hours 0 minutes
-                </p>
-
-                {/* Appointment Info */}
-                <h3 className="section-title">Appointment Details</h3>
-                <div className="form-group">
-                    <textarea 
-                        id="appointmentDetails" 
-                        rows="4" 
-                        placeholder="e.g., Oil change, tire rotation, check brake fluid..."
-                    ></textarea>
-                </div>
-
-                {/* Confirm Appointment */}
-                <h3 className="section-title">Confirmation & Contact</h3>
-                <p className="section-description">
-                    Use these links to contact the client and confirm the appointment details.
-                </p>
-                
+                <h3 className="section-title">Communication Helpers</h3>
                 <div className="form-grid-3 contact-grid">
                     <button type="button" className="contact-btn call-btn">
                         <FaPhone /> Call
@@ -99,39 +183,166 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                         <FaEnvelope /> Email
                     </button>
                     <button type="button" className="contact-btn sms-btn">
-                        <FaSms /> SMS
+                        <FaSms /> SMS / WhatsApp
                     </button>
                 </div>
 
-                {/* Confirmation Toggle and Calendar */}
-                <div className="confirmation-actions">
-                    <div className="form-group-inline">
-                        <input type="checkbox" id="confirmedToggle" defaultChecked />
-                        <label htmlFor="confirmedToggle">
-                            Confirmed (booked in your calendar)
-                        </label>
+
+                {/* 3. Vehicle Information (Uses Action Buttons for Lookup) */}
+                <h3 className="section-title"><FaCarSide /> Vehicle Details</h3>
+                <div className="form-grid-2">
+                    {/* Select Vehicle Button */}
+                    <button type="button" className="large-action-btn primary-action-btn">
+                        <FaCarSide style={{ marginRight: '8px' }} /> Select Vehicle ({formData.vehicleID ? 'Selected' : 'Required'})
+                    </button>
+                    {/* Display/Placeholder for Vehicle Make/Model */}
+                    <div className="form-group">
+                        <label>Vehicle Make/Model</label>
+                        <input type="text" readOnly value={formData.vehicleMake} />
                     </div>
-                    <button type="button" className="btn-secondary-action calendar-btn">
-                        <FaCalendarAlt style={{ marginRight: '8px' }} /> Add to Calendar
-                    </button>
+                </div>
+                
+                {/* Mock Vehicle Details (Read-Only from lookup) */}
+                <div className="form-grid-4">
+                    <div className="form-group">
+                        <label>Plate No</label>
+                        <input type="text" readOnly value={'T 123 ABC'} />
+                    </div>
+                    <div className="form-group">
+                        <label>Mileage (km)</label>
+                        <input type="text" readOnly value={'125,000'} />
+                    </div>
+                    <div className="form-group">
+                        <label>VIN / Chassis</label>
+                        <input type="text" readOnly value={'ABC...123'} />
+                    </div>
+                    <div className="form-group">
+                        <label>Transmission</label>
+                        <input type="text" readOnly value={'Automatic'} />
+                    </div>
                 </div>
 
-                {/* Automatic Reminders */}
-                <h3 className="section-title">Automatic Reminders</h3>
-                <p className="section-description">
-                    ARI can send automatic email/SMS reminders to the client one day before this appointment.
-                </p>
-                <div className="form-group-inline">
-                    <input type="checkbox" id="emailReminder" defaultChecked />
-                    <label htmlFor="emailReminder">Send Email reminder</label>
-                </div>
-                <div className="form-group-inline">
-                    <input type="checkbox" id="smsReminder" />
-                    <label htmlFor="smsReminder">Send SMS reminder</label>
+                {/* 4. Service Request Details */}
+                <h3 className="section-title"><FaWrench /> Service Request</h3>
+                <div className="form-grid-2">
+                    <div className="form-group">
+                        <label htmlFor="serviceCategory">Service Category</label>
+                        <select id="serviceCategory" value={formData.serviceCategory} onChange={handleChange} required>
+                            <option value="Mechanical">Mechanical</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Body">Body/Panel</option>
+                            <option value="Diagnostic">Diagnostic</option>
+                            <option value="Tire">Tire Service</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="estimatedDuration">Estimated Duration (Hours)</label>
+                        <input 
+                            type="number" 
+                            id="estimatedDuration" 
+                            value={formData.estimatedDuration}
+                            onChange={handleChange}
+                            min="0.5"
+                            step="0.5"
+                        />
+                    </div>
                 </div>
 
-                {/* Change Appointment Color */}
-                <h3 className="section-title">Appointment Color Tag</h3>
+                <div className="form-group">
+                    <label htmlFor="problemDescription">Customer's Problem Description</label>
+                    <textarea 
+                        id="problemDescription" 
+                        rows="3" 
+                        value={formData.problemDescription}
+                        onChange={handleChange}
+                        placeholder="e.g., Engine light is on, making a grinding noise when braking..."
+                    ></textarea>
+                </div>
+                
+                <div className="form-group">
+                    <label htmlFor="requestedServices">Requested Services (Internal Notes / Preliminary Job List)</label>
+                    <textarea 
+                        id="requestedServices" 
+                        rows="3" 
+                        value={formData.requestedServices}
+                        onChange={handleChange}
+                        placeholder="List of known tasks (Oil Change, Brake Pad replacement, etc.)"
+                    ></textarea>
+                </div>
+                
+                <div className="form-group">
+                    <label htmlFor="estimatedCost">Estimated Cost (Optional Before Approval)</label>
+                    <input 
+                        type="text" 
+                        id="estimatedCost" 
+                        value={formData.estimatedCost}
+                        onChange={handleChange}
+                        placeholder="e.g., TZS 150,000 (Internal use)"
+                    />
+                </div>
+                
+                <div className="form-group">
+                    <label htmlFor="notes">Notes / Remarks (Additional Details)</label>
+                    <textarea 
+                        id="notes" 
+                        rows="2" 
+                        value={formData.notes}
+                        onChange={handleChange}
+                        placeholder="Any special customer requests or internal remarks."
+                    ></textarea>
+                </div>
+                
+
+                {/* 5. Workshop & Technician Assignment */}
+                <h3 className="section-title"><FaMapMarkerAlt /> Workshop Assignment</h3>
+                <div className="form-grid-3">
+                    <div className="form-group">
+                        <label htmlFor="assignedTechnicianID">Assigned Technician</label>
+                        <select id="assignedTechnicianID" value={formData.assignedTechnicianID} onChange={handleChange}>
+                            <option value="">-- Unassigned --</option>
+                            {MOCK_TECHNICIANS.map(tech => (
+                                <option key={tech.id} value={tech.id}>{tech.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="workshopBay">Workshop Bay / Area</label>
+                        <select id="workshopBay" value={formData.workshopBay} onChange={handleChange}>
+                            {MOCK_BAYS.map(bay => (
+                                <option key={bay} value={bay}>{bay}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="serviceAdvisor">Service Advisor</label>
+                        <input type="text" id="serviceAdvisor" readOnly value={MOCK_TECHNICIANS[0].name} placeholder="Supervisor/Advisor" />
+                    </div>
+                </div>
+
+                {/* 6. Communication & Notification */}
+                <h3 className="section-title"><FaBell /> Reminders & Confirmation</h3>
+                <div className="form-grid-2">
+                    <div className="form-group-inline">
+                        <input 
+                            type="checkbox" 
+                            id="sendReminder" 
+                            checked={formData.sendReminder}
+                            onChange={handleChange}
+                        />
+                        <label htmlFor="sendReminder">Send Automatic Reminder?</label>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="confirmationStatus">Confirmation Status</label>
+                        <select id="confirmationStatus" value={formData.confirmationStatus} onChange={handleChange}>
+                            <option value="Not Confirmed">Not Confirmed</option>
+                            <option value="Confirmed by Customer">Confirmed by Customer</option>
+                            <option value="Auto Confirmed">Auto Confirmed</option>
+                        </select>
+                    </div>
+                </div>
+                
+                {/* Old fields retained for visual reference/style: */}
+                <h3 className="section-title"><FaTag /> Calendar Color Tag</h3>
                 <p className="section-description">
                     Select a color to easily identify this appointment type on your calendar.
                 </p>
@@ -145,6 +356,7 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                         />
                     ))}
                 </div>
+
 
                 {/* Form Actions (Fixed Footer) */}
                 <div className="form-actions fixed-footer">
@@ -268,6 +480,9 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                     margin-bottom: 15px;
                     padding-bottom: 5px;
                     border-bottom: 2px solid var(--border-color);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
                 }
                 
                 .section-description {
@@ -286,7 +501,14 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                 .form-grid-3 {
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
-                    gap: 15px;
+                    gap: 20px; /* Increased gap for better spacing */
+                    margin-bottom: 20px;
+                }
+                .form-grid-4 {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 20px;
+                    margin-bottom: 20px;
                 }
 
                 /* ----------------------------------------------------------------- */
@@ -301,10 +523,16 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                     color: var(--text-color);
                     font-weight: 500;
                     margin-bottom: 8px;
+                    font-size: 15px; /* Slightly smaller font */
                 }
 
                 .appointment-form input[type="text"], 
                 .appointment-form input[type="datetime-local"], 
+                .appointment-form input[type="date"], 
+                .appointment-form input[type="time"], 
+                .appointment-form input[type="email"], 
+                .appointment-form input[type="number"], 
+                .appointment-form select, 
                 .appointment-form textarea {
                     background-color: var(--bg-input);
                     border: 1px solid var(--border-color);
@@ -315,21 +543,34 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                     transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
                     width: 100%;
                     box-sizing: border-box;
+                    appearance: none; /* Helps with select styling */
+                }
+                .appointment-form select {
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23${isDarkMode ? 'ecf0f1' : '2c3e50'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 10px center;
+                    padding-right: 30px;
                 }
 
+
                 .appointment-form input:focus, 
-                .appointment-form textarea:focus {
+                .appointment-form textarea:focus,
+                .appointment-form select:focus {
                     border-color: var(--primary-color);
                     box-shadow: 0 0 5px rgba(0, 191, 255, 0.5);
                     outline: none;
                 }
                 
                 /* Dark Mode Fix for datetime-local icons/text */
-                .dark-mode-form .appointment-form input[type="datetime-local"] {
+                .dark-mode-form .appointment-form input[type="datetime-local"],
+                .dark-mode-form .appointment-form input[type="date"],
+                .dark-mode-form .appointment-form input[type="time"] {
                     color-scheme: dark; 
                 }
                 
-                .light-mode-form .appointment-form input[type="datetime-local"] {
+                .light-mode-form .appointment-form input[type="datetime-local"],
+                .light-mode-form .appointment-form input[type="date"],
+                .light-mode-form .appointment-form input[type="time"] {
                     color-scheme: light; 
                 }
                 
@@ -473,7 +714,7 @@ const AppointmentForm = ({ onSave, isDarkMode = true, toggleDarkMode = () => {} 
                 .form-actions.fixed-footer {
                     position: fixed;
                     bottom: 0;
-                    left: 270px; 
+                    left: 270px; /* Adjust for non-collapsed sidebar */
                     right: 0;
                     background-color: var(--bg-card); 
                     border-top: 1px solid var(--border-color);

@@ -7,10 +7,9 @@ import {
     FaBell, 
     FaUser,         
     FaSignOutAlt, 
-    FaMoon, 
-    FaSun,
     FaCheckCircle, 
-    FaTimesCircle  
+    FaTimesCircle,
+    FaCog 
 } from 'react-icons/fa'; 
 
 
@@ -94,27 +93,14 @@ const ToastNotification = ({ message, type, duration = 1500, onClose }) => {
 };
 
 
-// --- Custom ToggleSwitch Component ---
-const ToggleSwitch = ({ checked, onChange }) => (
-    <label className="switch">
-        <input type="checkbox" checked={checked} onChange={onChange} />
-        <span className="slider"></span> 
-        <div className="icons">
-            <FaSun className="icon-sun" />
-            <FaMoon className="icon-moon" />
-        </div>
-    </label>
-);
-
-
 const TopNavigationBar = ({ 
     shopName, 
     userName, 
     shopLocation, 
     isProfileMenuOpen,  
     toggleProfileMenu,  
-    isDarkMode,         
-    toggleDarkMode,     
+    // 🛑 NEW PROP: URL for the user's profile image
+    userAvatarUrl,         
     onLogout,           
     navigate          
 }) => {
@@ -124,7 +110,16 @@ const TopNavigationBar = ({
     
     const handleProfileClick = (e) => {
         e.preventDefault();
+        // 🛑 UPDATED: This correctly navigates to the /profile route defined in Home.js
         navigate('/profile'); 
+    };
+
+    // 🏆 NEW HANDLER: For the settings icon
+    const handleSettingsClick = (e) => {
+        e.preventDefault();
+        // Placeholder for future navigation, e.g., navigate('/settings');
+        // For now, we'll just show a test toast.
+        setToast({ message: 'Settings clicked (Navigation coming soon!)', type: 'success' });
     };
     
     const handleLogoutClick = async (e) => { 
@@ -161,7 +156,21 @@ const TopNavigationBar = ({
             {/* 3. Right Section: Action and User Profile */}
             <div className="action-section">
                 
-                <FaBell className="icon-notification icon-action" />
+                {/* 🏆 WRAPPED ICONS IN DIVS TO REMOVE INHERITED BORDER STYLE */}
+                <div 
+                    className="icon-wrapper"
+                    onClick={handleSettingsClick}
+                    title="Settings"
+                >
+                    <FaCog className="icon-settings icon-action" />
+                </div>
+
+                <div 
+                    className="icon-wrapper"
+                    title="Notifications"
+                >
+                    <FaBell className="icon-notification icon-action" />
+                </div>
                 
                 {/* --- User Profile Menu (Dropdown) --- */}
                 <div 
@@ -169,32 +178,32 @@ const TopNavigationBar = ({
                     onClick={toggleProfileMenu} 
                 >
                     <div className="user-profile">
-                        <FaUser className="user-icon" /> 
+                        {/* 🛑 MODIFIED: Display <img> if userAvatarUrl exists, otherwise use FaUser */}
+                        {userAvatarUrl ? (
+                            <img 
+                                src={userAvatarUrl} 
+                                alt="User Avatar" 
+                                className="user-avatar-img" 
+                            />
+                        ) : (
+                            <FaUser className="user-icon" />
+                        )}
                         <div className="user-info">
                             <span className="user-name">{userName}</span>
                             <span className="shop-location">{shopLocation}</span>
                         </div>
                     </div>
+                    {/* ... rest of dropdown content ... */}
 
                     <div className={`dropdown-content ${isProfileMenuOpen ? 'open' : ''}`}>
                         
                         <a 
                             href="#profile" 
                             className="menu-item" 
-                            onClick={handleProfileClick} 
+                            onClick={handleProfileClick} // 🛑 Uses the navigate('/profile') handler
                         >
                             <FaUser /> My Account Profile
                         </a>
-
-                        <div className="menu-item dark-mode-toggle" onClick={(e) => {
-                            e.stopPropagation();
-                        }}>
-                            <span><FaMoon /> Dark Mode:</span>
-                            <ToggleSwitch 
-                                checked={isDarkMode} 
-                                onChange={toggleDarkMode} 
-                            />
-                        </div>
 
                         <a 
                             href="#logout" 
@@ -210,15 +219,15 @@ const TopNavigationBar = ({
             </div>
             
             {/* ----------------------------------------------------------------- */}
-            {/* STYLES FOR LAYOUT AND DARK MODE TOGGLE (No Change in Core Styling) */}
+            {/* STYLES FOR LAYOUT */}
             {/* ----------------------------------------------------------------- */}
             <style jsx>{`
                 /* Color Variables for Top Nav (from previous steps) */
                 :root {
-                    --bg-top-nav: #2c3848;
-                    --text-primary: #ffffff;
+                    --bg-top-nav: #242421ff;
+                    --text-primary: #ffffff; /* WHITE */
                     --text-secondary: #aeb8c8;
-                    --bg-sidebar: #212A38;
+                    --bg-sidebar: #242421ff;
                 }
                 
                 /* Main Header Layout */
@@ -235,7 +244,6 @@ const TopNavigationBar = ({
                     align-items: center;
                     /* Ensure content starts after the sidebar, this is handled by Home.js's main-content-wrapper */
                     padding: 0 20px 0 270px; 
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                     transition: padding-left 0.3s ease;
                 }
                 
@@ -261,17 +269,38 @@ const TopNavigationBar = ({
                 .action-section {
                     display: flex;
                     align-items: center;
-                    gap: 25px; 
+                    /* 🏆 UPDATED: Reduced gap to rely on icon-wrapper margin */
+                    gap: 5px; 
+                }
+
+                /* 🏆 NEW STYLE: Wrapper for the icons to control spacing and fix borders */
+                .icon-wrapper {
+                    padding: 5px; /* Added minor padding for click area */
+                    border-radius: 4px;
+                    cursor: pointer;
+                    /* Explicitly removed border/background */
+                    border: none;
+                    background-color: transparent;
+                    margin-right: 15px; /* Space out the icons from each other and the profile menu */
+                    transition: background-color 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .icon-wrapper:hover {
+                    background-color: rgba(255, 255, 255, 0.1); /* Optional subtle hover effect */
                 }
                 
                 .icon-action {
                     font-size: 18px;
-                    cursor: pointer;
+                    /* 🏆 REMOVED: cursor: pointer; (moved to wrapper) */
                     color: var(--text-secondary);
                     transition: color 0.2s;
                 }
                 
-                .icon-action:hover {
+                /* Icon color change on wrapper hover */
+                .icon-wrapper:hover .icon-action {
                     color: var(--text-primary);
                 }
 
@@ -293,6 +322,16 @@ const TopNavigationBar = ({
                     background-color: rgba(255, 255, 255, 0.1);
                 }
 
+                /* 🛑 NEW: Style for the actual image (avatar) */
+                .user-avatar-img {
+                    width: 32px; /* Define the size of the avatar */
+                    height: 32px;
+                    border-radius: 50%; /* Makes it circular */
+                    object-fit: cover;
+                    margin-right: 10px;
+                    border: 2px solid var(--text-primary); /* Optional border for flair */
+                }
+
                 .user-icon {
                     font-size: 24px;
                     margin-right: 10px;
@@ -304,10 +343,11 @@ const TopNavigationBar = ({
                     line-height: 1.2;
                 }
 
+                /* 🏆 FIX APPLIED HERE: Ensure user-name explicitly uses the white primary text color */
                 .user-name {
                     font-size: 14px;
                     font-weight: 600;
-                    color: var(--text-primary);
+                    color: white; /* Set explicitly to White */
                 }
 
                 .shop-location {
@@ -354,7 +394,7 @@ const TopNavigationBar = ({
                 }
 
                 .menu-item:hover {
-                    background-color: #38465b;
+                    background-color: #242421ff;
                     color: var(--text-primary);
                 }
                 
@@ -362,100 +402,6 @@ const TopNavigationBar = ({
                     border-top: 1px solid rgba(255, 255, 255, 0.1);
                     margin-top: 5px;
                     padding-top: 10px;
-                }
-
-
-                /* --- Toggle Switch CSS --- */
-                .dark-mode-toggle {
-                    justify-content: space-between;
-                    cursor: default;
-                }
-                
-                .dark-mode-toggle span {
-                    display: flex;
-                    align-items: center;
-                }
-
-                /* The switch - container */
-                .switch {
-                    position: relative;
-                    display: inline-block;
-                    width: 50px;
-                    height: 24px;
-                }
-
-                /* Hide default checkbox */
-                .switch input {
-                    opacity: 0;
-                    width: 0;
-                    height: 0;
-                }
-
-                /* The slider - round */
-                .slider {
-                    position: absolute;
-                    cursor: pointer;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: #ccc;
-                    transition: .4s;
-                    border-radius: 24px;
-                }
-
-                .slider:before {
-                    position: absolute;
-                    content: "";
-                    height: 18px;
-                    width: 18px;
-                    left: 3px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: .4s;
-                    border-radius: 50%;
-                }
-
-                input:checked + .slider {
-                    background-color: #5d9cec;
-                }
-
-                input:checked + .slider:before {
-                    transform: translateX(26px);
-                }
-                
-                .icons {
-                    position: absolute;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    width: 100%;
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 0 5px;
-                    pointer-events: none;
-                }
-
-                .icon-sun, .icon-moon {
-                    font-size: 12px;
-                    transition: opacity 0.4s;
-                }
-
-                .icon-sun {
-                    color: white;
-                    opacity: 0;
-                }
-
-                .icon-moon {
-                    color: #2c3848;
-                    opacity: 1;
-                }
-
-                input:checked ~ .icons .icon-sun {
-                    opacity: 1;
-                }
-
-                input:checked ~ .icons .icon-moon {
-                    opacity: 0;
                 }
 
             `}</style>

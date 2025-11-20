@@ -3,13 +3,14 @@
 import axios from 'axios';
 
 // 1. Define the base URL for the Django backend
-// 💡 IMPORTANT: Ensure this matches your Django API root.
 const BASE_URL = 'http://127.0.0.1:8000/api';
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
+  // 🛑 CRITICAL FIX: Remove the 'Content-Type: application/json' header default.
+  // This allows Axios to correctly set 'multipart/form-data' when uploading files (FormData).
   headers: {
-    'Content-Type': 'application/json',
+    // 'Content-Type': 'application/json', <--- REMOVED THIS LINE
   },
 });
 
@@ -54,8 +55,8 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response ? error.response.status : null;
     
-    // Check for 401 error and ensure it's not the token refresh request itself
-    if (status === 401 && originalRequest.url !== '/auth/token/refresh/') {
+    // 🏆 FIX 1: Update the token refresh URL check to Djoser's endpoint
+    if (status === 401 && originalRequest.url !== '/auth/jwt/refresh/') {
       
       // Handle requests when a refresh is already in progress
       if (isRefreshing) {
@@ -83,8 +84,8 @@ apiClient.interceptors.response.use(
           return Promise.reject(error); 
         }
 
-        // POST request to Django Simple JWT's token refresh endpoint
-        const response = await axios.post(`${BASE_URL}/auth/token/refresh/`, {
+        // 🏆 FIX 2: Update the POST request URL to Djoser's correct refresh endpoint
+        const response = await axios.post(`${BASE_URL}/auth/jwt/refresh/`, {
           refresh: refreshToken,
         });
 
