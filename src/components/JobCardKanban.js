@@ -1440,7 +1440,7 @@ const JobCardKanban = () => {
                     line-height: 1.2;
                 }
                 
-.card-vehicle-info, 
+                .card-vehicle-info, 
                 .card-technician-info {
                     color: #4B5563; 
                     font-size: 13px;

@@ -20,7 +20,7 @@
 
 /* -------------------- Dashboard Card Styling -------------------- */
 .dashboard-card {
-    background-color: white;
+    background-color: var(--card-bg);
     padding: 20px;
     border-radius: 8px;
     display: flex;

@@ -1,21 +1,79 @@
 // src/components/PaymentList.js
 
 import React from 'react';
-import { FaMoneyBillWave, FaPlusCircle } from 'react-icons/fa';
+// Importing necessary icons for the header and actions
+import { FaMoneyBillWave, FaPlusCircle, FaEye, FaEdit, FaTrash } from 'react-icons/fa'; 
 
-const PaymentList = ({ navigateTo }) => {
+// Temporary CSS for table actions is included here for easy implementation.
+// It is recommended to move this to your main CSS file (e.g., App.css) later.
+const actionStyles = `
+/* --- CSS for the Action Icons in the Table --- */
+.table-actions {
+    display: flex;
+    gap: 10px; /* Space out the icons */
+    align-items: center;
+    justify-content: flex-start; /* Align actions to the left */
+}
+
+.btn-icon-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 1.1rem; /* Slightly larger for visibility */
+    transition: color 0.2s, opacity 0.2s;
+    opacity: 0.8; /* Slightly muted by default */
+}
+
+.btn-icon-action:hover {
+    opacity: 1; /* Fully visible on hover */
+}
+
+.btn-icon-action.view-action {
+    color: #3498db; /* Blue */
+}
+
+.btn-icon-action.edit-action {
+    color: #f39c12; /* Orange/Yellow */
+}
+
+.btn-icon-action.delete-action {
+    color: #e74c3c; /* Red */
+}
+`;
+
+
+// 🏆 FIX 1: Destructure `payments` and `onDeletePayment` from props
+const PaymentList = ({ navigateTo, payments, onDeletePayment }) => {
     
-    // Mock Data for the list
-    const payments = [
-        { id: 101, invoice: 'INV-2025-001', date: '2025-11-01', amount: '1,200,000 TZS', method: 'Bank Transfer', collectedBy: 'SA Jane' },
-        { id: 102, invoice: 'INV-2025-003', date: '2025-11-05', amount: '450,000 TZS', method: 'Cash', collectedBy: 'SA John' },
-        { id: 103, invoice: 'INV-2025-004', date: '2025-11-10', amount: '200,000 TZS', method: 'Mobile Money', collectedBy: 'SA Jane' },
-    ];
+    // 🛑 REMOVED: Mock Data is now passed via props from Home.js
+    // const payments = [ ... ];
+
+    // Dummy handler for demonstration
+    const handleEdit = (id) => {
+        console.log('Editing payment:', id);
+        // navigateTo(`/payments/edit/${id}`); 
+    };
+
+    // 🛑 REMOVED: Old handleDelete is no longer needed (resolves no-unused-vars warning)
+    // const handleDelete = (id) => {
+    //     if (window.confirm(`Are you sure you want to delete payment ${id}?`)) {
+    //         console.log('Deleting payment:', id);
+    //         // Logic to delete payment goes here
+    //     }
+    // };
+    
+    // Ensure payments exists before getting length
+    const paymentCount = payments ? payments.length : 0;
 
     return (
         <div className="list-page-container">
+            {/* Inject the CSS styles */}
+            <style>{actionStyles}</style> 
+            
             <header className="page-header list-header">
-                <h2 style={{ flexGrow: 1 }}><FaMoneyBillWave style={{ marginRight: '8px' }}/> Payments Received ({payments.length})</h2>
+                {/* 🏆 FIX: Use paymentCount */}
+                <h2 style={{ flexGrow: 1 }}><FaMoneyBillWave style={{ marginRight: '8px' }}/> Payments Received ({paymentCount})</h2>
                 <button 
                     className="btn-primary-action" 
                     onClick={() => navigateTo('/payments/new')} 
@@ -33,7 +91,7 @@ const PaymentList = ({ navigateTo }) => {
                             <th>Amount</th>
                             <th>Method</th>
                             <th>Collected By</th>
-                            <th>Actions</th>
+                            <th>Actions</th> 
                         </tr>
                     </thead>
                     <tbody>
@@ -45,8 +103,36 @@ const PaymentList = ({ navigateTo }) => {
                                 <td>{p.amount}</td>
                                 <td>{p.method}</td>
                                 <td>{p.collectedBy}</td>
-                                <td>
-                                    <button className="btn-link" onClick={() => navigateTo(`/payments/${p.id}`)}>View</button>
+                                
+                                {/* ACTIONS COLUMN: All actions on a single line */}
+                                <td className="table-actions">
+                                    {/* 1. View Icon */}
+                                    <button 
+                                        className="btn-icon-action view-action" 
+                                        title="View Payment Details"
+                                        onClick={() => navigateTo(`/payments/${p.id}`)}
+                                    >
+                                        <FaEye />
+                                    </button>
+                                    
+                                    {/* 2. Edit Icon Button */}
+                                    <button 
+                                        className="btn-icon-action edit-action"
+                                        title="Edit Payment"
+                                        onClick={() => handleEdit(p.id)}
+                                    >
+                                        <FaEdit />
+                                    </button>
+
+                                    {/* 3. Delete Icon Button */}
+                                    <button 
+                                        className="btn-icon-action delete-action"
+                                        title="Delete Payment"
+                                        // This line is now correctly referencing the prop
+                                        onClick={() => onDeletePayment(p.id, p.invoice)} 
+                                    >
+                                        <FaTrash />
+                                    </button>
                                 </td>
                             </tr>
                         ))}

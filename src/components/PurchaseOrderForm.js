@@ -397,7 +397,7 @@ const PurchaseOrderForm = ({ onSave, onCancel }) => {
                 <hr className="form-divider" />
                 
                 {/* --- Form Actions --- */}
-                <div className="form-actions">
+                <div className="page-form-actions">
                     <button type="submit" className="btn-primary-action">
                         <FaSave style={{ marginRight: '5px' }} /> {isEditMode ? 'Update PO' : 'Create PO'}
                     </button>

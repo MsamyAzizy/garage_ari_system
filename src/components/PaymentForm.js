@@ -401,7 +401,7 @@ const PaymentForm = ({ onSave, onCancel }) => {
                 {/* ----------------------------------------------------------------- */}
                 {/* 5. FORM ACTIONS */}
                 {/* ----------------------------------------------------------------- */}
-                <div className="form-actions-sticky">
+                <div className="page-form-actions">
                     <button type="button" className="btn-secondary" onClick={onCancel}>
                         <FaTimes style={{ marginRight: '5px' }} /> Cancel
                     </button>

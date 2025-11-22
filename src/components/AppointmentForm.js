@@ -359,7 +359,7 @@ const AppointmentForm = ({ onSave, onCancel, isDarkMode = false, toggleDarkMode 
 
 
                 {/* Form Actions (Fixed Footer) */}
-                <div className="form-actions fixed-footer">
+                <div className="page-form-actions">
                     <button type="submit" className="btn-primary-action save-btn">
                         <FaSave style={{ marginRight: '8px' }} /> Save Appointment
                     </button>

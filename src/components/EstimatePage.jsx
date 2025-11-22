@@ -494,10 +494,10 @@ const EstimatePage = () => {
             {/* ------------------------------------------- */}
             <div className="page-form-actions">
                 <button type="button" className="btn-secondary-action large-action-btn">
-                    <span style={{marginRight: '5px'}}></span> Cancel
+                    <span style={{marginRight: '5px'}}>❌</span> Cancel
                 </button>
                 <button type="submit" className="btn-primary-action large-action-btn">
-                    <span style={{marginRight: '5px'}}></span> Save Estimate
+                    <span style={{marginRight: '5px'}}>💾</span> Save Estimate
                 </button>
             </div>
             

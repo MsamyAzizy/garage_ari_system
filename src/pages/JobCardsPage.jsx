@@ -1,5 +1,5 @@
 // src/pages/JobCardsPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // <-- FIX 1: Import useCallback
 import axios from 'axios';
 import { FaPlusCircle, FaTrash } from 'react-icons/fa';
 
@@ -20,32 +20,34 @@ const JobCardsPage = () => {
 
   const headers = { Authorization: `Bearer ${localStorage.getItem('access_token')}` };
 
-  useEffect(() => {
-    fetchJobCards();
-    fetchParts();
-    fetchClients();
-  }, []);
-
-  const fetchJobCards = async () => {
+  // FIX 2: Wrap fetch functions in useCallback, listing 'headers' as their dependency.
+  const fetchJobCards = useCallback(async () => {
     try {
       const res = await axios.get('http://127.0.0.1:8000/api/jobcards/', { headers });
       setJobCards(res.data.results);
     } catch (err) { console.error(err); }
-  };
+  }, [headers]);
 
-  const fetchParts = async () => {
+  const fetchParts = useCallback(async () => {
     try {
       const res = await axios.get('http://127.0.0.1:8000/api/inventory/parts/', { headers });
       setParts(res.data.results);
     } catch (err) { console.error(err); }
-  };
+  }, [headers]);
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       const res = await axios.get('http://127.0.0.1:8000/api/clients/', { headers });
       setClients(res.data);
     } catch (err) { console.error(err); }
-  };
+  }, [headers]);
+  
+  // FIX 3: Add fetch functions to the dependency array (Line 27).
+  useEffect(() => {
+    fetchJobCards();
+    fetchParts();
+    fetchClients();
+  }, [fetchJobCards, fetchParts, fetchClients]); // <-- FIX 3: Added all three dependencies
 
   const fetchVehicles = async clientId => {
     try {
@@ -85,6 +87,10 @@ const JobCardsPage = () => {
     let totalDue = partsSubtotal + laborSubtotal;
     return { partsSubtotal, laborSubtotal, totalDue };
   };
+
+  // Note: For completeness, you should also wrap handleSubmit and fetchVehicles in useCallback
+  // and include their dependencies ('headers', 'lineItems', 'formData', 'fetchJobCards')
+  // but for the immediate ESLint fix, the above changes are sufficient.
 
   const handleSubmit = async () => {
     const payload = { ...formData, line_items: lineItems };

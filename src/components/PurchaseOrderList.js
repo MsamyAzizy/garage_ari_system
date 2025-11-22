@@ -1,15 +1,22 @@
-// src/components/PurchaseOrderList.js
+// src/components/PurchaseOrderList.js (No changes needed, already correct from previous step)
 
 import React from 'react';
-import { FaShoppingCart, FaPlusCircle } from 'react-icons/fa';
+import { 
+    FaShoppingCart, 
+    FaPlusCircle, 
+    FaEye, 
+    FaEdit, 
+    FaTrashAlt 
+} from 'react-icons/fa';
 
 /**
- * Displays a list of Purchase Orders with options to view details and create a new one.
+ * Displays a list of Purchase Orders with options to view details, edit, delete, and create a new one.
  * @param {object} props - Component props.
  * @param {function} props.navigateTo - Function to handle routing.
  * @param {Array<object>} props.purchaseOrders - The list of PO data.
+ * @param {function} props.onDeletePO - Handler for deleting a Purchase Order (to trigger modal).
  */
-const PurchaseOrderList = ({ navigateTo, purchaseOrders }) => {
+const PurchaseOrderList = ({ navigateTo, purchaseOrders, onDeletePO }) => {
     return (
         <div className="list-page-container">
             <header className="page-header po-list-header">
@@ -41,24 +48,44 @@ const PurchaseOrderList = ({ navigateTo, purchaseOrders }) => {
                                 <th>Delivery Date</th>
                                 <th>Status</th>
                                 <th>Total</th>
-                                <th>Actions</th>
+                                <th className="action-column-header">Actions</th> 
                             </tr>
                         </thead>
                         <tbody>
-                            {purchaseOrders.map((po, index) => (
-                                <tr key={index}>
+                            {purchaseOrders.map((po) => (
+                                <tr key={po.poId || po.poNo}> 
                                     <td>{po.poNo}</td>
                                     <td>{po.supplierName}</td>
                                     <td>{po.poDate}</td>
                                     <td>{po.expectedDeliveryDate}</td>
                                     <td>{po.status}</td>
                                     <td>{po.currency} {po.grandTotalAmount.toFixed(2)}</td>
-                                    <td>
+                                    
+                                    <td className="action-column-cell icon-action-container">
+                                        
                                         <button 
-                                            className="btn-link" 
+                                            className="icon-action view" 
                                             onClick={() => navigateTo(`/purchase-orders/${po.poId}`)}
+                                            title="View Details"
                                         >
-                                            View
+                                            <FaEye />
+                                        </button>
+                                        
+                                        <button 
+                                            className="icon-action edit" 
+                                            onClick={() => navigateTo(`/purchase-orders/${po.poId}/edit`)}
+                                            title="Edit Purchase Order"
+                                        >
+                                            <FaEdit />
+                                        </button>
+                                        
+                                        <button 
+                                            className="icon-action delete" 
+                                            // 🛑 This now calls the handler passed from Home.js, triggering the modal
+                                            onClick={() => onDeletePO && onDeletePO(po.poId, po.poNo)} 
+                                            title="Delete Purchase Order"
+                                        >
+                                            <FaTrashAlt />
                                         </button>
                                     </td>
                                 </tr>
@@ -67,6 +94,34 @@ const PurchaseOrderList = ({ navigateTo, purchaseOrders }) => {
                     </table>
                 )}
             </div>
+            
+            <style jsx>{`
+                .icon-action-container {
+                    display: flex;
+                    gap: 5px;
+                    justify-content: center;
+                }
+                .icon-action {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    padding: 5px;
+                    border-radius: 4px;
+                    transition: background-color 0.2s, color 0.2s;
+                    font-size: 1.1rem;
+                    line-height: 1; 
+                }
+                .icon-action.view { color: #3498db; }
+                .icon-action.edit { color: #f39c12; }
+                .icon-action.delete { color: #e74c3c; }
+                .icon-action:hover {
+                    background-color: rgba(0, 0, 0, 0.1);
+                }
+                .action-column-cell {
+                    text-align: center !important; 
+                    width: 150px; 
+                }
+            `}</style>
         </div>
     );
 };

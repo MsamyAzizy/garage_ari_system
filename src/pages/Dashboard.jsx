@@ -25,7 +25,7 @@ export default function Dashboard() {
     
     // Fetch inventory parts
     axios.get(`${API_BASE}/inventory/parts/`, config).then(res => setInventory(res.data.results));
-  }, []);
+  }, [config]); // <-- FIX: 'config' added here
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">

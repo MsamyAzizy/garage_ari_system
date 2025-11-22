@@ -539,7 +539,7 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                 {/* ----------------------------------------------------------------- */}
                 {/* 6. FORM ACTIONS (UNCHANGED) */}
                 {/* ----------------------------------------------------------------- */}
-                <div className="form-actions">
+                <div className="page-form-actions">
                     <button type="button" className="btn-secondary" onClick={onCancel}>
                         <FaTimes style={{ marginRight: '5px' }} /> Cancel
                     </button>

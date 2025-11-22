@@ -18,6 +18,18 @@ import TopNavBar from '../components/TopNavigationBar';
 import Sidebar from '../components/Sidebar';
 
 // Import Page Components
+import StatisticsPage from '../components/StatisticsPage'; // Add this import
+import DataExportPage from '../components/DataExportPage'; // Add this import
+import VendorsReport from '../components/VendorsReport'; // Add this import
+import VehiclesReport from '../components/VehiclesReport'; // Add this import
+import ClientsReport from '../components/ClientsReport';
+import TaxReport from '../components/TaxReport';
+import EmployeesAndSalariesReport from '../components/EmployeesAndSalariesReport';
+import InventoryAndProfitReport from '../components/InventoryAndProfitReport';
+import PartsServicesReport from '../components/PartsServicesReport'; // <--- ADD THIS LINE
+import DebitCreditReport from '../components/DebitCreditReport';
+import IncomeExpenseReport from '../components/IncomeExpenseReport';
+import SalesPurchasesReport from '../components/SalesPurchasesReport';
 import Dashboard from '../components/Dashboard';
 import ClientsList from '../components/ClientsList';
 import ClientForm from '../components/ClientDetailForm';
@@ -249,7 +261,7 @@ const ConfirmationModal = ({ isOpen, title, message, confirmText, onConfirm, onC
 
 
 // -----------------------------------------------------------------
-// MOCK VEHICLE LIST COMPONENT (Defined internally for Home.js)
+// 🚗 UPDATED VEHICLE LIST COMPONENT (Matching full file structure)
 // -----------------------------------------------------------------
 const VehicleList = ({ navigateTo, vehicles }) => (
     <div className="list-page-container">
@@ -271,34 +283,68 @@ const VehicleList = ({ navigateTo, vehicles }) => (
                 </div>
             ) : (
                 <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>VIN</th>
-                            <th>License Plate</th>
-                            <th>Make/Model</th>
-                            <th>Year</th>
-                            <th>ODO</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {vehicles.map((v, index) => (
-                            <tr key={index}>
-                                <td>{v.vin}</td>
-                                <td>{v.licensePlate}</td>
-                                <td>{v.make} / {v.model}</td>
-                                <td>{v.year}</td>
-                                <td>{v.odoReading}</td>
-                                <td><button className="btn-link" onClick={() => navigateTo(`/vehicles/${v.vin}`)}>View</button></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <thead>
+                <tr>
+                    <th style={{ textAlign: 'left' }}>Make/Model</th>
+                    <th style={{ textAlign: 'left' }}>VIN / SN</th>
+                    <th style={{ textAlign: 'right' }}>Year</th>
+                    <th style={{ textAlign: 'right' }}>Odometer</th>
+                    <th style={{ textAlign: 'center' }}>Plate / Unit #</th>
+                    <th className="action-column-header">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {vehicles.map((v) => (
+                    <tr key={v.id || v.vin || v.licensePlate || Date.now() + Math.random()}>
+                        <td style={{ textAlign: 'left', fontWeight: 'bold' }}>
+                            {v.make} {v.model}
+                            <br/><small style={{ fontWeight: 'normal', color: '#777' }}>{v.vehicleType} | {v.color}</small>
+                        </td>
+                        <td style={{ textAlign: 'left' }}>{v.vin || 'N/A'}</td>
+                        <td style={{ textAlign: 'right' }}>{v.year}</td>
+                        <td style={{ textAlign: 'right' }}>
+                            {v.odoReading ? `${Number(v.odoReading).toLocaleString()} ${v.odoUnit}` : 'N/A'}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                            {v.licensePlate || v.unitNumber || 'N/A'}
+                        </td>
+                        <td className="action-column-cell icon-action-container"> 
+                            
+                            {/* VIEW Icon */}
+                            <button 
+                                className="icon-action view" 
+                                onClick={() => navigateTo(`/vehicles/${v.vin || v.id}`)}
+                                title="View Details"
+                            >
+                                <FaEye />
+                            </button>
+                            
+                            {/* EDIT Icon */}
+                            <button 
+                                className="icon-action edit" 
+                                onClick={() => navigateTo(`/vehicles/${v.vin || v.id}`)}
+                                title="Edit Vehicle"
+                            >
+                                <FaEdit />
+                            </button>
+                            
+                            {/* DELETE Icon */}
+                            <button 
+                                className="icon-action delete" 
+                                onClick={() => console.log('Delete vehicle:', v)} // Add delete logic later
+                                title="Delete Vehicle"
+                            >
+                                <FaTrashAlt />
+                            </button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
             )}
         </div>
     </div>
 );
-
 // -----------------------------------------------------------------
 // 🏆 MOCK/REAL EMPLOYEE LIST COMPONENT (UPDATED TO INCLUDE EMPLOYEE ID)
 // -----------------------------------------------------------------
@@ -384,9 +430,9 @@ const EmployeeList = ({ navigateTo, employees, onDeleteEmployee }) => (
 );
 
 // -----------------------------------------------------------------
-// ⭐ MOCK SERVICE REMINDER LIST COMPONENT
+// ⭐ MOCK SERVICE REMINDER LIST COMPONENT (UPDATED ACTIONS)
 // -----------------------------------------------------------------
-const ServiceReminderList = ({ navigateTo, reminders }) => (
+const ServiceReminderList = ({ navigateTo, reminders, onDeleteReminder }) => (
     <div className="list-page-container">
         <header className="page-header reminder-list-header">
             <h2 style={{ flexGrow: 1 }}><FaBell style={{ marginRight: '8px' }}/> Service Reminders ({reminders.length})</h2>
@@ -413,7 +459,7 @@ const ServiceReminderList = ({ navigateTo, reminders }) => (
                             <th>Reminder Type</th>
                             <th>Next Due Date</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th className="action-column-header">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -424,7 +470,36 @@ const ServiceReminderList = ({ navigateTo, reminders }) => (
                                 <td>{r.type}</td>
                                 <td>{r.nextDueDate}</td>
                                 <td>{r.status}</td>
-                                <td><button className="btn-link" onClick={() => navigateTo(`/reminders/${r.id}`)}>View</button></td>
+                                {/* 🌟 UPDATED ACTIONS COLUMN 🌟 */}
+                                <td className="action-column-cell icon-action-container">
+                                    
+                                    {/* VIEW Icon (Hidden Icon - replaces text button) */}
+                                    <button 
+                                        className="icon-action view" 
+                                        onClick={() => navigateTo(`/reminders/${r.id}`)}
+                                        title="View Details"
+                                    >
+                                        <FaEye />
+                                    </button>
+                                    
+                                    {/* EDIT Icon */}
+                                    <button 
+                                        className="icon-action edit" 
+                                        onClick={() => navigateTo(`/reminders/${r.id}/edit`)} // Assuming an edit route
+                                        title="Edit Reminder"
+                                    >
+                                        <FaEdit />
+                                    </button>
+                                    
+                                    {/* DELETE Icon */}
+                                    <button 
+                                    className="icon-action delete"
+                                    onClick={() => onDeleteReminder && onDeleteReminder(r.id, r.customerName)}
+                                    title="Delete Reminder"
+                                    >
+                                        <FaTrashAlt />
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -433,7 +508,6 @@ const ServiceReminderList = ({ navigateTo, reminders }) => (
         </div>
     </div>
 );
-
 // -----------------------------------------------------------------
 // 🏆 NEW: A wrapper component to handle fetching data for EmployeeForm
 // -----------------------------------------------------------------
@@ -512,17 +586,26 @@ const Home = () => {
     const location = useLocation(); // 🛑 Hook to read navigation state
 
     // State Hooks
+    // State Hooks
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    // 🏆 Note: vehicles and purchaseOrders are mock states for now
+    // 🏆 Note: vehicles are mock states for now
     const [vehicles] = useState([]); 
-    const [purchaseOrders] = useState([
+    
+    // 🏆 NEW/REPLACED: purchaseOrders is now a mutable state variable
+    const [purchaseOrders, setPurchaseOrders] = useState([
         { poId: 'PO-2025-001', poNo: 'PO-001', supplierName: 'Auto Parts Inc.', poDate: '2025-10-20', expectedDeliveryDate: '2025-10-25', status: 'Received', currency: 'TZS', grandTotalAmount: 1250000 },
         { poId: 'PO-2025-002', poNo: 'PO-002', supplierName: 'Tool Mart Ltd.', poDate: '2025-11-01', expectedDeliveryDate: '2025-11-15', status: 'Sent', currency: 'USD', grandTotalAmount: 850.50 },
     ]);
-    const [reminders] = useState([
+    const [reminders, setReminders] = useState([
         { id: 1, customerName: 'Azizi Bongo', plate: 'T 789 DFG', type: 'Oil Change', nextDueDate: '2026-01-15', status: 'Active' },
         { id: 2, customerName: 'John Doe', plate: 'T 123 ABC', type: 'Insurance Renewal', nextDueDate: '2025-12-01', status: 'Overdue' },
+    ]);
+    // 🏆 NEW: Payment List State (moved from PaymentList.js)
+    const [payments, setPayments] = useState([
+        { id: 101, invoice: 'INV-2025-001', date: '2025-11-01', amount: '1,200,000 TZS', method: 'Bank Transfer', collectedBy: 'SA Jane' },
+        { id: 102, invoice: 'INV-2025-003', date: '2025-11-05', amount: '450,000 TZS', method: 'Cash', collectedBy: 'SA John' },
+        { id: 103, invoice: 'INV-2025-004', date: '2025-11-10', amount: '200,000 TZS', method: 'Mobile Money', collectedBy: 'SA Jane' },
     ]);
 
     // 🏆 NEW: State for Employee List Data (Replacing hardcoded array)
@@ -661,6 +744,106 @@ const Home = () => {
     /**
      * Handles the submission (POST or PUT/PATCH) for the ClientForm.
      */
+
+    // 🏆 NEW: Function to handle the actual API call/logic for PO deletion
+    const performDeletePO = useCallback(async (id, poNo) => {
+        // Close modal first
+        closeModal(); 
+        try {
+            console.log(`MOCK: Deleting Purchase Order with ID: ${id}`);
+            // 🛑 REAL API CALL: await apiClient.delete(`/purchase-orders/${id}/`);
+            
+            // MOCK: Filter out the deleted purchase order
+            setPurchaseOrders(prevList => prevList.filter(po => po.poId !== id));
+            
+            // Add Toast Notification for success
+            // **Bolding the PO number in the success message**
+            const message = `Purchase Order **${poNo}** was successfully removed.`; 
+            setAppToast({ message, type: 'success' });
+            
+        } catch (error) {
+            console.error("Failed to delete Purchase Order:", error);
+            setAppToast({ message: `Error deleting PO ${poNo}. Please try again.`, type: 'error' });
+        }
+    }, [setPurchaseOrders, setAppToast, closeModal]);
+
+    // 🏆 NEW: PO DELETE HANDLER (Sets up the Confirmation Modal)
+    const handleDeletePO = useCallback((id, poNo) => {
+        setModalConfig({
+            isOpen: true,
+            // Title matching the screenshot ("Do you want to remove client?") but generic
+            title: `Do you want to remove this Purchase Order?`, 
+            // Message showing which item is being deleted (matching screenshot structure)
+            message: `If you remove Purchase Order (${poNo}), you cannot undo.`, 
+            confirmText: 'Remove', // Matches the screenshot button text
+            onConfirmAction: () => performDeletePO(id, poNo),
+        });
+    }, [performDeletePO, setModalConfig]);
+
+    // 🏆 NEW: Function to handle the actual API call/logic for REMINDER deletion
+    const performDeleteReminder = useCallback(async (id, name) => {
+        closeModal(); 
+        try {
+            console.log(`MOCK: Deleting Service Reminder for: ${name}`);
+            // 🛑 REAL API CALL: await apiClient.delete(`/reminders/${id}/`);
+            
+            // MOCK: Filter out the deleted reminder
+            setReminders(prevList => prevList.filter(r => r.id !== id));
+            
+            // Add Toast Notification for success
+            const message = `Service Reminder for **${name}** was successfully removed.`; 
+            setAppToast({ message, type: 'success' });
+            
+        } catch (error) {
+            console.error("Failed to delete Service Reminder:", error);
+            setAppToast({ message: `Error deleting reminder for ${name}. Please try again.`, type: 'error' });
+        }
+    }, [setReminders, setAppToast, closeModal]);
+
+    // 🏆 NEW: REMINDER DELETE HANDLER (Sets up the Confirmation Modal)
+    const handleDeleteReminder = useCallback((id, name) => {
+        setModalConfig({
+            isOpen: true,
+            title: `Do you want to remove this Reminder?`, 
+            message: `If you remove the reminder for (${name}), you cannot undo this action.`, 
+            confirmText: 'Remove', 
+            onConfirmAction: () => performDeleteReminder(id, name),
+        });
+    }, [performDeleteReminder, setModalConfig]);
+
+    // 🏆 NEW: Function to handle the actual API call/logic for PAYMENT deletion
+    const performDeletePayment = useCallback(async (id, invoice) => {
+        closeModal(); 
+        try {
+            console.log(`MOCK: Deleting Payment with ID: ${id} for Invoice: ${invoice}`);
+            // 🛑 REAL API CALL: await apiClient.delete(`/payments/${id}/`);
+            
+            // MOCK: Filter out the deleted payment
+            setPayments(prevList => prevList.filter(p => p.id !== id));
+            
+            // Add Toast Notification for success
+            const message = `Payment for Invoice **${invoice}** was successfully deleted.`; 
+            setAppToast({ message, type: 'success' });
+            
+        } catch (error) {
+            console.error("Failed to delete Payment:", error);
+            setAppToast({ message: `Error deleting payment for invoice ${invoice}. Please try again.`, type: 'error' });
+        }
+    }, [setPayments, setAppToast, closeModal]);
+
+    // 🏆 NEW: PAYMENT DELETE HANDLER (Sets up the Confirmation Modal)
+    const handleDeletePayment = useCallback((id, invoice) => {
+        setModalConfig({
+            isOpen: true,
+            title: `Delete Payment for Invoice ${invoice}?`, 
+            message: 'Permanently remove this payment record. This action cannot be undone.', 
+            confirmText: 'Delete', 
+            onConfirmAction: () => performDeletePayment(id, invoice),
+        });
+    }, [performDeletePayment, setModalConfig]);
+
+
+
     const handleClientSave = async (formData) => {
         const isEditMode = !!formData.id;
         const clientId = formData.id;
@@ -824,7 +1007,7 @@ const Home = () => {
 
     const handleVehicleCancel = () => {
         // Safe navigation back to the client list
-        navigate('/clients');
+        navigate('/vehicles');
     };
 
     const handleGenericInventorySave = (data) => {
@@ -1095,13 +1278,13 @@ const Home = () => {
                         <Route path="/inventory/vendors" element={<VendorForm navigateTo={handleNavigate} onSave={handleVendorSave} onCancel={handleVendorCancel} />} />
 
                         {/* -------------------- 5. Purchase Orders -------------------- */}
-                        <Route path="/purchase-orders" element={<PurchaseOrderList navigateTo={handleNavigate} purchaseOrders={purchaseOrders} />} />
-                        <Route path="/purchase-orders/new/:supplierId?/:jobCardId?" element={<PurchaseOrderForm onSave={handlePOSave} onCancel={handlePOCancel} />} />
+                        <Route path="/purchase-orders" element={<PurchaseOrderList navigateTo={handleNavigate} purchaseOrders={purchaseOrders} onDeletePO={handleDeletePO} />} />
+                        <Route path="/purchase-orders/new/:supplierId?/:jobCardId?" element={<PurchaseOrderForm onSave={handlePOSave} onCancel={handlePOCancel}  />} />
                         <Route path="/purchase-orders/:poId" element={<PurchaseOrderForm onSave={handlePOSave} onCancel={handlePOCancel} />} />
 
                         {/* -------------------- 6. Appointments & Reminders -------------------- */}
                         <Route path="/appointments/new" element={<AppointmentForm onSave={handleAppointmentSave} onCancel={handleAppointmentCancel} />} />
-                        <Route path="/reminders" element={<ServiceReminderList navigateTo={handleNavigate} reminders={reminders} />} />
+                        <Route path="/reminders" element={<ServiceReminderList navigateTo={handleNavigate} reminders={reminders} onDeleteReminder={handleDeleteReminder}/>} />
                         <Route path="/reminders/new/:clientId?/:vehicleId?" element={<ServiceReminderForm onSave={handleServiceReminderSave} onCancel={handleServiceReminderCancel} />} />
                         <Route path="/reminders/:reminderId" element={<ServiceReminderForm onSave={handleServiceReminderSave} onCancel={handleServiceReminderCancel} />} />
 
@@ -1113,7 +1296,7 @@ const Home = () => {
                         <Route path="/accounting/journal" element={<TransactionJournal navigateTo={handleNavigate} />} />
                         <Route path="/accounting/expenses" element={<ExpenseForm navigateTo={handleNavigate} onSave={handleExpenseSave} onCancel={handleExpenseCancel} />} />
 
-                        <Route path="/payments" element={<PaymentList navigateTo={handleNavigate} />} />
+                        <Route path="/payments" element={<PaymentList navigateTo={handleNavigate} payments={payments} onDeletePayment={handleDeletePayment} />} />
                         <Route path="/payments/new/:invoiceId?" element={<PaymentForm onSave={handlePaymentSave} onCancel={handlePaymentCancel} />} />
                         <Route path="/payments/:paymentId" element={<PaymentForm onSave={handlePaymentSave} onCancel={handlePaymentCancel} />} />
 
@@ -1134,19 +1317,92 @@ const Home = () => {
                         <Route path="/employees/new" element={<EmployeeFormWrapper onSave={handleEmployeeSave} onCancel={handleEmployeeCancel} />} />
                         <Route path="/employees/:employeeId" element={<EmployeeFormWrapper onSave={handleEmployeeSave} onCancel={handleEmployeeCancel} />} />
 
-                        {/* -------------------- 9. Reports & Settings -------------------- */}
-                        <Route path="/reports" element={<ReportsLandingPage navigateTo={handleNavigate} />} />
-                        <Route path="/profile" element={<ProfilePage />} />
+                      {/* -------------------- 9. Reports & Settings -------------------- */}
+                 
 
-                        {/* -------------------- Catch All -------------------- */}
-                        <Route path="*" element={
-                            <div style={{ padding: '20px', textAlign: 'center' }}>
-                                <h2>404 - Page Not Found</h2>
-                                <p>The page you are looking for does not exist.</p>
-                                <button className="btn-secondary" onClick={() => navigate('/')}>Go to Dashboard</button>
-                            </div>
-                        } />
-                    </Routes>
+
+
+
+ {/* -------------------- 9. Reports & Settings (UPDATED) -------------------- */}
+    
+    {/* Income and Expenses Report Route */}
+    <Route 
+        path="/reports/financial-summary" 
+        element={<IncomeExpenseReport navigateTo={handleNavigate} />} 
+    />
+    
+    {/* Sales and Purchases Report Route */}
+    <Route 
+        path="/reports/sales-purchases" 
+        element={<SalesPurchasesReport navigateTo={handleNavigate} />} 
+    />
+    
+    {/* Debit and Credit Report Route */}
+    <Route 
+        path="/reports/ar-ap" 
+        element={<DebitCreditReport navigateTo={handleNavigate} />} 
+    />
+    
+    {/* Route for Parts and Services */}
+    <Route 
+        path="/reports/parts-services" 
+        element={<PartsServicesReport navigateTo={handleNavigate} />} 
+    />
+    
+    {/* Route for Inventory and Profit */}
+    <Route 
+        path="/reports/inventory-profit" 
+        element={<InventoryAndProfitReport navigateTo={handleNavigate} />} 
+    />
+
+    <Route 
+        path="/reports/employees-salaries" 
+        element={<EmployeesAndSalariesReport navigateTo={handleNavigate} />} 
+    />
+    
+    {/* Tax Report Route */}
+    <Route 
+        path="/reports/tax-report" 
+        element={<TaxReport navigateTo={handleNavigate} />} 
+    />
+
+    {/* **NEW: Clients Report Route** */}
+    <Route 
+        path="/reports/clients" 
+        element={<ClientsReport navigateTo={handleNavigate} />} 
+    />
+    <Route 
+    path="/reports/vehicles" 
+    element={<VehiclesReport navigateTo={handleNavigate} />} 
+/>
+<Route 
+    path="/reports/vendors" 
+    element={<VendorsReport navigateTo={handleNavigate} />} 
+/>
+<Route 
+    path="/reports/data-export" 
+    element={<DataExportPage navigateTo={handleNavigate} />} 
+/>
+<Route 
+    path="/reports/statistics" 
+    element={<StatisticsPage navigateTo={handleNavigate} />} 
+/>
+    
+    {/* Reports Landing Page */}
+    <Route path="/reports" element={<ReportsLandingPage navigateTo={handleNavigate} />} />
+    <Route path="/profile" element={<ProfilePage />} />
+
+{/* -------------------- Catch All -------------------- */}
+    <Route path="*" element={
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h2>404 - Page Not Found</h2>
+            <p>The page you are looking for does not exist.</p>
+            <button className="btn-secondary" onClick={() => navigate('/')}>Go to Dashboard</button>
+        </div>
+    } />
+</Routes>
+
+                    
                 </div>
             </div>
 

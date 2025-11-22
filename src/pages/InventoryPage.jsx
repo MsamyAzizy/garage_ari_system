@@ -1,5 +1,5 @@
 // src/pages/InventoryPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react'; // <-- FIX 1: Import useCallback
 import axios from 'axios';
 import PartModal from '../components/PartModal';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
@@ -17,9 +17,13 @@ export default function InventoryPage() {
   const [partToEdit, setPartToEdit] = useState(null);
 
   const token = localStorage.getItem('access_token');
+  // Define 'headers'
   const headers = { Authorization: `Bearer ${token}` };
 
-  const fetchData = async () => {
+  // FIX 2: Wrap fetchData in useCallback.
+  // We need to include 'headers' in useCallback's dependency array 
+  // because it uses the 'headers' object defined above.
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [partsRes, catRes, venRes] = await Promise.all([
@@ -35,11 +39,12 @@ export default function InventoryPage() {
       alert('Error fetching inventory data.');
     }
     setLoading(false);
-  };
+  }, [headers]); // <-- FIX 3: 'headers' is a dependency of useCallback
 
+  // FIX 4: Add fetchData to useEffect's dependency array (Line 42)
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]); // <-- FIX 4: 'fetchData' is now a dependency
 
   const handleAdd = () => {
     setPartToEdit(null);
@@ -51,6 +56,8 @@ export default function InventoryPage() {
     setShowModal(true);
   };
 
+  // Note: handleDelete also uses 'headers' and 'fetchData', 
+  // so it should ideally be wrapped in useCallback as well for consistency.
   const handleDelete = async (partId) => {
     if (!window.confirm('Are you sure you want to delete this part?')) return;
     try {

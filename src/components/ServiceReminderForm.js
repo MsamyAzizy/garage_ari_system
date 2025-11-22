@@ -517,7 +517,7 @@ const ServiceReminderForm = ({ onCancel, isDarkMode = false }) => {
             </div>
             
             {/* Form Actions (Fixed Footer) */}
-            <div className="form-actions-fixed-footer">
+            <div className="page-form-actions">
                 <button type="button" className="btn-secondary-action" onClick={onCancel || (() => navigate('/reminders'))} disabled={isLoading}>
                     Cancel
                 </button>

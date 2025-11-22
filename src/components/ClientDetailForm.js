@@ -877,7 +877,7 @@ const ClientForm = () => {
                 </div>
                 
                 {/* --- Form Actions --- */}
-                <footer className="form-actions">
+                <footer className="page-form-actions">
                     <button 
                         type="button" 
                         onClick={handleCancel} 
@@ -913,7 +913,7 @@ const ClientForm = () => {
                 /* ----------------------------------------------------------------- */
                 
                 .client-form-container {
-                    max-width: 1900px;
+                    max-width: 2000px;
                     margin: 20px auto;
                     padding: 0 20px;
                     font-family: 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
@@ -1292,7 +1292,9 @@ const ClientForm = () => {
                     to { opacity: 0; }
                 }
             `}</style>
+            
         </div>
+        
     );
 };
 

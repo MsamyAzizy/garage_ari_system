@@ -621,7 +621,7 @@ select option[style*="color: red"] {
     padding: 15px 30px;
     background-color: var(--card-bg);
     border-top: 1px solid var(--border-color);
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -2px 5px rgba(87, 92, 86, 0.986);
     display: flex;
     justify-content: flex-end; /* Move buttons to the right (standard placement for form actions) */
     gap: 15px;

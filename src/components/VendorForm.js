@@ -1,11 +1,11 @@
 // src/components/VendorForm.js
 
 import React from 'react';
-// Corrected: FaTimes removed. FaUserTie and FaSave are kept as they are used in the header and the save button.
-import { FaUserTie, FaSave } from 'react-icons/fa'; 
+// 🏆 FIX 1: Import the FaTimes icon for the Cancel button
+import { FaUserTie, FaSave, FaTimes } from 'react-icons/fa'; 
 
 const VendorForm = ({ onSave, onCancel }) => { 
-    // onCancel is kept in props for completeness, though unused in the button's absence
+    // onCancel is now used in the Cancel button's onClick handler
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -107,13 +107,22 @@ const VendorForm = ({ onSave, onCancel }) => {
                 </div>
 
                 {/* Form Actions (Fixed Footer - Save button on the right) */}
-                <div className="form-actions fixed-footer">
-                    {/* The Save button is on the right, controlled by CSS justify-content: flex-end */}
+                <div className="page-form-actions">
+                    
+                    {/* 🏆 FIX 2: Add the Cancel button on the left (controlled by CSS) */}
+                    <button 
+                        type="button" // Use type="button" to prevent form submission
+                        className="btn-secondary-action" 
+                        onClick={onCancel} // Call the onCancel prop
+                        style={{ marginRight: 'auto' }} // Push it to the left
+                    >
+                        <FaTimes style={{ marginRight: '8px' }} /> Cancel
+                    </button>
+                    
+                    {/* The Save button is on the right */}
                     <button type="submit" className="btn-primary-action">
                         <FaSave style={{ marginRight: '8px' }} /> Save
                     </button>
-                    
-                    {/* The CANCEL button remains removed */}
                 </div>
             </form>
         </div>

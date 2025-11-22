@@ -28,7 +28,7 @@ const PRIMARY_BLUE = '#5d9cec';
 const BG_MAIN_LIGHT = '#f4f7f9'; // Very light grey/white background
 const BG_CARD_LIGHT = '#ffffff'; // White background for the card
 const TEXT_PRIMARY_LIGHT = '#333333'; // Dark text
-const TEXT_MUTED_LIGHT = '#6c757d'; // Muted grey text
+const TEXT_MUTED_LIGHT = '#747d6cff'; // Muted grey text
 const INPUT_BORDER_LIGHT = '#e5e5e5'; // Light border
 
 // 🏆 ADDED DARK MODE CONSTANTS ONLY FOR MODAL 🏆
@@ -814,9 +814,9 @@ const ClientsList = () => {
                 }
                 
                 .btn-back-to-list {
-                    background: none;
+                    background: #5d9cec;
                     border: none;
-                    color: ${TEXT_MUTED_LIGHT}; 
+                    color: white; 
                     cursor: pointer;
                     padding: 8px 15px;
                     border-radius: 6px;

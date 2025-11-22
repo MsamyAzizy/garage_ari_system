@@ -8,7 +8,9 @@ import {
   // 🏆 NEW ICON FOR EMPLOYEE MANAGEMENT
   FaUserTie,
   // ⭐ NEW ICON FOR PURCHASE ORDER (Use FaShoppingCart for consistency with inventory flow)
-  FaShoppingCart 
+  FaShoppingCart,
+  // 🧭 NEW ICON FOR TOUR CTA 🧭
+  FaCompass
 } from 'react-icons/fa'; 
 
 const sidebarModules = [
@@ -32,7 +34,7 @@ const sidebarModules = [
     isCollapsible: true, 
     subModules: [
         { name: 'Kanban Board List', path: '/jobcards/kanban', highlight: '' }, 
-        { name: 'Create New Job Card', path: '/jobcards/new', highlight: 'NEW' }, 
+        { name: 'Create New Job Card', path: '/jobcards/new', highlight: '' }, 
     ]
   },
   // ---------------------------------------------------------------------
@@ -53,7 +55,22 @@ const sidebarModules = [
   },
   // ---------------------------------------------------------------------
 
-  { name: 'Invoices & Estimates', icon: FaFileInvoice, path: '/invoices-estimates' },
+// 🏆 NEW MODULE: INVOICES & ESTIMATES (Collapsible Parent) 🏆
+{ 
+  name: 'Invoices & Estimates', 
+  icon: FaFileInvoice, 
+  path: '/invoices-estimates', // Parent path for active state check
+  isCollapsible: true, 
+  subModules: [
+      // Default view when clicking the parent link
+      // Link to the form we just styled
+      { name: 'Create New Estimate', path: '/invoices-estimates', highlight: '' }, 
+            // Link for creating a new invoice
+
+      { name: 'Create New Invoice', path: '/invoices-estimates/estimate', highlight: '' }, 
+
+  ]
+},
   { name: 'Payments', icon: FaCreditCard, path: '/payments' },
   { name: 'Accounting', icon: FaDollarSign, path: '/accounting' },
   { name: 'Appointments', icon: FaCalendarAlt, path: '/appointments/new', highlight: '' },
@@ -63,10 +80,85 @@ const sidebarModules = [
   { name: 'Purchase Order', icon: FaShoppingCart , path: '/purchase-orders' }, 
   { name: 'Reports Analysis', icon: FaChartLine, path: '/reports' },
   // 🛑 ICON UPDATE: FaWrench is used for Job Cards and Configuration
-  { name: 'Configuration', icon: FaWrench, path: '/configuration' },
+  //{ name: 'Configuration', icon: FaWrench, path: '/configuration' },
 ];
 
-const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => { 
+
+// ➡️ UPDATED TEXT SLIDES (8 Slides total)
+const SLIDES = [
+    { title: 'Quick System Tour', subtitle: 'Explore key features!' },
+    { title: 'Create Job Cards', subtitle: 'Start new services now!' },
+    { title: 'Manage Inventory', subtitle: 'Update parts and stock.' },
+    { title: 'Check Reports', subtitle: 'View sales performance.' },
+    // ⬇️ ADDED 4 NEW SLIDES ⬇️
+    { title: 'Invoice Customers', subtitle: 'Convert estimates quickly!' },
+    { title: 'Manage Employees', subtitle: 'Track shifts and payroll.' },
+    { title: 'Schedule Appointments', subtitle: 'Book next week\'s jobs!' },
+    { title: 'Request Service', subtitle: 'Log customer requests.' },
+];
+
+// 🧭 UPDATED COMPONENT: TourCtaBanner with Auto-Slide 🧭
+const TourCtaBanner = ({ isCollapsed, onClick }) => {
+    const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+    // Effect to cycle through slides every 3 seconds
+    useEffect(() => {
+        // 🛑 IMPORTANT: Added check for small screen here. On mobile, the sidebar is never collapsed, so the slide should continue.
+        // We only stop the animation if the screen is large/desktop and the sidebar is manually collapsed.
+        if (isCollapsed && window.innerWidth > 992) return; 
+
+        const interval = setInterval(() => {
+            setCurrentSlideIndex(prevIndex => 
+                (prevIndex + 1) % SLIDES.length
+            );
+        }, 3000); // Change slide every 3 seconds
+
+        return () => clearInterval(interval); // Cleanup on unmount/collapse
+    }, [isCollapsed]);
+
+    return (
+        <div 
+            className={`tour-cta-banner ${isCollapsed ? 'collapsed' : ''}`}
+            onClick={onClick}
+        >
+            <div className="cta-content">
+                <FaCompass className="cta-icon" />
+                
+                <div className="cta-text-wrapper">
+                    {/* The slider container must have overflow: hidden */}
+                    {!isCollapsed ? (
+                        <div className="text-slider-container">
+                            <div 
+                                className="text-slides" 
+                                style={{ 
+                                    // Dynamically shift the container to show the current slide
+                                    transform: `translateX(-${currentSlideIndex * 100 / SLIDES.length}%)`,
+                                    // Total width of all slides
+                                    width: `${SLIDES.length * 100}%`
+                                }}
+                            >
+                                {/* Map each slide text to a slider item */}
+                                {SLIDES.map((slide, index) => (
+                                    <div key={index} className="slide-item">
+                                        <span className="cta-title">{slide.title}</span>
+                                        <span className="cta-subtitle">{slide.subtitle}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        // Collapsed state text
+                        <span className="cta-title">Tour</span>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// 🛑 NEW PROP ADDED: isOpenMobile 🛑
+const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo, isOpenMobile }) => { 
   
   const ToggleIcon = isCollapsed ? FaAngleRight : FaAngleLeft;
   // State for which dropdown is open 
@@ -140,16 +232,18 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
 
     // Handlers for mouse enter/leave when COLLAPSED (Flyout mode)
     const handleMouseEnter = useCallback((e, module) => {
-        if (!isCollapsed || !module.isCollapsible) return;
-        
-        const rect = e.currentTarget.getBoundingClientRect();
-        // Set the flyout position relative to the sidebar
-        setFlyoutTop(rect.top - 10); // Adjusting the offset slightly
-        setHoveredModulePath(module.path);
+        // 🛑 Prevent flyout on mobile, where isCollapsed is false but screen is small
+        if (isCollapsed && window.innerWidth > 992 && module.isCollapsible) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            // Set the flyout position relative to the sidebar
+            setFlyoutTop(rect.top - 10); // Adjusting the offset slightly
+            setHoveredModulePath(module.path);
+        }
     }, [isCollapsed]);
 
     const handleMouseLeave = useCallback(() => {
-        if (isCollapsed) {
+        // 🛑 Only use the delay for desktop collapsed state
+        if (isCollapsed && window.innerWidth > 992) {
             // Allow a short delay to move to the flyout menu without it closing
             setTimeout(() => {
                 // If the mouse is not over the flyout area or another item, clear it
@@ -157,14 +251,24 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
             }, 300); 
         }
     }, [isCollapsed]);
+
+    // 🧭 NEW HANDLER: Tour CTA Click 🧭
+    const handleTourCtaClick = () => {
+        console.log("Starting System Tour...");
+        // Implement your actual tour logic here (e.g., calling a react-joyride function)
+    };
     
     // The dropdown is open if:
     // 1. We are expanded AND it was clicked open (openDropdown state)
-    // 2. We are collapsed AND we are hovering over it (hoveredModulePath state)
+    // 2. We are collapsed (desktop) AND we are hovering over it (hoveredModulePath state)
     // 3. It is the active module (isModuleActive)
 
     return (
-        <nav className={`sidebar ${isCollapsed ? 'sidebar--collapsed' : ''}`}> 
+        // 🛑 UPDATED CLASS LIST: Added conditional class for mobile open state 🛑
+        <nav className={`sidebar 
+            ${isCollapsed ? 'sidebar--collapsed' : ''} 
+            ${isOpenMobile ? 'sidebar--open-mobile' : ''}
+        `}> 
         
         {/* 1. LOGO/HEADER AREA */}
         <button 
@@ -175,6 +279,7 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
             <FaBars className="logo-icon" /> 
             <span className="logo-text">AUTO REPAIR SYS</span>
             
+            {/* 🛑 Hiding collapse icon on mobile since the full sidebar is shown */}
             <ToggleIcon className="header-collapse-icon" /> 
         </button>
 
@@ -186,8 +291,8 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
             {sidebarModules.map((module) => {
                 
                 const isActive = isModuleActive(module);
-                const isDropdownOpen = module.path === openDropdown && !isCollapsed; // Expanded click-based state
-                const isFlyoutOpen = module.path === hoveredModulePath && isCollapsed; // Collapsed hover-based state
+                const isDropdownOpen = module.path === openDropdown && !isCollapsed; // Expanded click-based state (Desktop & Mobile Open)
+                const isFlyoutOpen = module.path === hoveredModulePath && isCollapsed; // Collapsed hover-based state (Desktop Only)
                 
                 // Determine the link's target path
                 const targetPath = module.isCollapsible && module.subModules.length > 0
@@ -291,6 +396,10 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
             </ul>
         </div>
 
+        {/* 3. TOUR CTA BANNER (FOOTER) */}
+        <div className="sidebar-footer-cta">
+            <TourCtaBanner isCollapsed={isCollapsed} onClick={handleTourCtaClick} />
+        </div>
         
         {/* ADDED STYLES */}
         <style>{`
@@ -307,7 +416,8 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
             top: 0;
             left: 0;
             padding: 0; 
-            transition: width 0.3s ease;
+            /* 🛑 IMPORTANT: Added a 100% width transition for mobile slide-in */
+            transition: width 0.3s ease, left 0.3s ease; 
             display: flex;
             flex-direction: column;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -342,7 +452,7 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
 
 
             /* ----------------------------------------------------------------- */
-            /* COLLAPSED STATE ADJUSTMENTS (Flyout) */
+            /* COLLAPSED STATE ADJUSTMENTS (Flyout - Desktop Only) */
             /* ----------------------------------------------------------------- */
 
             .sidebar--collapsed .link-text,
@@ -436,6 +546,12 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
             .sidebar--collapsed .logo-icon {
                 margin: 0;
             }
+            
+            /* 🛑 HIDE COLLAPSE ICON ON COLLAPSED MOBILE VIEW (will be full width) 🛑 */
+            .sidebar--open-mobile .header-collapse-icon {
+                display: none;
+            }
+
 
             .nav-wrapper {
                 flex-grow: 1;
@@ -581,6 +697,214 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo }) => {
                 margin-left: -5px; 
             }
 
+            /* ----------------------------------------------------------------- */
+            /* 🧭 UPDATED: TOUR CTA BANNER STYLES (FOOTER & SLIDER) 🧭 */
+            /* ----------------------------------------------------------------- */
+            
+            .sidebar-footer-cta {
+                padding: 10px;
+                margin-top: auto; 
+                background-color: #242421ff; 
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                /* Ensure banner content is clipped to enable slide effect */
+                overflow: hidden; 
+            }
+            
+            .tour-cta-banner {
+                background-color: #242421ff; 
+                padding: 15px;
+                border-radius: 8px;
+                color: white;
+                cursor: pointer;
+                transition: background-color 0.2s; 
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                border: 1px solid #38465b; 
+            }
+
+            .tour-cta-banner:hover {
+                background-color: #2c3848; 
+            }
+
+            .cta-content {
+                display: flex;
+                align-items: center;
+                width: 100%;
+                transition: all 0.3s ease;
+            }
+
+            .cta-icon {
+                font-size: 24px;
+                color: #ffc107; 
+                margin-right: 15px;
+                min-width: 24px;
+                transition: margin 0.3s ease;
+            }
+            
+            .cta-text-wrapper {
+                flex-grow: 1;
+                text-align: left;
+                overflow: hidden; 
+                white-space: nowrap; /* Keep the content on a single line */
+                max-width: 170px; 
+                transition: max-width 0.3s ease; 
+            }
+
+            /* ➡️ SLIDER CONTAINER STYLES */
+            .text-slider-container {
+                /* This is the window for the scrolling text */
+                height: 40px; 
+                overflow: hidden; 
+                width: 100%; /* Ensure it takes up the full width of the wrapper */
+            }
+
+            .text-slides {
+                display: flex;
+                height: 100%;
+                /* Transition is controlled by the inline style in React */
+                transition: transform 0.5s ease-in-out; 
+            }
+
+            .slide-item {
+                /* CRITICAL FIX: Flex items need to define their min-width based on parent total width */
+                min-width: calc(100% / ${SLIDES.length}); 
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                height: 100%;
+                text-align: left;
+                /* CRITICAL FIX: Set explicit width to ensure horizontal spacing */
+                width: 100%; 
+            }
+
+            .cta-title {
+                font-weight: 600;
+                font-size: 15px;
+                /* Ensure title is visible */
+                white-space: nowrap; 
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .cta-subtitle {
+                font-size: 12px;
+                color: #c4ccd8;
+                margin-top: 2px;
+                /* Ensure subtitle is visible */
+                white-space: nowrap; 
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            /* ----------------------------------------------------------------- */
+            /* COLLAPSED STATE */
+            /* ----------------------------------------------------------------- */
+            
+            .tour-cta-banner.collapsed {
+                padding: 10px;
+                align-items: center;
+                justify-content: center;
+                background-color: #2c3848; 
+                border: none;
+            }
+
+            .tour-cta-banner.collapsed:hover {
+                background-color: #38465b; 
+            }
+            
+            .tour-cta-banner.collapsed .cta-content {
+                justify-content: center;
+                width: auto;
+            }
+
+            .tour-cta-banner.collapsed .cta-icon {
+                margin: 0;
+            }
+            
+            /* Hide the text wrapper completely in collapsed state */
+            .tour-cta-banner.collapsed .cta-text-wrapper {
+                max-width: 0; 
+                opacity: 0;
+            }
+            
+            /* ----------------------------------------------------------------- */
+            /* 🛑 MOBILE RESPONSIVENESS (MAX-WIDTH: 992px) 🛑 */
+            /* ----------------------------------------------------------------- */
+            @media (max-width: 992px) {
+                
+                .sidebar {
+                    /* Initial state: Hidden off-screen */
+                    left: -250px; 
+                    width: 250px;
+                    /* Ensure mobile sidebar is never visually collapsed */
+                    transform: none !important;
+                }
+                
+                .sidebar--open-mobile {
+                    /* Open state: Slide in */
+                    left: 0;
+                    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5); /* Overlay effect */
+                }
+                
+                /* 🛑 CRITICAL: Force the sidebar out of the collapsed state on mobile 🛑 */
+                .sidebar--collapsed {
+                    width: 250px; /* Force full width on mobile */
+                }
+                
+                .sidebar--collapsed .logo-text,
+                .sidebar--collapsed .link-text,
+                .sidebar--collapsed .highlight-tag,
+                .sidebar--collapsed .dropdown-indicator {
+                    /* Re-show elements hidden by the desktop collapsed state */
+                    display: block; 
+                    opacity: 1;
+                    visibility: visible;
+                }
+                
+                /* Reset icon margin */
+                .sidebar--collapsed .logo-icon {
+                    margin-right: 10px;
+                }
+                
+                /* Disable the Flyout Menu logic for mobile */
+                .sidebar--collapsed .submenu-list {
+                    /* Re-enable smooth transition for click-based dropdown on mobile */
+                    transition: max-height 0.3s ease-out; 
+                    position: static; 
+                    box-shadow: none;
+                }
+                
+                .sidebar--collapsed .submenu-list.open {
+                    /* Use the expanded dropdown logic for mobile open state */
+                    max-height: 500px !important;
+                    display: block; 
+                }
+                
+                /* Footer CTA adjustments */
+                .tour-cta-banner.collapsed {
+                    /* Reset mobile footer to expanded look */
+                    background-color: #242421ff;
+                    padding: 15px; 
+                }
+                
+                .tour-cta-banner.collapsed .cta-content {
+                    justify-content: flex-start;
+                }
+                
+                .tour-cta-banner.collapsed .cta-icon {
+                    margin-right: 15px;
+                }
+                
+                .tour-cta-banner.collapsed .cta-text-wrapper {
+                    max-width: 170px;
+                    opacity: 1;
+                }
+                
+            }
+            
+            
         `}</style>
         </nav>
     );

@@ -528,7 +528,7 @@ const InvoiceEstimateForm = ({ type = 'Invoice', onSave, onCancel, documentData 
                 {/* ----------------------------------------------------------------- */}
                 {/* 6. FORM ACTIONS */}
                 {/* ----------------------------------------------------------------- */}
-                <div className="form-actions">
+                <div className="page-form-actions">
                     <button type="button" className="btn-secondary" onClick={onCancel}>
                         <FaTimes style={{ marginRight: '5px' }} /> Cancel
                     </button>

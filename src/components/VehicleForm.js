@@ -1,6 +1,6 @@
 // src/components/VehicleForm.js - FINAL CLEAN CODE
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react'; // 👈 Added useEffect
 import {
     FaCar,
     FaCamera,
@@ -9,11 +9,12 @@ import {
     FaPaintBrush,
     FaSave,
     FaTimes,
-    FaImage
+    FaImage,
+    FaUserFriends // 👈 Added FaUserFriends icon
 } from 'react-icons/fa';
 
 // ----------------------------------------------------------------------
-// 1. DATA DEFINITIONS & SORTING
+// 1. DATA DEFINITIONS & MOCK UTILITIES
 // ----------------------------------------------------------------------
 
 const vehicleBodyTypes = [
@@ -280,6 +281,35 @@ const mockTrimOptions = [
     'Off-Road (TRD / Rubicon)'
 ].sort();
 
+
+// 🏆 NEW MOCK CLIENT DATA 🏆
+const mockClients = [
+    { id: 101, name: 'Tanzania Logistics Co.' },
+    { id: 102, name: 'Dar es Salaam Fleet Services' },
+    { id: 103, name: 'Zanzibar Transport Hub' },
+    { id: 104, name: 'Kilimanjaro Heavy Equipment Ltd.' },
+    { id: 105, name: 'Lake Victoria Fishing & Freight' },
+];
+
+/**
+ * 🏆 NEW MOCK HOOK: Simulates fetching clients from an API endpoint.
+ */
+const useFetchClients = () => {
+    const [clients, setClients] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Simulate API delay
+        setTimeout(() => {
+            setClients(mockClients);
+            setLoading(false);
+        }, 800);
+    }, []);
+
+    return { clients, loading };
+};
+
+
 // ----------------------------------------------------------------------
 // 2. REACT COMPONENT
 // ----------------------------------------------------------------------
@@ -288,8 +318,13 @@ const VehicleForm = ({ onSave, onCancel }) => {
     // State to hold the selected image file URL
     const [vehicleImage, setVehicleImage] = useState(null);
 
+    // 🏆 NEW: Client State and Loading
+    const { clients, loading: loadingClients } = useFetchClients();
+
     // --- State to hold form values ---
     const [formData, setFormData] = useState({
+        // 🏆 NEW: Field for client ID
+        clientId: '',
         vin: '',
         licensePlate: '',
         vehicleType: '',
@@ -306,6 +341,15 @@ const VehicleForm = ({ onSave, onCancel }) => {
         unitNumber: '',
         notes: ''
     });
+
+    // 🏆 HELPER: Find the name of the selected client for display
+    const selectedClientName = useMemo(() => {
+        if (!formData.clientId) return '';
+        // Note: Compare clientId as strings to match select value attribute
+        const client = clients.find(c => String(c.id) === String(formData.clientId));
+        return client ? client.name : '';
+    }, [formData.clientId, clients]);
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -362,9 +406,9 @@ const VehicleForm = ({ onSave, onCancel }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         const dataToSave = { ...formData, image: vehicleImage };
-        // Basic validation for required fields
-        if (!formData.year || !formData.make || !formData.model) {
-            alert("Please complete the Year, Make, and Model fields.");
+        // 🏆 UPDATED VALIDATION: Client ID is now required
+        if (!formData.clientId || !formData.year || !formData.make || !formData.model) {
+            alert("Please complete the Client, Year, Make, and Model fields.");
             return;
         }
         onSave(dataToSave);
@@ -455,6 +499,39 @@ const VehicleForm = ({ onSave, onCancel }) => {
                         <FaRulerHorizontal className="icon-btn-form" title="Measure" />
                     </div>
                 </div>
+                
+                {/* 🏆 1A. Client Assignment Section (NEW) 🏆 */}
+                <h4 className="form-section-title"><FaUserFriends /> Client Assignment</h4>
+                <div className="form-grid-1">
+                    <div className="form-group">
+                        <label htmlFor="clientId">Client Name</label>
+                        <select 
+                            id="clientId" 
+                            name="clientId" 
+                            onChange={handleChange} 
+                            value={formData.clientId}
+                            disabled={loadingClients}
+                        >
+                            <option value="">
+                                {loadingClients ? 'Loading clients...' : 'Select client to assign vehicle'}
+                            </option>
+                            {/* Dynamically generated list of clients */}
+                            {clients.map(client => (
+                                // Use client.id as the value for submission
+                                <option key={client.id} value={client.id}>
+                                    {client.name}
+                                </option>
+                            ))}
+                        </select>
+                        {selectedClientName && (
+                            <small style={{ marginTop: '5px', display: 'block', color: '#5d9cec', fontSize: '12px' }}>
+                                Vehicle will be assigned to: **{selectedClientName}**
+                            </small>
+                        )}
+                    </div>
+                </div>
+                {/* --- End Client Assignment --- */}
+                
 
                 {/* 1. Primary Identifiers */}
                 <h4 className="form-section-title"><FaCar /> Vehicle Details</h4>
@@ -581,78 +658,78 @@ const VehicleForm = ({ onSave, onCancel }) => {
                 <div className="form-grid-3">
                     <div className="form-group">
                         <label htmlFor="color">Exterior Color</label>
-                        <input type="text" id="color" name="color" placeholder="EG: BLACK, WHITE, ETC." onChange={handleChange} value={formData.color} />
+                        <input type="text" id="color" name="color" placeholder="Red, White, Black, etc." onChange={handleChange} value={formData.color} />
                     </div>
-
+                    
                     <div className="form-group">
-                        <label htmlFor="engine">Engine Type / Configuration</label>
+                        <label htmlFor="engine">Engine / Power Source</label>
                         <select id="engine" name="engine" onChange={handleChange} value={formData.engine}>
-                            <option value="">select engine type</option>
-                            {/* Dynamically generated list (SORTED) */}
-                            {engineOptions.map(eng => (
-                                <option key={eng} value={eng}>{eng}</option>
+                            <option value="">select engine type/fuel</option>
+                            {engineOptions.map(option => (
+                                <option key={option} value={option}>{option}</option>
                             ))}
                         </select>
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="drivetrain">Drive Train</label>
+                        <label htmlFor="drivetrain">Drivetrain</label>
                         <select id="drivetrain" name="drivetrain" onChange={handleChange} value={formData.drivetrain}>
-                            <option value="">select drive train</option>
-                            <option value="Front-Wheel Drive (FWD)">Front-Wheel Drive (FWD)</option>
-                            <option value="Rear-Wheel Drive (RWD)">Rear-Wheel Drive (RWD)</option>
-                            <option value="All-Wheel Drive (AWD)">All-Wheel Drive (AWD)</option>
-                            <option value="Four-Wheel Drive (4WD/4x4)">Four-Wheel Drive (4WD/4x4)</option>
-                            <option value="6x4">Six Wheel Drive (6x4)</option>
-                            <option value="6x2">Six Wheel Drive (6x2)</option>
+                            <option value="">select drivetrain</option>
+                            <option value="FWD">Front-Wheel Drive (FWD)</option>
+                            <option value="RWD">Rear-Wheel Drive (RWD)</option>
+                            <option value="AWD">All-Wheel Drive (AWD)</option>
+                            <option value="4x4/4WD">4x4 / Four-Wheel Drive (4WD)</option>
                         </select>
                     </div>
                 </div>
-
-                {/* 4. Odometer/Internal */}
+                
+                {/* 4. Odometer & Unit Number */}
+                <h4 className="form-section-title"><FaRulerHorizontal /> Mileage & Internal ID</h4>
                 <div className="form-grid-3">
                     <div className="form-group">
-                        <label htmlFor="odoReading">Odometer Reading</label>
-                        <input type="number" id="odoReading" name="odoReading" placeholder="ENTER CURRENT READING" onChange={handleChange} value={formData.odoReading} />
+                        <label htmlFor="odoReading">Odometer Reading (Start)</label>
+                        <input type="number" id="odoReading" name="odoReading" placeholder="0" onChange={handleChange} value={formData.odoReading} />
                     </div>
+                    
                     <div className="form-group">
                         <label htmlFor="odoUnit">Odometer Unit</label>
                         <select id="odoUnit" name="odoUnit" onChange={handleChange} value={formData.odoUnit}>
                             <option value="miles">Miles</option>
-                            <option value="km">Kilometers (km)</option>
+                            <option value="kilometers">Kilometers</option>
                             <option value="hours">Hours (for equipment)</option>
                         </select>
                     </div>
+
                     <div className="form-group">
-                        <label htmlFor="unitNumber">Unit Number (Internal)</label>
-                        <input type="text" id="unitNumber" name="unitNumber" placeholder="YOUR FLEET ID (OPTIONAL)" onChange={handleChange} value={formData.unitNumber} />
+                        <label htmlFor="unitNumber">Internal Unit Number</label>
+                        <input type="text" id="unitNumber" name="unitNumber" placeholder="U0001 or 12345" onChange={handleChange} value={formData.unitNumber} />
                     </div>
                 </div>
 
-
                 {/* 5. Notes */}
-                <h4 className="form-section-title">Notes</h4>
-                <div className="form-group full-width">
-                    <label htmlFor="notes">Additional Notes</label>
-                    <textarea
-                        id="notes"
-                        name="notes"
-                        rows="4"
-                        placeholder="Add any relevant history, condition details, or internal remarks about the vehicle."
-                        onChange={handleChange}
+                <div className="form-group full-width-group">
+                    <label htmlFor="notes">Notes/Description</label>
+                    <textarea 
+                        id="notes" 
+                        name="notes" 
+                        rows="3" 
+                        placeholder="Add internal notes, damage description, or special instructions." 
+                        onChange={handleChange} 
                         value={formData.notes}
                     ></textarea>
                 </div>
 
 
-                {/* 6. Action Buttons (Sticky Footer/Bar) */}
-                <footer className="form-actions-footer">
-                    <button type="submit" className="btn-primary"><FaSave /> Save Vehicle</button>
-                    <button type="button" onClick={onCancel} className="btn-cancel"><FaTimes /> Cancel</button>
-                </footer>
-
+                {/* FORM ACTIONS (Maintaining current position/style classes) */}
+                <div className="page-form-actions">
+                    <button type="button" onClick={onCancel} className="btn-secondary-action large-btn action-cancel-style">
+                        <font color='white'><FaTimes style={{ marginRight: '8px' }} /> Cancel</font>
+                    </button>
+                    <button type="submit" className="btn-primary-action large-btn action-save-style">
+                        <FaSave style={{ marginRight: '8px' }} /> Save Vehicle
+                    </button>
+                </div>
             </form>
-            {/* End of form */}
         </div>
     );
 };

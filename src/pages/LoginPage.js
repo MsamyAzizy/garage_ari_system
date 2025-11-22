@@ -345,7 +345,7 @@ const LoginPage = () => (
         {/* 🛑 NEW FOOTER COMPONENT */}
         <GlobalFooter /> 
 
-        {/* CSS Styling (No major changes here, just for completeness) */}
+        {/* CSS Styling with Enhanced Responsiveness */}
         <style>{`
             /* ----------------------------------------------------------------- */
             /* GLOBAL PAGE STYLES (Adjusted for Navbar & Footer) */
@@ -366,7 +366,8 @@ const LoginPage = () => (
                 justify-content: center;
                 align-items: center;
                 flex-grow: 1; /* Allows it to fill the vertical space */
-                min-height: calc(100vh - 70px - 50px); /* Total height minus navbar and footer height */
+                /* Adjusted min-height calculation based on typical 70px nav and 50px footer */
+                min-height: calc(100vh - 70px - 50px); 
                 font-family: 'Inter', sans-serif;
                 background-color: #f0f4f8; 
                 padding-top: 20px; 
@@ -508,7 +509,7 @@ const LoginPage = () => (
             }
 
             /* ----------------------------------------------------------------- */
-            /* SPLIT CONTAINER STYLES (No Change) */
+            /* SPLIT CONTAINER STYLES */
             /* ----------------------------------------------------------------- */
             .split-login-container {
                 display: flex;
@@ -525,7 +526,7 @@ const LoginPage = () => (
                 transform: translateY(-2px); 
             }
 
-            /* LEFT PANEL (Dark Blue Section - No Change) */
+            /* LEFT PANEL (Dark Blue Section) */
             .split-left-panel {
                 flex: 1;
                 background-color: ${LEFT_PANEL_COLOR}; 
@@ -554,268 +555,338 @@ const LoginPage = () => (
                 color: rgba(255, 255, 255, 0.9); 
             }
             
-    .panel-content {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
+            .panel-content {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
 
-    .welcome-title {
-        font-size: 36px;
-        font-weight: 700;
-        margin-bottom: 15px;
-    }
-    .welcome-text {
-        font-size: 16px;
-        line-height: 1.6;
-        margin-bottom: 30px;
-        color: rgba(255, 255, 255, 0.95); 
-    }
+            .welcome-title {
+                font-size: 36px;
+                font-weight: 700;
+                margin-bottom: 15px;
+            }
+            .welcome-text {
+                font-size: 16px;
+                line-height: 1.6;
+                margin-bottom: 30px;
+                color: rgba(255, 255, 255, 0.95); 
+            }
 
-    .register-link-button {
-        background-color: white;
-        color: ${LEFT_PANEL_COLOR}; 
-        border: 2px solid white; 
-        padding: 12px 25px;
-        border-radius: 25px; 
-        font-size: 16px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: background-color 0.3s, transform 0.1s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        max-width: 250px;
-        margin: 0 auto;
-    }
+            .register-link-button {
+                background-color: white;
+                color: ${LEFT_PANEL_COLOR}; 
+                border: 2px solid white; 
+                padding: 12px 25px;
+                border-radius: 25px; 
+                font-size: 16px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: background-color 0.3s, transform 0.1s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                max-width: 250px;
+                margin: 0 auto;
+            }
 
-    .register-link-button:hover {
-        background-color: #f0f8ff; 
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
+            .register-link-button:hover {
+                background-color: #f0f8ff; 
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            }
 
-    /* ----------------------------------------------------------------- */
-    /* RIGHT PANEL (Login Form Section - Logo Size Increased) */
-    /* ----------------------------------------------------------------- */
-    .split-right-panel {
-        flex: 1.2; 
-        padding: 50px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        color: ${PRIMARY_TEXT_COLOR};
-    }
+            /* ----------------------------------------------------------------- */
+            /* RIGHT PANEL (Login Form Section) */
+            /* ----------------------------------------------------------------- */
+            .split-right-panel {
+                flex: 1.2; 
+                padding: 50px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                color: ${PRIMARY_TEXT_COLOR};
+            }
 
-    .login-logo-container {
-        text-align: center;
-        margin-bottom: 30px; 
-    }
-    .login-content-logo {
-        height: 80px; 
-        width: auto;
-    }
+            .login-logo-container {
+                text-align: center;
+                margin-bottom: 30px; 
+            }
+            .login-content-logo {
+                height: 80px; 
+                width: auto;
+            }
 
-    .login-form {
-        width: 100%;
-    }
-    .input-group { 
-        position: relative; 
-        margin-bottom: 25px; 
-    }
-    .input-icon { 
-        position: absolute; 
-        left: 15px; 
-        top: 50%; 
-        transform: translateY(-50%); 
-        font-size: 18px; 
-        pointer-events: none; 
-        color: #95a5a6; 
-    }
+            .login-form {
+                width: 100%;
+            }
+            .input-group { 
+                position: relative; 
+                margin-bottom: 25px; 
+            }
+            .input-icon { 
+                position: absolute; 
+                left: 15px; 
+                top: 50%; 
+                transform: translateY(-50%); 
+                font-size: 18px; 
+                pointer-events: none; 
+                color: #95a5a6; 
+            }
 
-    .split-right-panel input {
-        width: 100%; 
-        padding: 15px 15px 15px 50px; 
-        border-radius: 8px;
-        border: 1px solid #e0e6ed; 
-        background-color: #fcfdff; 
-        font-size: 17px; 
-        color: ${PRIMARY_TEXT_COLOR};
-        box-sizing: border-box; 
-        transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
-    }
-    .split-right-panel input:focus {
-        border-color: ${ACTIVE_COLOR}; 
-        box-shadow: 0 0 8px rgba(0, 191, 255, 0.35); 
-        outline: none;
-        background-color: white;
-    }
-    
-    .password-toggle-icon {
-        position: absolute; 
-        right: 15px; 
-        top: 50%; 
-        transform: translateY(-50%); 
-        color: #95a5a6; 
-        cursor: pointer; 
-        font-size: 18px; 
-        transition: color 0.2s ease;
-    }
-    .password-toggle-icon:hover { 
-        color: ${ACTIVE_COLOR}; 
-    }
+            .split-right-panel input {
+                width: 100%; 
+                padding: 15px 15px 15px 50px; 
+                border-radius: 8px;
+                border: 1px solid #e0e6ed; 
+                background-color: #fcfdff; 
+                font-size: 17px; 
+                color: ${PRIMARY_TEXT_COLOR};
+                box-sizing: border-box; 
+                transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+            }
+            .split-right-panel input:focus {
+                border-color: ${ACTIVE_COLOR}; 
+                box-shadow: 0 0 8px rgba(0, 191, 255, 0.35); 
+                outline: none;
+                background-color: white;
+            }
+            
+            .password-toggle-icon {
+                position: absolute; 
+                right: 15px; 
+                top: 50%; 
+                transform: translateY(-50%); 
+                color: #95a5a6; 
+                cursor: pointer; 
+                font-size: 18px; 
+                transition: color 0.2s ease;
+            }
+            .password-toggle-icon:hover { 
+                color: ${ACTIVE_COLOR}; 
+            }
 
-    .error-message { 
-        color: #e74c3c; 
-        margin-bottom: 20px; 
-        font-size: 15px; 
-        font-weight: 600;
-        text-align: center; 
-    }
-    
-    .forgot-link {
-        font-size: 15px; 
-        margin-top: 20px; 
-        cursor: pointer; 
-        text-align: center; 
-        transition: color 0.2s; 
-        color: #7f8c8d; 
-    }
-    .forgot-link:hover { 
-        color: ${ACTIVE_COLOR}; 
-        text-decoration: underline;
-    }
+            .error-message { 
+                color: #e74c3c; 
+                margin-bottom: 20px; 
+                font-size: 15px; 
+                font-weight: 600;
+                text-align: center; 
+            }
+            
+            .forgot-link {
+                font-size: 15px; 
+                margin-top: 20px; 
+                cursor: pointer; 
+                text-align: center; 
+                transition: color 0.2s; 
+                color: #7f8c8d; 
+            }
+            .forgot-link:hover { 
+                color: ${ACTIVE_COLOR}; 
+                text-decoration: underline;
+            }
 
-    .login-button {
-        width: 100%; 
-        padding: 16px; 
-        background-color: ${ACTIVE_COLOR}; 
-        color: white; 
-        border: none;
-        border-radius: 8px; 
-        font-size: 18px; 
-        font-weight: 700; 
-        cursor: pointer;
-        transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
-        margin-top: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        letter-spacing: 0.5px;
-    }
-    .login-button:hover:not(:disabled) {
-        background-color: #3a3a37ff; 
-        box-shadow: 0 5px 15px rgba(0, 191, 255, 0.5);
-        transform: translateY(-2px); 
-    }
-    .login-button:disabled {
-        background-color: #3a3a37ff; 
-        cursor: not-allowed;
-        opacity: 0.8;
-    }
-    .loading-content {
-        display: flex; 
-        align-items: center; 
-        gap: 10px;
-    }
-    
-    /* MINI SPINNER STYLES */
-    .button-spinner {
-        width: 20px; 
-        height: 20px;
-        position: relative; 
-        animation: spin 1.8s linear infinite; 
-    }
+            .login-button {
+                width: 100%; 
+                padding: 16px; 
+                background-color: ${ACTIVE_COLOR}; 
+                color: white; 
+                border: none;
+                border-radius: 8px; 
+                font-size: 18px; 
+                font-weight: 700; 
+                cursor: pointer;
+                transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
+                margin-top: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                letter-spacing: 0.5px;
+            }
+            .login-button:hover:not(:disabled) {
+                background-color: #3a3a37ff; 
+                box-shadow: 0 5px 15px rgba(0, 191, 255, 0.5);
+                transform: translateY(-2px); 
+            }
+            .login-button:disabled {
+                background-color: #3a3a37ff; 
+                cursor: not-allowed;
+                opacity: 0.8;
+            }
+            .loading-content {
+                display: flex; 
+                align-items: center; 
+                gap: 10px;
+            }
+            
+            /* MINI SPINNER STYLES */
+            .button-spinner {
+                width: 20px; 
+                height: 20px;
+                position: relative; 
+                animation: spin 1.8s linear infinite; 
+            }
 
-    .button-spinner::before,
-    .button-spinner::after {
-        content: '';
-        position: absolute;
-        border-radius: 50%;
-        border: 2px solid transparent; 
-        box-sizing: border-box; 
-    }
+            .button-spinner::before,
+            .button-spinner::after {
+                content: '';
+                position: absolute;
+                border-radius: 50%;
+                border: 2px solid transparent; 
+                box-sizing: border-box; 
+            }
 
-    .button-spinner::before {
-        top: 0; left: 0; right: 0; bottom: 0;
-        border-top-color: #e74c3c;
-        border-left-color: #f1c40f; 
-        animation: arc-grow-shrink 2s ease-in-out infinite alternate; 
-    }
+            .button-spinner::before {
+                top: 0; left: 0; right: 0; bottom: 0;
+                border-top-color: #e74c3c;
+                border-left-color: #f1c40f; 
+                animation: arc-grow-shrink 2s ease-in-out infinite alternate; 
+            }
 
-    .button-spinner::after {
-        top: 4px; left: 4px; right: 4px; bottom: 4px; 
-        border-bottom-color: #2ecc71;
-        border-right-color: #3498db;
-        animation: arc-grow-shrink-reverse 2s ease-in-out infinite alternate; 
-    }
+            .button-spinner::after {
+                top: 4px; left: 4px; right: 4px; bottom: 4px; 
+                border-bottom-color: #2ecc71;
+                border-right-color: #3498db;
+                animation: arc-grow-shrink-reverse 2s ease-in-out infinite alternate; 
+            }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    @keyframes arc-grow-shrink {
-        0% { border-width: 2px; transform: scale(1); opacity: 1; }
-        50% { border-width: 3px; transform: scale(0.9); opacity: 0.8; }
-        100% { border-width: 2px; transform: scale(1); opacity: 1; }
-    }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            @keyframes arc-grow-shrink {
+                0% { border-width: 2px; transform: scale(1); opacity: 1; }
+                50% { border-width: 3px; transform: scale(0.9); opacity: 0.8; }
+                100% { border-width: 2px; transform: scale(1); opacity: 1; }
+            }
 
-    @keyframes arc-grow-shrink-reverse {
-        0% { border-width: 2px; transform: scale(1); opacity: 1; }
-        50% { border-width: 3px; transform: scale(1.1); opacity: 0.8; }
-        100% { border-width: 2px; transform: scale(1); opacity: 1; }
-    }
+            @keyframes arc-grow-shrink-reverse {
+                0% { border-width: 2px; transform: scale(1); opacity: 1; }
+                50% { border-width: 3px; transform: scale(1.1); opacity: 0.8; }
+                100% { border-width: 2px; transform: scale(1); opacity: 1; }
+            }
 
-    /* RESPONSIVENESS */
-    @media (max-width: 992px) {
-        .global-navbar {
-            padding: 0 20px;
-        }
-        .navbar-actions {
-            /* Change to flex-wrap to handle three buttons */
-            display: flex;
-            flex-wrap: wrap; 
-            justify-content: flex-end;
-            gap: 10px;
-        }
-        
-        .navbar-links {
-            display: none; 
-        }
+            /* ----------------------------------------------------------------- */
+            /* 🖼️ RESPONSIVENESS - BEGINNING OF MEDIA QUERIES */
+            /* ----------------------------------------------------------------- */
 
-        .split-login-container {
-            min-height: 450px;
-            max-width: 400px;
-            flex-direction: column;
-        }
+            /* 🛑 1. Tablet/Medium Screens (Below 992px, above 768px) */
+            @media (max-width: 992px) {
+                /* General Layout */
+                .global-navbar {
+                    padding: 0 20px;
+                }
+                .navbar-actions {
+                    gap: 8px; /* Reduce gap */
+                }
+                .nav-service-btn, .nav-appointment-btn, .contact-option-btn {
+                    padding: 8px 15px; /* Smaller buttons */
+                    font-size: 14px;
+                }
+                .navbar-title {
+                    font-size: 20px; /* Smaller title */
+                }
 
-        .split-left-panel {
-            display: none; 
-        }
-        
-        .split-right-panel {
-            flex: 1;
-            padding: 40px 30px;
-        }
-        
-        /* Adjust wrapper height for small screens */
-        .main-content-wrapper {
-            min-height: calc(100vh - 70px - 50px); 
-            padding: 20px 0; 
-        }
-        
-        /* Hide footer content on very small screens if necessary, though keeping it is usually fine */
-        .footer-developer {
-            display: none;
-        }
-        
-        .footer-content {
-            gap: 15px;
-        }
-    }
+                /* Login Form: Reduce size, keep split view */
+                .split-login-container {
+                    width: 750px; /* Target size for tablets */
+                    min-height: 500px;
+                }
+                .split-left-panel {
+                    padding: 30px; /* Smaller padding */
+                }
+                .split-right-panel {
+                    flex: 1.5; /* Give more space to the form */
+                    padding: 40px;
+                }
+                .logo-main-text {
+                    font-size: 32px;
+                }
+                .welcome-title {
+                    font-size: 28px;
+                }
+
+                .main-content-wrapper {
+                    padding: 10px 0; 
+                }
+            }
+
+            /* 🛑 2. Mobile Screens (Below 768px) */
+            @media (max-width: 768px) {
+                /* Navbar: Critical fixes */
+                .global-navbar {
+                    height: auto; /* Allow navbar to grow if buttons wrap */
+                    padding: 10px 15px;
+                    flex-direction: column; /* Stack logo and actions */
+                    align-items: flex-start;
+                }
+                
+                .navbar-logo-text {
+                    margin-bottom: 10px;
+                }
+
+                .navbar-actions {
+                    width: 100%;
+                    /* Ensure buttons wrap, but primary buttons (Service/Appointment) are first */
+                    flex-wrap: wrap; 
+                    justify-content: space-between; 
+                    gap: 5px;
+                    margin-top: 5px;
+                }
+
+                .nav-service-btn, .nav-appointment-btn {
+                    flex-grow: 1; /* Make primary buttons share width */
+                    max-width: 48%;
+                    text-align: center;
+                    justify-content: center;
+                }
+                
+                /* Force WhatsApp/Email options to stack or take full width */
+                .contact-option-btn {
+                    width: 100%; /* Full width for stacked options */
+                    margin-top: 5px;
+                }
+                /* Hide email/whatsapp icons on very small screens to avoid overflow issues if text is long */
+                .contact-option-btn svg {
+                    font-size: 0; 
+                }
+
+                /* Login Form: Collapse Split Screen */
+                .split-login-container {
+                    min-height: auto;
+                    max-width: 95%; /* Use full available width */
+                    width: 400px; /* Max sensible width on mobile */
+                    flex-direction: column; /* Stack panels */
+                }
+
+                .split-left-panel {
+                    /* Hide the branding panel on mobile for simplicity and focus */
+                    display: none; 
+                }
+                
+                .split-right-panel {
+                    padding: 30px 20px;
+                }
+
+                .login-content-logo {
+                    height: 60px; /* Smaller logo */
+                    margin-bottom: 20px;
+                }
+                
+                .input-group input {
+                    font-size: 16px; /* Ensure input text is readable */
+                }
+
+                /* Footer adjustments */
+                .global-footer {
+                    height: 40px;
+                    font-size: 12px;
+                }
+            }
         `}</style>
     </>
 );

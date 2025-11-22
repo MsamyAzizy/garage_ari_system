@@ -73,7 +73,9 @@ const ExpenseForm = ({ onSave, onCancel }) => {
         let newValue = value;
         if (type === 'number') {
             // Convert to float, defaulting to 0 if invalid
-            newValue = parseFloat(value) || 0;
+            newValue = parseFloat(value);
+            // Ensure display is controlled, allowing empty string for user input
+            newValue = isNaN(newValue) ? '' : value; 
         }
         
         setFormData(prev => ({
@@ -86,7 +88,10 @@ const ExpenseForm = ({ onSave, onCancel }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        if (formData.amountPaidGross <= 0 || !formData.expenseCategory) {
+        // Use parsed float for validation
+        const grossAmountFloat = parseFloat(formData.amountPaidGross);
+        
+        if (grossAmountFloat <= 0 || !formData.expenseCategory) {
             alert("Please enter a valid amount and select an expense category.");
             return;
         }
@@ -109,7 +114,7 @@ const ExpenseForm = ({ onSave, onCancel }) => {
         <div className="form-page-container">
             <header className="page-header">
                 <h2><FaReceipt /> Record New Business Expense</h2>
-                <button className="btn-primary-action" onClick={() => onCancel()}>
+                <button className="btn-secondary" onClick={onCancel}>
                     <FaTimes style={{ marginRight: '5px' }} /> Back to List
                 </button>
             </header>
@@ -119,17 +124,17 @@ const ExpenseForm = ({ onSave, onCancel }) => {
                 {/* ----------------------------------------------------------------- */}
                 {/* 1. EXPENSE DETAILS */}
                 {/* ----------------------------------------------------------------- */}
-                <div className="form-section">
+                <div className="form-section card-style">
                     <h3 className="section-header">Expense Details</h3>
                     <div className="form-grid three-cols">
                         
                         <div className="form-group">
-                            <label htmlFor="expenseDate">**Expense Date**</label>
+                            <label htmlFor="expenseDate">Expense Date</label>
                             <input type="date" id="expenseDate" name="expenseDate" value={formData.expenseDate} onChange={handleChange} required />
                         </div>
                         
                         <div className="form-group">
-                            <label htmlFor="expenseCategory">**Expense Category**</label>
+                            <label htmlFor="expenseCategory">Expense Category</label>
                             <select id="expenseCategory" name="expenseCategory" value={formData.expenseCategory} onChange={handleChange} required>
                                 {EXPENSE_CATEGORIES.map(c => (
                                     <option key={c} value={c}>{c}</option>
@@ -139,13 +144,13 @@ const ExpenseForm = ({ onSave, onCancel }) => {
                         
                         <div className="form-group">
                             <label htmlFor="vendorId">Vendor / Supplier</label>
-                            <div style={{ display: 'flex', gap: '5px' }}>
-                                <select id="vendorId" name="vendorId" value={formData.vendorId} onChange={handleChange} style={{ flexGrow: 1 }}>
+                            <div className="input-group-with-button">
+                                <select id="vendorId" name="vendorId" value={formData.vendorId} onChange={handleChange}>
                                     {VENDORS.map(v => (
                                         <option key={v.id} value={v.id}>{v.name}</option>
                                     ))}
                                 </select>
-                                <button type="button" className="btn-secondary" style={{ padding: '0 8px' }} onClick={() => alert('Navigate to Vendor Form')}>
+                                <button type="button" className="btn-icon-secondary" title="Add New Vendor" onClick={() => alert('Navigate to Vendor Form')}>
                                     <FaPlusCircle />
                                 </button>
                             </div>
@@ -156,7 +161,7 @@ const ExpenseForm = ({ onSave, onCancel }) => {
                             <input type="text" id="receiptInvoiceNumber" name="receiptInvoiceNumber" value={formData.receiptInvoiceNumber} onChange={handleChange} placeholder='Optional reference number' />
                         </div>
                         
-                        <div className="form-group form-group--full-width" style={{gridColumn: 'span 2'}}>
+                        <div className="form-group form-group--full-width">
                             <label htmlFor="expenseNotes">Expense Notes / Description</label>
                             <textarea id="expenseNotes" name="expenseNotes" rows="2" value={formData.expenseNotes} onChange={handleChange}></textarea>
                         </div>
@@ -166,12 +171,12 @@ const ExpenseForm = ({ onSave, onCancel }) => {
                 {/* ----------------------------------------------------------------- */}
                 {/* 2. FINANCIALS & PAYMENT */}
                 {/* ----------------------------------------------------------------- */}
-                <div className="form-section">
+                <div className="form-section card-style">
                     <h3 className="section-header"><FaCalculator /> Payment & VAT ({CURRENCY})</h3>
                     <div className="form-grid three-cols">
                         
                         <div className="form-group">
-                            <label htmlFor="amountPaidGross">**Amount Paid (Gross)**</label>
+                            <label htmlFor="amountPaidGross">Amount Paid (Gross)</label>
                             <input 
                                 type="number" 
                                 id="amountPaidGross" 
@@ -181,9 +186,10 @@ const ExpenseForm = ({ onSave, onCancel }) => {
                                 required 
                                 min="0" 
                                 step="0.01" 
-                                style={{ fontSize: '1.2em', fontWeight: 'bold' }}
+                                className="input-large-value"
+                                placeholder="0.00"
                             />
-                            <small style={{ color: 'var(--text-muted)' }}>This amount should **include** 18% VAT.</small>
+                            <small className="form-help-text">This amount should **include** {VAT_RATE * 100}% VAT.</small>
                         </div>
                         
                         <div className="form-group">
@@ -195,12 +201,12 @@ const ExpenseForm = ({ onSave, onCancel }) => {
                             </select>
                         </div>
                         
-                        {/* VAT Calculation Display */}
-                        <div className="form-group">
-                            <label>VAT Breakdown (18%)</label>
-                            <div style={{ padding: '10px', backgroundColor: '#f9f9f9', borderRadius: '4px' }}>
-                                <p style={{ margin: '0 0 5px 0' }}>**Subtotal (Excl. VAT):** {CURRENCY} **{subtotal.toFixed(2)}**</p>
-                                <p style={{ margin: 0, color: 'var(--error-color)' }}>**VAT Amount (18%):** {CURRENCY} **{vatAmount.toFixed(2)}**</p>
+                        {/* VAT Calculation Display (Modernized) */}
+                        <div className="form-group vat-breakdown-display">
+                            <label>VAT Breakdown (VAT Rate: {VAT_RATE * 100}%)</label>
+                            <div className="breakdown-card">
+                                <p><span>Subtotal (Excl. VAT):</span> <span className="value-label success-text">{CURRENCY} {subtotal.toFixed(2)}</span></p>
+                                <p><span>VAT Amount:</span> <span className="value-label danger-text">{CURRENCY} {vatAmount.toFixed(2)}</span></p>
                             </div>
                         </div>
 
@@ -209,9 +215,9 @@ const ExpenseForm = ({ onSave, onCancel }) => {
 
 
                 {/* ----------------------------------------------------------------- */}
-                {/* 3. FORM ACTIONS */}
+                {/* 3. FORM ACTIONS (Aligned Right) */}
                 {/* ----------------------------------------------------------------- */}
-                <div className="form-actions">
+                <div className="form-actions form-actions-right">
                     <button type="button" className="btn-secondary" onClick={onCancel}>
                         <FaTimes style={{ marginRight: '5px' }} /> Cancel
                     </button>
@@ -222,8 +228,72 @@ const ExpenseForm = ({ onSave, onCancel }) => {
             </form>
             
             <style jsx>{`
-                /* Ensure form-grid uses the right columns */
+                /* General form action styling */
+                .form-actions {
+                    padding: 20px 0;
+                    display: flex;
+                    gap: 15px;
+                }
+                
+                /* Alignment for right-side buttons */
+                .form-actions-right {
+                    justify-content: flex-end;
+                }
+
+                /* Input group for Vendor select + Add button */
+                .input-group-with-button {
+                    display: flex;
+                    gap: 5px;
+                }
+                .input-group-with-button select {
+                    flex-grow: 1;
+                }
+                .btn-icon-secondary {
+                    background-color: var(--secondary-color);
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 0 10px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                }
+                
+                /* Styling for the large financial input */
+                .input-large-value {
+                    font-size: 1.4em !important;
+                    font-weight: bold;
+                    color: var(--primary-color) !important;
+                }
+
+                /* VAT Breakdown Display */
+                .vat-breakdown-display .breakdown-card {
+                    padding: 15px;
+                    background-color: var(--card-bg); /* Use theme card background */
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                    box-shadow: var(--card-shadow-light);
+                }
+                .vat-breakdown-display p {
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 5px 0;
+                    font-size: 0.95rem;
+                }
+                .vat-breakdown-display .value-label {
+                    font-weight: bold;
+                }
+                .success-text {
+                    color: var(--success-color); /* Usually green */
+                }
+                .danger-text {
+                    color: var(--danger-color); /* Usually red */
+                }
+
+                /* Responsive Grid Layout */
                 .form-grid.three-cols {
+                    display: grid;
+                    gap: 20px;
                     grid-template-columns: repeat(3, 1fr);
                 }
                 .form-group--full-width {
@@ -244,6 +314,13 @@ const ExpenseForm = ({ onSave, onCancel }) => {
                     }
                     .form-group--full-width {
                         grid-column: span 1;
+                    }
+                    .form-actions {
+                        flex-direction: column-reverse; /* Put save on top on mobile */
+                        align-items: stretch;
+                    }
+                    .form-actions button {
+                        width: 100%;
                     }
                 }
             `}</style>
