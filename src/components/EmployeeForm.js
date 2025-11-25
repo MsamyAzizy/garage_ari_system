@@ -1,9 +1,11 @@
-// src/components/EmployeeForm.js (COMPLETED)
+// src/components/EmployeeForm.js (FINAL FRONTEND CODE WITH VALIDATION FIXES)
 
 import React, { useState, useCallback } from 'react';
+//import { useNavigate } from 'react-router-dom';
+import apiClient from '../utils/apiClient'; // Import the configured API client
 import {
     FaUser, FaHome, FaBriefcase, FaMoneyBillAlt, FaGraduationCap,
-    FaSave, FaTimes, FaArrowLeft // 🏆 ADDED: FaArrowLeft icon for the Back button
+    FaSave, FaTimes, FaArrowLeft
 } from 'react-icons/fa';
 
 // ----------------------------------------------------------------------
@@ -151,11 +153,8 @@ const generateEmployeeId = () => {
 };
 
 const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
-    // 🛑 Note: employeeData will contain the database 'id' for editing
-    const isEditMode = !!employeeData?.id; 
-
-    // Set a new ID only if it's not edit mode AND the data doesn't already have one
-    // We use the employeeData.employeeId if available (for editing), or generate a mock one.
+    const isEditMode = !!employeeData?.id;
+    
     const initialEmployeeId = isEditMode 
         ? employeeData.employeeId 
         : (employeeData?.employeeId || generateEmployeeId()); 
@@ -215,10 +214,77 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
         }));
     }, []);
 
-    const handleSubmit = (e) => {
+    // 🏆 CRITICAL FIX: REAL API SUBMISSION HANDLER - Data Cleansing & Error Handling Added
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Pass the internal ID (if editing) and the form data to the parent handler
-        onSave({ ...formData, id: employeeData?.id }, isEditMode);
+
+        // --- PRE-PROCESSING THE DATA FOR BACKEND VALIDATION ---
+        const dataToSend = { ...formData };
+        
+        // List of fields that must send null (not "") if left blank, as per the serializer setup
+        // This resolves 'Date has wrong format' and 'A valid integer is required' errors for optional fields.
+        const optionalNullFields = [
+            'dob', 'contractStartDate', 'contractEndDate', 
+            'graduationYear', 'basicSalary', 'allowances', 'deductions'
+        ];
+
+        optionalNullFields.forEach(field => {
+            const value = dataToSend[field];
+            // If the value is an empty string, set it to JSON null
+            if (value === '' || value === undefined) {
+                dataToSend[field] = null;
+            }
+        });
+        // --------------------------------------------------------
+
+        // 1. Determine API method and URL
+        const method = isEditMode ? 'put' : 'post';
+        const url = isEditMode 
+            ? `/employees/${employeeData.id}/` 
+            : '/employees/'; 
+
+        try {
+            // 2. Perform the API call using the cleaned dataToSend
+            const response = await apiClient({
+                method: method,
+                url: url,
+                data: dataToSend, // <--- Use dataToSend here
+            });
+
+            // 3. Success Handling
+            if (onSave) {
+                onSave(response.data, !isEditMode); 
+            } else {
+                 console.log("Employee saved successfully but onSave prop is missing.");
+            }
+
+        } catch (error) {
+            console.error(`Failed to ${isEditMode ? 'update' : 'create'} employee:`, error);
+            
+            const errorData = error.response?.data;
+            let errorMsg = 'Please check API connection.';
+            
+            if (errorData) {
+                // Corrected error formatting (FIXES: errorData[key].join is not a function)
+                errorMsg = Object.keys(errorData)
+                    .map(key => {
+                        const errorValue = errorData[key];
+                        if (Array.isArray(errorValue)) {
+                            // If it's an array of errors (the usual case), join them
+                            return `${key}: ${errorValue.join(' ')}`;
+                        } else if (typeof errorValue === 'string') {
+                            // If it's a simple string error, use it directly
+                            return `${key}: ${errorValue}`;
+                        } else {
+                            // Handle general object/non-string errors
+                            return `${key}: ${JSON.stringify(errorValue)}`;
+                        }
+                    })
+                    .join('\n');
+            }
+
+            alert(`Error saving employee:\n${errorMsg}`);
+        }
     };
 
     return (
@@ -281,6 +347,7 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                         </div>
                         <div className="form-group">
                             <label htmlFor="dob">Date of Birth</label>
+                            {/* NOTE: type="date" handles YYYY-MM-DD format, but the value must be "" or a valid date string */}
                             <input type="date" id="dob" name="dob" value={formData.dob} onChange={handleChange} />
                         </div>
                         
@@ -551,76 +618,71 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
 
             <style jsx>{`
                 .form-page-container {
-                    background-color: white;
+                    background-color: #f7f9fc;
+                    padding: 20px;
                     border-radius: 8px;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-                    padding-bottom: 20px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                    max-width: 1900px;
+                    margin: 20px auto;
                 }
                 .page-header {
-                    padding: 15px 20px;
-                    border-bottom: 1px solid #eee;
-                    margin-bottom: 20px;
-                    /* CSS FOR TOP RIGHT BUTTON */
-                    display: flex; 
-                    justify-content: space-between; 
+                    display: flex;
+                    justify-content: space-between;
                     align-items: center;
-                    position: relative;
+                    border-bottom: 2px solid #e0e0e0;
+                    padding-bottom: 15px;
+                    margin-bottom: 20px;
                 }
                 .page-header h2 {
                     margin: 0;
+                    color: #333;
                 }
-                /* 🟢 UPDATED STYLE FOR BACK BUTTON (Green) */
                 .btn-back-to-list {
-                    padding: 8px 15px; 
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    /* Using green color variables */
-                    background-color: #007bff; /* Bootstrap Success Green */
+                    background-color: #6c757d;
                     color: white;
-                    border: 1px solid #007bff;
-                    transition: background-color 0.2s;
-                    display: inline-flex;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
                     align-items: center;
-                    font-size: 0.9rem;
+                    transition: background-color 0.2s;
                 }
                 .btn-back-to-list:hover {
-                    background-color: #37b151ff; /* Slightly darker green on hover */
-                    border-color: #3dbe5bff;
+                    background-color: #5a6268;
                 }
-                /* -------------------------------- */
                 .app-form {
-                    padding: 0 20px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
                 }
                 .form-section {
-                    margin-bottom: 30px;
-                    border: 1px solid #f0f0f0;
-                    border-radius: 6px;
-                    padding: 15px;
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
                 }
                 .section-header {
+                    color: #007bff;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 10px;
+                    margin-bottom: 15px;
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    color: var(--color-primary-dark);
-                    font-size: 1.15rem;
-                    margin-top: 0;
-                    margin-bottom: 15px;
-                    padding-bottom: 5px;
-                    border-bottom: 2px solid var(--color-primary-light);
                 }
                 .sub-header-line {
                     color: #555;
-                    font-size: 0.95rem;
+                    font-size: 1.1em;
                     margin-top: 15px;
                     margin-bottom: 10px;
+                    border-bottom: 1px dashed #ddd;
                     padding-bottom: 5px;
-                    border-bottom: 1px dotted #ccc;
                 }
                 .form-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 20px;
+                    gap: 15px 20px;
                 }
                 .form-group {
                     display: flex;
@@ -630,66 +692,54 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                     grid-column: 1 / -1;
                 }
                 .form-group label {
-                    font-weight: 600;
                     margin-bottom: 5px;
-                    color: #495057;
-                    font-size: 0.9rem;
+                    font-weight: 600;
+                    color: #555;
                 }
-                .form-group input, .form-group select, .form-group textarea {
+                .form-group input,
+                .form-group select,
+                .form-group textarea {
                     padding: 10px;
-                    border: 1px solid #ced4da;
+                    border: 1px solid #ccc;
                     border-radius: 4px;
-                    font-size: 1rem;
-                    color: #495057;
-                    background-color: #fff;
-                    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-                }
-                .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-                    border-color: var(--color-primary);
-                    outline: 0;
-                    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+                    font-size: 1em;
+                    width: 100%;
+                    box-sizing: border-box; /* Crucial for full-width inputs */
                 }
                 .disabled-input {
                     background-color: #e9ecef;
+                    color: #6c757d;
                     cursor: not-allowed;
                 }
-                .form-actions {
+                .page-form-actions {
                     display: flex;
-                    justify-content: flex-end; 
+                    justify-content: flex-end;
                     gap: 10px;
-                    padding: 20px;
-                    border-top: 1px solid #eee;
-                    margin-top: 20px;
+                    padding-top: 20px;
                 }
-                .btn-secondary {
+                .btn-primary-action, .btn-secondary {
                     padding: 10px 20px;
-                    border-radius: 4px;
+                    border: none;
+                    border-radius: 6px;
                     cursor: pointer;
-                    font-weight: 600;
-                    background-color: #6c757d;
-                    color: white;
-                    border: 1px solid #6c757d;
-                    transition: opacity 0.2s;
-                    display: inline-flex;
+                    font-weight: bold;
+                    transition: background-color 0.2s;
+                    display: flex;
                     align-items: center;
-                }
-                .btn-secondary:hover {
-                    opacity: 0.8;
                 }
                 .btn-primary-action {
-                    padding: 10px 20px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    background-color: var(--color-primary);
+                    background-color: #28a745;
                     color: white;
-                    border: 1px solid var(--color-primary);
-                    transition: background-color 0.2s;
-                    display: inline-flex;
-                    align-items: center;
                 }
                 .btn-primary-action:hover {
-                    background-color: var(--color-primary-dark);
+                    background-color: #218838;
+                }
+                .btn-secondary {
+                    background-color: #f0ad4e;
+                    color: white;
+                }
+                .btn-secondary:hover {
+                    background-color: #ec971f;
                 }
             `}</style>
         </div>

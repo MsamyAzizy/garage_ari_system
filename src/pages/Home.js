@@ -18,6 +18,7 @@ import TopNavBar from '../components/TopNavigationBar';
 import Sidebar from '../components/Sidebar';
 
 // Import Page Components
+import EmployeeDetailView from '../components/EmployeeDetailView';
 import StatisticsPage from '../components/StatisticsPage'; // Add this import
 import DataExportPage from '../components/DataExportPage'; // Add this import
 import VendorsReport from '../components/VendorsReport'; // Add this import
@@ -263,7 +264,7 @@ const ConfirmationModal = ({ isOpen, title, message, confirmText, onConfirm, onC
 // -----------------------------------------------------------------
 // 🚗 UPDATED VEHICLE LIST COMPONENT (Matching full file structure)
 // -----------------------------------------------------------------
-const VehicleList = ({ navigateTo, vehicles }) => (
+const VehicleList = ({ navigateTo, vehicles, onDeleteVehicle }) => (
     <div className="list-page-container">
         <header className="page-header vehicle-list-header">
             <h2 style={{ flexGrow: 1 }}><FaCar style={{ marginRight: '8px' }}/> Customer Vehicles ({vehicles.length})</h2>
@@ -309,34 +310,37 @@ const VehicleList = ({ navigateTo, vehicles }) => (
                             {v.licensePlate || v.unitNumber || 'N/A'}
                         </td>
                         <td className="action-column-cell icon-action-container"> 
-                            
-                            {/* VIEW Icon */}
-                            <button 
-                                className="icon-action view" 
-                                onClick={() => navigateTo(`/vehicles/${v.vin || v.id}`)}
-                                title="View Details"
-                            >
-                                <FaEye />
-                            </button>
-                            
-                            {/* EDIT Icon */}
-                            <button 
-                                className="icon-action edit" 
-                                onClick={() => navigateTo(`/vehicles/${v.vin || v.id}`)}
-                                title="Edit Vehicle"
-                            >
-                                <FaEdit />
-                            </button>
-                            
-                            {/* DELETE Icon */}
-                            <button 
-                                className="icon-action delete" 
-                                onClick={() => console.log('Delete vehicle:', v)} // Add delete logic later
-                                title="Delete Vehicle"
-                            >
-                                <FaTrashAlt />
-                            </button>
-                        </td>
+    
+    {/* 🏆 VIEW Icon: Stays on the simpler route for read-only view */}
+    <button 
+        className="icon-action view" 
+        // We'll use this route for the new VehicleDetailView (Read-Only)
+        onClick={() => navigateTo(`/vehicles/${v.vin || v.id}/view`)} 
+        title="View Details"
+    >
+        <FaEye />
+    </button>
+    
+    {/* 🏆 EDIT Icon: Needs a separate route, typically using a dedicated 'edit' suffix */}
+    <button 
+        className="icon-action edit" 
+        // We'll use this route for the VehicleFormWrapper (Editable Form)
+        onClick={() => navigateTo(`/vehicles/${v.vin || v.id}`)}
+        title="Edit Vehicle"
+    >
+        <FaEdit />
+    </button>
+    
+    {/* DELETE Icon (Using onDeleteVehicle function, referencing the Employee List example) */}
+    <button 
+        className="icon-action delete" 
+        // Assuming your list component receives onDeleteVehicle as a prop
+        onClick={() => onDeleteVehicle(v.vin || v.id, v.model)} 
+        title="Delete Vehicle"
+    >
+        <FaTrashAlt />
+    </button>
+</td>
                     </tr>
                 ))}
             </tbody>
@@ -373,10 +377,12 @@ const EmployeeList = ({ navigateTo, employees, onDeleteEmployee }) => (
                             {/* 🛑 NEW COLUMN: Employee ID */}
                             <th>Employee ID</th> 
                             <th>Name</th>
-                            <th>Role</th>
+                            <th>Middle Name</th>
+                            <th>JOB TITLE</th>
                             <th>Department</th>
                             <th>Email</th>
                             <th>Phone</th>
+                            <th>STATUS</th>
                             <th className="action-column-header">Actions</th>
                         </tr>
                     </thead>
@@ -385,18 +391,20 @@ const EmployeeList = ({ navigateTo, employees, onDeleteEmployee }) => (
                             <tr key={e.id}>
                                 {/* 🛑 NEW DATA: Employee ID */}
                                 <td>{e.employeeId}</td> 
-                                <td>{e.name}</td>
-                                <td>{e.role}</td>
+                                <td>{e.firstName}</td>
+                                <td>{e.middleName}</td>
+                                <td>{e.jobTitle}</td>
                                 <td>{e.department}</td>
                                 <td>{e.email}</td>
-                                <td>{e.phone}</td>
+                                <td>{e.phoneNumber}</td>
+                                <td>{e.employmentStatus}</td>
                                 {/* 🏆 UPDATED: Using icon-action class for modern look */}
                                 <td className="action-column-cell icon-action-container"> 
                                     
                                     {/* 🛑 VIEW Icon */}
                                     <button 
                                         className="icon-action view" 
-                                        onClick={() => navigateTo(`/employees/${e.id}`)}
+                                        onClick={() => navigateTo(`/employees/${e.id}/view`)}
                                         title="View Details"
                                     >
                                         <FaEye />
@@ -523,28 +531,13 @@ const EmployeeFormWrapper = ({ onSave, onCancel }) => {
             setIsLoading(true); // Always set loading to true when fetching
 
             const fetchEmployee = async () => {
-                try {
-                    // 🛑 REAL API CALL (currently mocked):
-                    // const response = await apiClient.get(`/employees/${employeeId}/`);
-                    // setEmployeeData(response.data);
-
-                    // MOCK DATA SIMULATION:
-                    console.log(`MOCK: Fetching employee with ID: ${employeeId}`);
-                    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-                    const mockEmployee = {
-                        id: employeeId,
-                        employeeId: `EMP-${employeeId}`,
-                        firstName: 'Mock',
-                        lastName: `User ${employeeId}`,
-                        jobTitle: 'Mechanic / Technician',
-                        employmentType: 'Full-time',
-                        employmentStatus: 'Active',
-                        dateOfHire: '2020-05-15',
-                        basicSalary: 450000,
-                        currency: 'TZS',
-                        department: 'Service', // 🛑 MOCK DEPARTMENT
-                    };
-                    setEmployeeData(mockEmployee);
+        try {
+            // 🏆 UNCOMMENT THIS LINE TO USE THE REAL API 🏆
+            const response = await apiClient.get(`/employees/${employeeId}/`);
+            
+            // The DRF serializer ensures response.data contains fields like 
+            // response.data.firstName, response.data.jobTitle, etc.
+            setEmployeeData(response.data);
                     
                 } catch (error) {
                     console.error("Failed to fetch employee data:", error);
@@ -654,29 +647,27 @@ const Home = () => {
 
 
     // 🏆 EFFECT: Fetch Employee List Data (Setup for real API)
-    const fetchEmployees = useCallback(async () => {
-        setIsEmployeeListLoading(true);
-        try {
-            // 🛑 REAL API CALL (currently mocked):
-            // const response = await apiClient.get('/employees/');
-            // setEmployeeList(response.data);
+   // 🏆 EFFECT: Fetch Employee List Data (Now using real API)
+   // ... inside the Home component in Home.js ...
 
-            // MOCK DATA SIMULATION (UPDATED with Department and Employee ID):
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
-            const mockEmployees = [
-                { id: 1, employeeId: 'E-001', name: 'Technician 1', role: 'Lead Mechanic', department: 'Service', email: 'tech1@example.com', phone: '255 777 111 222' },
-                { id: 2, employeeId: 'E-002', name: 'Service Advisor', role: 'Service Advisor', department: 'Service', email: 'sa@example.com', phone: '255 777 333 444' },
-                { id: 3, employeeId: 'E-003', name: 'Warehouse Manager', role: 'Inventory Specialist', department: 'Parts', email: 'parts@example.com', phone: '255 777 555 666' },
-                { id: 4, employeeId: 'E-004', name: 'Accountant', role: 'Finance Officer', department: 'Administration', email: 'accounts@example.com', phone: '255 777 777 888' },
-            ];
-            setEmployeeList(mockEmployees);
+    // 🏆 EFFECT: Fetch Employee List Data (Now correctly extracting the array)
+    const fetchEmployees = useCallback(async () => {
+        setIsEmployeeListLoading(true);
+        try {
+            const response = await apiClient.get('/employees/');
+            
+            // ✅ CRITICAL FIX: Extract the 'results' array from the DRF paginated response
+            setEmployeeList(response.data.results); // <--- CHANGE IS HERE!
 
-        } catch (error) {
-            console.error("Failed to fetch employee list:", error);
-        } finally {
-            setIsEmployeeListLoading(false);
-        }
-    }, []);
+            console.log("SUCCESS: Fetched employee list from API.");
+            
+        } catch (error) {
+            console.error("Failed to fetch employee list from API:", error);
+            setAppToast({ message: "Failed to load employees. Please try again.", type: 'error' });
+        } finally {
+            setIsEmployeeListLoading(false);
+        }
+    }, [setAppToast]);
 
     // Initial fetch
     useEffect(() => {
@@ -706,25 +697,28 @@ const Home = () => {
 
     // 🛑 New function to handle the actual API call/logic (Defined first)
     // 🏆 FIXED: Wrapped in useCallback with correct dependencies, including closeModal
-    const performDeleteEmployee = useCallback(async (id, name) => {
-        // Close modal first
-        closeModal(); // Use the dedicated helper function
+   const performDeleteEmployee = useCallback(async (id, name) => {
+    closeModal(); // Close modal first
 
-        try {
-            console.log(`MOCK: Deleting employee with ID: ${id}`);
-            // 🛑 REAL API CALL: await apiClient.delete(`/employees/${id}/`);
-            
-            // MOCK: Filter out the deleted employee
-            setEmployeeList(prevList => prevList.filter(e => e.id !== id));
+    try {
+        // ✅ CRITICAL FIX: Make the actual DELETE request to the API
+        await apiClient.delete(`/employees/${id}/`);
 
-            const message = `Employee **${name}** was successfully deleted.`;
-            // Use setAppToast directly instead of navigation success to avoid re-navigating
-            setAppToast({ message, type: 'success' });
-        } catch (error) {
-            console.error("Failed to delete employee:", error);
-            setAppToast({ message: `Error deleting employee ${name}. Please try again.`, type: 'error' });
-        }
-    }, [setEmployeeList, setAppToast, closeModal]); 
+        console.log(`SUCCESS: Deleted employee with ID: ${id} from the API.`);
+        
+        // 2. ONLY THEN, update the local state to trigger a re-render
+        setEmployeeList(prevList => prevList.filter(e => e.id !== id));
+
+        const message = `Employee **${name}** was successfully deleted.`;
+        setAppToast({ message, type: 'success' });
+        
+    } catch (error) {
+        // If the API delete fails, the employee will remain in the database and the list on refresh.
+        console.error("Failed to delete employee on API:", error);
+        // Show an error toast to the user
+        setAppToast({ message: `Error deleting employee ${name}. Server error.`, type: 'error' });
+    }
+}, [closeModal, setAppToast, setEmployeeList]); 
     
     
     // 🏆 NEW EMPLOYEE DELETE HANDLER (UPDATED to use Modal)
@@ -735,9 +729,35 @@ const Home = () => {
             title: `Delete Employee: ${name}?`,
             message: 'Permanently remove this employee. You cannot undo this action.',
             confirmText: 'Delete',
-            onConfirmAction: () => performDeleteEmployee(id, name),
+            // CRITICAL FIX: Pass a function that calls the logic with the specific employee's data
+            onConfirmAction: () => performDeleteEmployee(id, name), 
         });
-    }, [performDeleteEmployee, setModalConfig]); // FIX: Dependency added here
+    }, [performDeleteEmployee]);
+
+    // 🏆 NEW EMPLOYEE SAVE HANDLER (Called from EmployeeForm -> onSave)
+    const handleSaveEmployee = useCallback((savedEmployee, isNew) => {
+        const action = isNew ? 'created' : 'updated';
+        const successMsg = `Employee **${savedEmployee.firstName} ${savedEmployee.lastName}** was successfully ${action}.`;
+
+        // 1. Update the local list state immediately for a smooth UX
+        setEmployeeList(prevList => {
+            if (isNew) {
+                // For a new employee (POST), add the newly created object (which includes the real DB 'id')
+                return [savedEmployee, ...prevList];
+            } else {
+                // For an update (PUT), replace the old object with the saved data in the list
+                return prevList.map(e => 
+                    e.id === savedEmployee.id ? savedEmployee : e
+                );
+            }
+        });
+
+        // 2. Navigate away from the form immediately back to the list
+        // This stops the EmployeeFormWrapper from re-rendering the form with the saved data
+        // and triggering an unintended second submission.
+        handleNavigationSuccess('/employees', successMsg, 'success');
+
+    }, [handleNavigationSuccess, setEmployeeList]);
 
     // --- Form Handlers (All handlers below remain functional as per previous steps) ---
 
@@ -1066,20 +1086,80 @@ const Home = () => {
     };
 
     // 🏆 NEW EMPLOYEE HANDLERS (UPDATED TO USE FORM DATA STRUCTURE)
-    const handleEmployeeSave = (data, isEditMode) => {
-        // Mock save logic (In a real app, you'd call apiClient.post/put here)
-        console.log("Employee Data being handled:", data);
-        const employeeName = `${data.firstName} ${data.lastName}`;
-        const message = isEditMode
-            ? `Employee **${employeeName}** (ID: ${data.employeeId}) updated successfully!`
-            : `New Employee **${employeeName}** (ID: ${data.employeeId}) registered!`;
-        
-        // After save, refresh the list:
-        fetchEmployees(); 
+    // 🏆 NEW/UPDATED HELPER: Function to handle saving/updating an employee
+const handleEmployeeSave = useCallback(async (formData) => {
+    // 1. Determine if this is an EDIT or a CREATE operation
+    const isEdit = !!formData.id; // True if the employee object already has an ID
+    const apiUrl = isEdit ? `/employees/${formData.id}/` : '/employees/';
+    const apiMethod = isEdit ? 'put' : 'post'; // Use PUT for update, POST for create
 
-        // Navigate to the Employee List with a success toast
-        handleNavigationSuccess('/employees', message);
+    // 2. Format the data for the API
+    // Ensure the data keys match what your Django REST Framework (DRF) backend expects.
+    // Assuming your backend uses snake_case and separated names:
+    const dataToSend = {
+        // The API model likely expects first_name, last_name, job_title, etc.
+        first_name: formData.firstName,
+        middle_name: formData.middleName || '',
+        last_name: formData.lastName,
+        job_title: formData.jobTitle,
+        department: formData.department,
+        email: formData.email,
+        phone_number: formData.phoneNumber, // Assuming backend uses phone_number
+        employment_status: formData.employmentStatus,
+        // ... include other necessary fields like dateOfHire, basicSalary ...
+        date_of_hire: formData.dateOfHire, // Example
+        basic_salary: formData.basicSalary, // Example
+        currency: formData.currency, // Example
     };
+
+    try {
+        console.log(`API ${apiMethod.toUpperCase()}: Sending data to ${apiUrl}`);
+        
+        // 3. Perform the API call
+        const response = await apiClient[apiMethod](apiUrl, dataToSend);
+
+        // 4. Handle State Update
+        const savedEmployee = response.data;
+        
+        // Transform API response object back into the camelCase/combined format the List component expects (if necessary)
+        // Ensure you always use the ID returned by the API for correctness (especially for new items)
+        const formattedSavedEmployee = {
+            id: savedEmployee.id,
+            employeeId: savedEmployee.employee_id || savedEmployee.employeeId, // Use backend's ID
+            firstName: savedEmployee.first_name,
+            middleName: savedEmployee.middle_name,
+            lastName: savedEmployee.last_name,
+            jobTitle: savedEmployee.job_title,
+            department: savedEmployee.department,
+            email: savedEmployee.email,
+            phoneNumber: savedEmployee.phone_number,
+            employmentStatus: savedEmployee.employment_status,
+        };
+
+        setEmployeeList(prevList => {
+            if (isEdit) {
+                // If editing, map over the list and REPLACE the old object
+                return prevList.map(e => 
+                    e.id === formattedSavedEmployee.id ? formattedSavedEmployee : e
+                );
+            } else {
+                // If creating, APPEND the new object
+                return [...prevList, formattedSavedEmployee];
+            }
+        });
+
+        // 5. Navigate back and show success message
+        const message = isEdit 
+            ? `Employee **${formattedSavedEmployee.firstName} ${formattedSavedEmployee.lastName}** updated successfully.`
+            : `New employee **${formattedSavedEmployee.firstName} ${formattedSavedEmployee.lastName}** added successfully.`;
+            
+        handleNavigationSuccess('/employees', message, 'success');
+
+    } catch (error) {
+        console.error(`Failed to ${isEdit ? 'update' : 'create'} employee:`, error.response?.data || error);
+        setAppToast({ message: `Error saving employee: ${error.response?.data?.detail || error.message || 'Please check your network.'}`, type: 'error' });
+    }
+}, [setEmployeeList, handleNavigationSuccess, setAppToast]);
 
     const handleEmployeeCancel = () => {
         // Safe navigation back to the Employee List
@@ -1313,8 +1393,17 @@ const Home = () => {
                                 />
                             )
                         } />
+                        {/* 🛑 NEW VIEW ROUTE (FOR READ-ONLY DETAIL PAGE) */}
+<Route 
+    path="/employees/:employeeId/view" 
+    element={
+        <EmployeeDetailView 
+            onCancel={() => handleNavigate('/employees')} 
+        />
+    } 
+/>
                         {/* The wrapper handles fetching data for new/edit modes */}
-                        <Route path="/employees/new" element={<EmployeeFormWrapper onSave={handleEmployeeSave} onCancel={handleEmployeeCancel} />} />
+                        <Route path="/employees/new" element={<EmployeeFormWrapper onSave={handleSaveEmployee} onCancel={() => handleNavigate('/employees')} />} />
                         <Route path="/employees/:employeeId" element={<EmployeeFormWrapper onSave={handleEmployeeSave} onCancel={handleEmployeeCancel} />} />
 
                       {/* -------------------- 9. Reports & Settings -------------------- */}

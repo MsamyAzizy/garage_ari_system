@@ -1,5 +1,3 @@
-// src/components/TopNavigationBar.js - FULL CODE
-
 import React, { useState, useEffect } from 'react'; 
 // Import all necessary icons
 import { 
@@ -17,17 +15,33 @@ import {
     FaCompressArrowsAlt, // Compact 
     FaTimes, // X close button
     FaExpand, // Fullscreen/Expand 
-    FaSyncAlt // Reload/Refresh 
+    FaSyncAlt, // Reload/Refresh 
+    
+    // 🏆 ICONS FOR PROFILE MENU
+    FaHeadset, // Support
+    FaDollarSign, // Accounting
+    FaLock, // Privacy Center
+    FaCommentAlt, // Feedback
+    FaHistory, // History
+    
+    // 🔔 ICONS FOR NOTIFICATIONS
+    FaFolderOpen, // For file manager
+    FaShoppingCart, // For orders
+    FaCheck, // Generic check/approve
+    FaReply, // Reply button icon
+    FaDownload // Download icon
+    
 } from 'react-icons/fa'; 
 
 
 // Define common colors
 const SUCCESS_COLOR = '#2ecc71'; 
 const ERROR_COLOR = '#e74c3c'; 
+const WARNING_COLOR = '#f39c12'; // For pending/archived items
 
 
 // -----------------------------------------------------------------
-// 🏆 1. INTERNATIONALIZATION (i18n) STRINGS DICTIONARY (CORRECTED ORDER)
+// 🏆 1. INTERNATIONALIZATION (i18n) STRINGS DICTIONARY 
 // -----------------------------------------------------------------
 
 // 1a. Define the base English object first
@@ -40,7 +54,21 @@ const englishStrings = {
     myAccount: 'My Account Profile',
     logout: 'Logout',
     notificationToast: (langName) => `Language set to ${langName}!`,
-    themeToast: (theme) => `Theme switched to ${theme} mode!`
+    themeToast: (theme) => `Theme switched to ${theme} mode!`,
+    
+    // 🏆 MENU ITEMS
+    support: 'Support',
+    accounting: 'Accounting',
+    privacyCenter: 'Privacy Center',
+    feedback: 'Feedback',
+    history: 'History',
+    
+    // 🔔 NOTIFICATION STRINGS (New)
+    notifications: 'Notifications',
+    all: 'All',
+    unread: 'Unread',
+    archived: 'Archived',
+    viewAll: 'View all'
 };
 
 // 1b. Define Swahili strings
@@ -53,11 +81,25 @@ const swahiliTZStrings = {
     myAccount: 'Akaunti Yangu',
     logout: 'Toka',
     notificationToast: (langName) => `Lugha imewekwa kama ${langName}!`,
-    themeToast: (theme) => `Mandhari imebadilishwa kuwa hali ya ${theme}!`
+    themeToast: (theme) => `Mandhari imebadilishwa kuwa hali ya ${theme}!` ,
+    
+    // 🏆 MENU ITEMS
+    support: 'Usaidizi',
+    accounting: 'Uhasibu',
+    privacyCenter: 'Kituo cha Faragha',
+    feedback: 'Maoni',
+    history: 'Historia',
+    
+    // 🔔 NOTIFICATION STRINGS (New)
+    notifications: 'Arifa',
+    all: 'Zote',
+    unread: 'Ambazo Hazijasomwa',
+    archived: 'Zilizohifadhiwa',
+    viewAll: 'Tazama zote'
 };
 
 
-// 1c. Define the full dictionary using the base objects (avoids use-before-define)
+// 1c. Define the full dictionary using the base objects
 const i18nStrings = {
     'en': englishStrings,
     'sw-tz': swahiliTZStrings,
@@ -146,9 +188,9 @@ const ToastNotification = ({ message, type, duration = 1500, onClose }) => {
 
 
 // -----------------------------------------------------------------
-// 3. SETTINGS DROPDOWN COMPONENT (Uses dynamic text)
+// 3. SETTINGS DROPDOWN COMPONENT (Not modified)
 // -----------------------------------------------------------------
-
+// ... (SettingsDropdown component code remains unchanged)
 const SettingCard = ({ icon: Icon, title, isChecked, onToggle, showInfo = false }) => (
     <div className="setting-card-dropdown">
         <div className="card-header-dropdown">
@@ -394,8 +436,9 @@ const SettingsDropdown = ({ isOpen, onClose, onToggleTheme, currentTheme, string
 
 
 // -----------------------------------------------------------------
-// 4. LANGUAGE DROPDOWN COMPONENT
+// 4. LANGUAGE DROPDOWN COMPONENT (Not modified)
 // -----------------------------------------------------------------
+// ... (LanguageDropdown component code remains unchanged)
 
 const languages = [
     { code: 'en', name: 'English (UK)', flag: '🇬🇧' },
@@ -493,7 +536,507 @@ const LanguageDropdown = ({ isOpen, onClose, onLanguageChange, currentLanguageCo
 
 
 // -----------------------------------------------------------------
-// 5. Main TopNavigationBar Component (Uses dynamic strings and passes them)
+// 5. NOTIFICATIONS DROPDOWN COMPONENT (NEW)
+// -----------------------------------------------------------------
+
+// Sample data structure based on the screenshot
+const sampleNotifications = [
+    { id: 1, type: 'friend_request', user: 'Deja Brady', time: '9 hours', category: 'Communication', isUnread: true, avatar: '/path/to/avatar1.jpg' },
+    { id: 2, type: 'mention', user: 'Jayvon Hull', time: 'a day', category: 'Project UI', isUnread: true, message: '@Jaydon Frankie feedback by asking questions or just leave a note of appreciation.', avatar: '/path/to/avatar2.jpg' },
+    { id: 3, type: 'file_added', user: 'Lainey Davidson', time: '2 days', category: 'File manager', isUnread: true, fileName: 'design-suriname-2015.mp4', fileSize: '2.3 Mb', avatar: '/path/to/avatar3.jpg' },
+    { id: 4, type: 'tags_added', user: 'Angelique Morse', time: '4 days', category: 'File manager', isUnread: false, tags: ['Design', 'Dashboard', 'Design system'], avatar: '/path/to/avatar4.jpg' },
+    { id: 5, type: 'payment_request', user: 'Giana Brandt', time: '5 days', category: 'File manager', isUnread: false, amount: '$200', avatar: '/path/to/avatar5.jpg' },
+    { id: 6, type: 'order_status', user: 'Your order', time: '6 days', category: 'Order', isUnread: false, status: 'is placed waiting for shipping', avatar: '/path/to/avatar6.jpg' },
+];
+
+// Helper to render notification content
+const NotificationContent = ({ notification }) => {
+    switch (notification.type) {
+        case 'friend_request':
+            return (
+                <>
+                    <p className="notification-title">
+                        <span className="notification-user">{notification.user}</span> sent you a friend request
+                    </p>
+                    <div className="notification-actions">
+                        <button className="action-button accept-button"><FaCheck /> Accept</button>
+                        <button className="action-button decline-button">Decline</button>
+                    </div>
+                </>
+            );
+        case 'mention':
+            return (
+                <>
+                    <p className="notification-title">
+                        <span className="notification-user">{notification.user}</span> mentioned you in **Minimal UI**
+                    </p>
+                    <div className="notification-message-box">
+                        <p>{notification.message}</p>
+                    </div>
+                    <div className="notification-actions">
+                        <button className="action-button reply-button"><FaReply /> Reply</button>
+                    </div>
+                </>
+            );
+        case 'file_added':
+            return (
+                <>
+                    <p className="notification-title">
+                        <span className="notification-user">{notification.user}</span> added file to **File manager**
+                    </p>
+                    <div className="file-info-box">
+                        <div className="file-icon-name">
+                            <FaFolderOpen className="file-icon" />
+                            <span>{notification.fileName}</span>
+                        </div>
+                        <span className="file-size">{notification.fileSize}</span>
+                        <button className="action-button download-button"><FaDownload /> Download</button>
+                    </div>
+                </>
+            );
+        case 'tags_added':
+            return (
+                <>
+                    <p className="notification-title">
+                        <span className="notification-user">{notification.user}</span> added new tags to **File manager**
+                    </p>
+                    <div className="tag-list">
+                        {notification.tags.map(tag => (
+                            <span key={tag} className="tag-pill">{tag}</span>
+                        ))}
+                    </div>
+                </>
+            );
+        case 'payment_request':
+            return (
+                <>
+                    <p className="notification-title">
+                        <span className="notification-user">{notification.user}</span> request a payment of **{notification.amount}**
+                    </p>
+                    <div className="notification-actions">
+                        <button className="action-button accept-button pay-button">Pay</button>
+                        <button className="action-button decline-button">Decline</button>
+                    </div>
+                </>
+            );
+        case 'order_status':
+            return (
+                <p className="notification-title">
+                    <span className="notification-user">{notification.user}</span> {notification.status}
+                </p>
+            );
+        default:
+            return <p>Unknown Notification Type</p>;
+    }
+};
+
+const NotificationsDropdown = ({ isOpen, onClose, strings }) => {
+    
+    // State to manage the active filter tab
+    const [activeTab, setActiveTab] = useState('all'); // 'all', 'unread', 'archived'
+    
+    if (!isOpen) return null;
+
+    // Filter notifications based on activeTab (Archived is a placeholder for now)
+    const filteredNotifications = sampleNotifications.filter(n => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'unread') return n.isUnread;
+        // Placeholder logic for archived - simply exclude unread ones for this example
+        if (activeTab === 'archived') return !n.isUnread; 
+        return true;
+    });
+
+    const unreadCount = sampleNotifications.filter(n => n.isUnread).length;
+    // Assuming archived count is a fixed placeholder for now, like in the screenshot
+    const archivedCount = 10; 
+    const allCount = sampleNotifications.length;
+
+    return (
+        <div className="notifications-dropdown-container open">
+            <div className="notifications-dropdown-content">
+                
+                {/* Header */}
+                <div className="notification-header">
+                    <h2 className="notification-title">{strings.notifications}</h2>
+                    <div className="header-icons">
+                        <FaCheck className="header-icon" title="Mark all as read" />
+                        <FaCog className="header-icon" title="Notification Settings" />
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="notification-tabs">
+                    <button 
+                        className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('all')}
+                    >
+                        {strings.all} <span>{allCount}</span>
+                    </button>
+                    <button 
+                        className={`tab-button ${activeTab === 'unread' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('unread')}
+                    >
+                        {strings.unread} <span className="unread-count">{unreadCount}</span>
+                    </button>
+                    <button 
+                        className={`tab-button ${activeTab === 'archived' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('archived')}
+                    >
+                        {strings.archived} <span>{archivedCount}</span>
+                    </button>
+                </div>
+                
+                {/* List */}
+                <div className="notification-list">
+                    {filteredNotifications.map(notification => (
+                        <div key={notification.id} className={`notification-item ${notification.isUnread ? 'unread' : ''}`}>
+                            <div className="notification-avatar-container">
+                                {/* Using FaUser as a placeholder avatar */}
+                                {notification.type === 'order_status' ? (
+                                    <FaShoppingCart className="notification-avatar-icon order-icon" />
+                                ) : (
+                                    <FaUser className="notification-avatar-icon" />
+                                )}
+                            </div>
+                            <div className="notification-details">
+                                <NotificationContent notification={notification} />
+                                <div className="notification-footer">
+                                    <span className="notification-time">{notification.time}</span>
+                                    <span className="dot-separator">·</span>
+                                    <span className="notification-category">{notification.category}</span>
+                                </div>
+                            </div>
+                            {notification.isUnread && <span className="unread-dot"></span>}
+                        </div>
+                    ))}
+                    {filteredNotifications.length === 0 && (
+                        <p className="no-notifications">No {activeTab} notifications.</p>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="notification-footer-controls">
+                    <a href="#view-all" className="view-all-link">{strings.viewAll}</a>
+                </div>
+            </div>
+
+            {/* STYLES FOR NOTIFICATION DROPDOWN */}
+            <style jsx>{`
+                .notifications-dropdown-container {
+                    position: absolute;
+                    top: 60px; 
+                    right: 20px; 
+                    z-index: 1000;
+                    opacity: 0;
+                    transform: translateY(-10px);
+                    transition: opacity 0.3s ease, transform 0.3s ease;
+                }
+                
+                .notifications-dropdown-container.open {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                .notifications-dropdown-content {
+                    background-color: var(--bg-top-nav); /* Use main dark color */
+                    color: white;
+                    border-radius: 8px;
+                    width: 380px; 
+                    max-height: 500px;
+                    overflow: hidden;
+                    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .notification-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px 20px 10px;
+                }
+                
+                .notification-header h2 {
+                    font-size: 20px;
+                    font-weight: 700;
+                    margin: 0;
+                }
+                
+                .notification-header .header-icons {
+                    display: flex;
+                    gap: 15px;
+                }
+
+                .notification-header .header-icon {
+                    font-size: 16px;
+                    color: var(--text-secondary); 
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+                
+                .notification-header .header-icon:hover {
+                    color: white;
+                }
+                
+                /* Tabs */
+                .notification-tabs {
+                    display: flex;
+                    padding: 0 20px;
+                    border-bottom: 1px solid #4A4A45;
+                }
+                
+                .tab-button {
+                    background: none;
+                    border: none;
+                    color: var(--text-secondary);
+                    padding: 10px 15px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-size: 14px;
+                    border-bottom: 2px solid transparent;
+                    transition: all 0.2s;
+                    margin-right: 10px;
+                }
+                
+                .tab-button:hover:not(.active) {
+                    color: white;
+                }
+                
+                .tab-button.active {
+                    color: white;
+                    border-bottom-color: ${SUCCESS_COLOR};
+                }
+                
+                .tab-button span {
+                    background-color: #4A4A45;
+                    border-radius: 12px;
+                    padding: 2px 8px;
+                    margin-left: 5px;
+                    font-size: 12px;
+                }
+                
+                .tab-button .unread-count {
+                    background-color: ${ERROR_COLOR};
+                    color: white;
+                }
+
+                /* List */
+                .notification-list {
+                    overflow-y: auto;
+                    max-height: 400px; /* Max height before scroll */
+                    padding: 5px 0;
+                }
+                
+                .notification-item {
+                    display: flex;
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #4A4A45;
+                    position: relative;
+                    cursor: pointer;
+                    transition: background-color 0.15s;
+                }
+                
+                .notification-item:hover {
+                    background-color: #3a3a37ff; /* Darker hover */
+                }
+                
+                .notification-avatar-container {
+                    flex-shrink: 0;
+                    margin-right: 15px;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background-color: #4A4A45;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .notification-avatar-icon {
+                    color: white;
+                    font-size: 18px;
+                }
+                
+                .order-icon {
+                    color: ${WARNING_COLOR};
+                }
+
+                .notification-details {
+                    flex-grow: 1;
+                }
+                
+                .notification-title {
+                    font-size: 14px;
+                    margin: 0 0 5px 0;
+                    line-height: 1.4;
+                    font-weight: 500;
+                    color: white;
+                }
+                
+                .notification-user {
+                    font-weight: 700;
+                }
+                
+                .unread-dot {
+                    position: absolute;
+                    top: 20px;
+                    right: 10px;
+                    width: 8px;
+                    height: 8px;
+                    background-color: ${SUCCESS_COLOR};
+                    border-radius: 50%;
+                }
+                
+                /* Footer / Meta */
+                .notification-footer {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    font-size: 12px;
+                    color: var(--text-secondary);
+                    margin-top: 5px;
+                }
+                
+                .dot-separator {
+                    font-size: 16px;
+                    line-height: 1;
+                }
+                
+                .notification-category {
+                    font-weight: 600;
+                }
+
+                /* Actions/Content Blocks */
+                .notification-actions {
+                    display: flex;
+                    gap: 10px;
+                    margin-top: 10px;
+                }
+                
+                .action-button {
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    border: none;
+                    font-weight: 600;
+                    cursor: pointer;
+                    font-size: 13px;
+                    transition: opacity 0.2s;
+                }
+                
+                .action-button:hover {
+                    opacity: 0.8;
+                }
+
+                .accept-button {
+                    background-color: ${SUCCESS_COLOR};
+                    color: white;
+                }
+
+                .pay-button {
+                    background-color: ${WARNING_COLOR};
+                    color: white;
+                }
+
+                .decline-button {
+                    background-color: #4A4A45;
+                    color: white;
+                }
+
+                .reply-button {
+                    background-color: #4A4A45;
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                
+                .notification-message-box {
+                    background-color: #4A4A45;
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    margin-top: 8px;
+                    font-size: 13px;
+                }
+                
+                .notification-message-box p {
+                    margin: 0;
+                    color: #E2E8F0;
+                }
+                
+                .file-info-box {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-top: 8px;
+                    padding: 8px 12px;
+                    background-color: #4A4A45;
+                    border-radius: 4px;
+                }
+                
+                .file-icon-name {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    flex-grow: 1;
+                    font-weight: 600;
+                }
+                
+                .file-icon {
+                    color: ${SUCCESS_COLOR};
+                }
+                
+                .file-size {
+                    font-size: 12px;
+                    color: var(--text-secondary);
+                    margin-right: 10px;
+                }
+                
+                .tag-list {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-top: 8px;
+                }
+                
+                .tag-pill {
+                    background-color: #3A4A45; /* Slightly different shade */
+                    color: ${SUCCESS_COLOR};
+                    padding: 4px 10px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 600;
+                }
+
+
+                /* Footer Controls */
+                .notification-footer-controls {
+                    padding: 10px 20px;
+                    border-top: 1px solid #4A4A45;
+                    text-align: center;
+                }
+                
+                .view-all-link {
+                    color: ${SUCCESS_COLOR};
+                    text-decoration: none;
+                    font-weight: 600;
+                    font-size: 14px;
+                }
+                
+                .no-notifications {
+                    text-align: center;
+                    padding: 20px;
+                    color: var(--text-secondary);
+                }
+
+            `}</style>
+        </div>
+    );
+};
+
+
+// -----------------------------------------------------------------
+// 6. Main TopNavigationBar Component (Updated)
 // -----------------------------------------------------------------
 
 const TopNavigationBar = ({ 
@@ -511,18 +1054,24 @@ const TopNavigationBar = ({
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [currentTheme, setCurrentTheme] = useState('dark'); 
     
-    // LANGUAGE STATE: Default to the first language in the updated list
+    // LANGUAGE STATE
     const [isLanguageOpen, setIsLanguageOpen] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState(languages[0]); 
+    
+    // 🔔 NOTIFICATIONS STATE (NEW)
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    // Hardcoded unread count for badge
+    const unreadCount = sampleNotifications.filter(n => n.isUnread).length; 
     
     // Get the language strings for the current state
     const strings = getStrings(currentLanguage.code);
 
 
     // Handlers
-    const handleProfileClick = (e) => {
+    const handleProfileClick = (e, path) => {
         e.preventDefault();
-        navigate('/profile'); 
+        toggleProfileMenu(); // Close menu after clicking an item
+        navigate(path); 
     };
 
     const handleSettingsClick = (e) => {
@@ -530,6 +1079,7 @@ const TopNavigationBar = ({
         // Close other dropdowns
         if (isProfileMenuOpen) toggleProfileMenu();
         if (isLanguageOpen) setIsLanguageOpen(false); 
+        if (isNotificationsOpen) setIsNotificationsOpen(false); // Close notifications
         setIsSettingsOpen(prev => !prev);
     };
 
@@ -538,26 +1088,34 @@ const TopNavigationBar = ({
         // Close other dropdowns
         if (isProfileMenuOpen) toggleProfileMenu();
         if (isSettingsOpen) setIsSettingsOpen(false);
+        if (isNotificationsOpen) setIsNotificationsOpen(false); // Close notifications
         setIsLanguageOpen(prev => !prev);
+    };
+    
+    // 🔔 NEW HANDLER
+    const handleNotificationClick = (e) => {
+        e.preventDefault();
+        // Close other dropdowns
+        if (isProfileMenuOpen) toggleProfileMenu();
+        if (isSettingsOpen) setIsSettingsOpen(false);
+        if (isLanguageOpen) setIsLanguageOpen(false);
+        setIsNotificationsOpen(prev => !prev);
     };
 
     const handleLanguageChange = (lang) => {
         setCurrentLanguage(lang);
-        // Use the new dynamic toast message function
         const updatedStrings = getStrings(lang.code);
         setToast({ message: updatedStrings.notificationToast(lang.name), type: 'success' });
     };
     
     const handleThemeToggle = (newTheme) => {
         setCurrentTheme(newTheme);
-        // Use the new dynamic theme toast message function
         setToast({ message: strings.themeToast(newTheme), type: 'success' });
     };
 
     const handleLogoutClick = async (e) => { 
         e.preventDefault();
         toggleProfileMenu(); 
-        // NOTE: Keeping this English for simplicity, but it should also be translated
         setToast({ message: 'Successfully logged out!', type: 'success' });
         await onLogout(); 
     };
@@ -586,13 +1144,24 @@ const TopNavigationBar = ({
                     setIsLanguageOpen(false);
                 }
             }
+            
+            // 🔔 Logic to close notifications dropdown (NEW)
+            if (isNotificationsOpen) {
+                const dropdownContent = document.querySelector('.notifications-dropdown-content');
+                const notificationIconWrapper = document.querySelector('.icon-wrapper[title="Notifications"]');
+                
+                if (dropdownContent && !dropdownContent.contains(event.target) &&
+                    notificationIconWrapper && !notificationIconWrapper.contains(event.target)) {
+                    setIsNotificationsOpen(false);
+                }
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isSettingsOpen, isLanguageOpen]);
+    }, [isSettingsOpen, isLanguageOpen, isNotificationsOpen]);
     
 
     return (
@@ -620,6 +1189,13 @@ const TopNavigationBar = ({
                 onClose={() => setIsLanguageOpen(false)}
                 onLanguageChange={handleLanguageChange}
                 currentLanguageCode={currentLanguage.code}
+            />
+            
+            {/* 🔔 RENDER NOTIFICATION DROPDOWN (NEW) */}
+            <NotificationsDropdown 
+                isOpen={isNotificationsOpen}
+                onClose={() => setIsNotificationsOpen(false)}
+                strings={strings}
             />
 
 
@@ -657,18 +1233,20 @@ const TopNavigationBar = ({
                     <FaCog className="icon-settings icon-action spin-icon" />
                 </div>
 
+                {/* 🔔 NOTIFICATION ICON (UPDATED WITH HANDLER) */}
                 <div 
-                    className="icon-wrapper"
+                    className="icon-wrapper notification-wrapper"
                     title="Notifications"
+                    onClick={handleNotificationClick} // 🔔 NEW HANDLER
                 >
                     <FaBell className="icon-notification icon-action" />
-                    <span className="notification-badge">4</span>
+                    {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
                 </div>
                 
                 {/* --- User Profile Menu (Dropdown) --- */}
                 <div 
                     className="user-profile-menu" 
-                    onClick={toggleProfileMenu} 
+                    onClick={isProfileMenuOpen ? () => {} : toggleProfileMenu} 
                 >
                     <div className="user-profile">
                         {userAvatarUrl ? (
@@ -690,11 +1268,55 @@ const TopNavigationBar = ({
                         
                         <a 
                             href="#profile" 
-                            className="menu-item" 
-                            onClick={handleProfileClick} 
+                            className="menu-item primary-item" 
+                            onClick={(e) => handleProfileClick(e, '/profile')} 
                         >
                             <FaUser /> {strings.myAccount} 
                         </a>
+                        
+                        {/* 🏆 NEW MENU ITEMS */}
+                        <a 
+                            href="#support" 
+                            className="menu-item" 
+                            onClick={(e) => handleProfileClick(e, '/support')} 
+                        >
+                            <FaHeadset /> {strings.support}
+                        </a>
+                        
+                        <a 
+                            href="#accounting" 
+                            className="menu-item" 
+                            onClick={(e) => handleProfileClick(e, '/accounting')} 
+                        >
+                            <FaDollarSign /> {strings.accounting}
+                        </a>
+                        
+                        <a 
+                            href="#privacy" 
+                            className="menu-item" 
+                            onClick={(e) => handleProfileClick(e, '/privacy')} 
+                        >
+                            <FaLock /> {strings.privacyCenter}
+                        </a>
+                        
+                        <a 
+                            href="#feedback" 
+                            className="menu-item" 
+                            onClick={(e) => handleProfileClick(e, '/feedback')} 
+                        >
+                            <FaCommentAlt /> {strings.feedback}
+                        </a>
+
+                        <a 
+                            href="#history" 
+                            className="menu-item secondary-item" 
+                            onClick={(e) => handleProfileClick(e, '/history')} 
+                        >
+                            <FaHistory /> {strings.history}
+                        </a>
+                        {/* 🏆 END MENU ITEMS */}
+                        
+                        <div className="menu-separator"></div>
 
                         <a 
                             href="#logout" 
@@ -710,7 +1332,7 @@ const TopNavigationBar = ({
             </div>
             
             {/* ----------------------------------------------------------------- */}
-            {/* STYLES FOR LAYOUT */}
+            {/* STYLES FOR LAYOUT (Not modified) */}
             {/* ----------------------------------------------------------------- */}
             <style jsx>{`
                 /* Color Variables for Top Nav (from previous steps) */
@@ -719,6 +1341,7 @@ const TopNavigationBar = ({
                     --text-primary: #ffffff; /* WHITE */
                     --text-secondary: #aeb8c8;
                     --bg-sidebar: #242421ff;
+                    --bg-dropdown: #3a3a37ff; /* Darker shade for contrast */
                 }
                 
                 /* Main Header Layout */
@@ -842,7 +1465,7 @@ const TopNavigationBar = ({
                     animation: spin 6s linear infinite;
                 }
 
-                /* --- User Profile Dropdown --- (Standard styles) */
+                /* --- User Profile Dropdown --- */
                 .user-profile-menu {
                     position: relative;
                     cursor: pointer;
@@ -896,8 +1519,8 @@ const TopNavigationBar = ({
                     top: 100%; 
                     right: 0;
                     min-width: 240px;
-                    background-color: var(--bg-sidebar);
-                    border-radius: 4px;
+                    background-color: var(--bg-dropdown); 
+                    border-radius: 8px; 
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
                     padding: 8px 0;
                     margin-top: 10px;
@@ -906,6 +1529,7 @@ const TopNavigationBar = ({
                     opacity: 0;
                     transform: translateY(-10px);
                     transition: opacity 0.2s ease, transform 0.2s ease;
+                    border: 1px solid rgba(255, 255, 255, 0.1); 
                 }
 
                 .dropdown-content.open {
@@ -918,26 +1542,36 @@ const TopNavigationBar = ({
                     display: flex;
                     align-items: center;
                     padding: 10px 15px;
-                    color: var(--text-secondary);
+                    color: white;
                     text-decoration: none;
                     font-size: 14px;
-                    transition: background-color 0.2s, color 0.2s;
-                }
-                
-                .menu-item > svg {
-                    margin-right: 10px;
-                    font-size: 16px;
+                    transition: background-color 0.2s;
+                    font-weight: 500;
                 }
 
+                .menu-item svg {
+                    margin-right: 10px;
+                    font-size: 16px;
+                    color: var(--text-secondary);
+                }
+                
                 .menu-item:hover {
-                    background-color: #242421ff;
-                    color: var(--text-primary);
+                    background-color: #4A4A45; 
+                }
+                
+                /* Separator for logical grouping */
+                .menu-separator {
+                    height: 1px;
+                    background-color: #4A4A45;
+                    margin: 8px 0;
                 }
                 
                 .logout-item {
-                    border-top: 1px solid rgba(255, 255, 255, 0.1);
-                    margin-top: 5px;
-                    padding-top: 10px;
+                    color: ${ERROR_COLOR}; 
+                }
+                
+                .logout-item svg {
+                    color: ${ERROR_COLOR}; 
                 }
 
             `}</style>
@@ -946,3 +1580,10 @@ const TopNavigationBar = ({
 };
 
 export default TopNavigationBar;
+
+
+
+
+
+
+

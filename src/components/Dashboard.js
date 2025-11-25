@@ -7,7 +7,7 @@ import {
     FaFileInvoiceDollar, 
     FaCalendarCheck, 
     FaExclamationTriangle,
-    FaRegLightbulb, 
+    // FaRegLightbulb, // Removed: Not needed without TourBox
     // ADDED Imports for new widgets:
     FaChevronDown,
     FaEllipsisV,
@@ -22,8 +22,8 @@ const KANBAN_STATUSES = [
     { title: "Paid/Closed", color: "#94A3B8" } 
 ];
 
-const TOUR_COMPLETED_KEY = 'dashboardTourLastShown';
-const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; // Milliseconds in 24 hours
+// const TOUR_COMPLETED_KEY = 'dashboardTourLastShown'; // Removed
+// const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; // Milliseconds in 24 hours // Removed
 
 // --- Placeholder Data for New Widgets (UPDATED FOR AUTO REPAIR) ---
 const SALES_ORDERS_DATA = [
@@ -141,8 +141,9 @@ const KanbanBoardPlaceholder = () => (
 
 
 // ----------------------------------------------------
-// 3. Guided Tour Pop-up Box Component
+// 3. Guided Tour Pop-up Box Component - REMOVED!
 // ----------------------------------------------------
+/*
 const TourBox = ({ step, totalSteps, onClose, onNext, position, title, content }) => {
     const isLastStep = step === totalSteps; 
     
@@ -167,6 +168,7 @@ const TourBox = ({ step, totalSteps, onClose, onNext, position, title, content }
         </div>
     );
 };
+*/
 
 
 // ----------------------------------------------------
@@ -422,24 +424,13 @@ const Dashboard = ({ isSidebarCollapsed }) => {
     const [isLoading, setIsLoading] = useState(true); 
     const [error, setError] = useState(null); 
 
-    // Tour State Management 
-    const totalTourSteps = 2;
-    const [tourStep, setTourStep] = useState(-1);
+    // Tour State Management (Removed everything related to running the tour)
+    // const totalTourSteps = 2; // Removed
+    // const [tourStep, setTourStep] = useState(-1); // Removed
+    // const tourContent = [ ... ]; // Removed
 
-    const tourContent = [
-        {
-            position: 'center-modal', // Step 1: Center Modal Overlay
-            title: "Welcome to your Dashboard!",
-            content: "This quick tour will highlight key areas. Let's start with the overall metrics.",
-        },
-        {
-            position: 'top-right', // Step 2: Top Right Corner
-            title: "Quick Status Overview",
-            content: "These cards provide real-time metrics and month-over-month change for Clients, Vehicles, and Revenue.",
-        },
-    ];
-
-    // Handlers
+    // Handlers (Removed all tour handlers)
+    /*
     const saveTourTimestamp = () => {
         localStorage.setItem(TOUR_COMPLETED_KEY, Date.now().toString());
     };
@@ -457,10 +448,12 @@ const Dashboard = ({ isSidebarCollapsed }) => {
         saveTourTimestamp();
         setTourStep(0); 
     };
+    */
     
     // 🏆 Combined useEffect for Tour Persistence and Data Fetching
     useEffect(() => {
-        // --- 1. Tour Persistence Check ---
+        // --- 1. Tour Persistence Check --- (REMOVED LOGIC)
+        /*
         const lastShown = localStorage.getItem(TOUR_COMPLETED_KEY);
         const now = Date.now();
         
@@ -475,6 +468,7 @@ const Dashboard = ({ isSidebarCollapsed }) => {
         } else {
             setTourStep(1); 
         }
+        */
 
         // --- 2. Data Fetching Logic ---
         const fetchDashboardData = async () => {
@@ -559,7 +553,8 @@ const Dashboard = ({ isSidebarCollapsed }) => {
     return (
         <div className={`dashboard-page ${isSidebarCollapsed ? 'shifted' : ''}`}>
             
-            {/* GUIDED TOUR IMPLEMENTATION */}
+            {/* GUIDED TOUR IMPLEMENTATION - REMOVED! */}
+            {/*
             {tourStep > 0 && (
                 <>
                     {(() => {
@@ -581,6 +576,7 @@ const Dashboard = ({ isSidebarCollapsed }) => {
                     })()}
                 </>
             )}
+            */}
 
             <div className="dashboard-header-path">
                 <h1 className="dashboard-title">Dashboard Overview</h1>
@@ -765,7 +761,8 @@ const Dashboard = ({ isSidebarCollapsed }) => {
                     box-shadow: 0 0 10px rgba(248, 113, 113, 0.4); 
                 }
                 
-                /* --- TOUR BOX STYLES (Kept as is for contrast) --- */
+                /* --- TOUR BOX STYLES (REMOVED: Tour is no longer active) --- */
+                /*
                 .tour-backdrop {
                     position: fixed;
                     top: 0;
@@ -784,519 +781,447 @@ const Dashboard = ({ isSidebarCollapsed }) => {
                     padding: 20px;
                     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
                     z-index: 9999; 
-                    max-width: 350px;
-                    animation: fadeIn 0.3s ease-out;
-                    border: 2px solid #6366F1; 
                 }
-                
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: scale(0.95); }
-                    to { opacity: 1; transform: scale(1); }
-                }
-                /* --- END TOUR BOX STYLES --- */
+                */
 
-
-                /* ---------------------------------------------------- */
-                /* 🎨 NEW WIDGET CONTAINERS */
-                /* ---------------------------------------------------- */
-                .widget-card {
-                    background-color: #FFFFFF; /* White background for widgets */
-                    border-radius: 8px; 
-                    padding: 20px; 
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-                    border: 1px solid #E5E7EB; 
-                    color: #1E293B;
-                    transition: box-shadow 0.2s ease-in-out;
-                }
-                
-                .widget-card:hover {
-                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); 
-                }
-                
-                .widget-title {
-                    font-size: 16px;
-                    font-weight: 700;
-                    margin: 0;
-                    color: #1E293B;
-                }
-                
-                .widget-subtitle {
-                    font-size: 12px;
-                    color: #6B7280;
-                    margin-top: 2px;
-                    margin-bottom: 15px;
-                }
+                /* REMAINING CSS FOR WIDGETS AND LAYOUT */
 
                 .top-widgets-grid {
-                    /* Downloads (1fr) on Left, Area Installed (2fr) on Right */
                     display: grid;
                     grid-template-columns: 1fr 2fr; 
-                    gap: 20px;
-                    margin-bottom: 20px;
+                    gap: 30px; 
+                    margin-bottom: 30px;
                 }
 
                 .bottom-widgets-grid {
                     display: grid;
-                    grid-template-columns: 2fr 1fr; /* Table wider, List narrower */
-                    gap: 20px;
+                    grid-template-columns: 3fr 2fr;
+                    gap: 30px; 
                     margin-bottom: 30px;
                 }
+
+                .widget-card {
+                    background-color: #FFFFFF;
+                    border-radius: 8px;
+                    padding: 20px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                    border: 1px solid #E5E7EB;
+                    min-height: 350px;
+                }
+
+                .widget-title {
+                    font-size: 18px;
+                    font-weight: 700;
+                    margin-bottom: 5px;
+                    color: #1E293B;
+                }
+
+                .widget-subtitle {
+                    font-size: 13px;
+                    color: #6B7280;
+                    margin-bottom: 20px;
+                }
                 
-                /* ---------------------------------------------------- */
-                /* JOB CARDS CHART STYLES (Donut) - INCREASED SIZE */
-                /* ---------------------------------------------------- */
+                /* --- DONUT CHART STYLES --- */
                 .donut-chart-container {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    margin: 20px 0;
+                    margin: 30px 0;
+                    position: relative;
+                    height: 150px;
+                    width:670px; 
                 }
 
                 .donut-chart {
-                    /* INCREASED SIZE: 150px -> 200px */
-                    width: 200px; 
-                    height: 200px; 
+                    width: 150px;
+                    height: 150px;
                     border-radius: 50%;
                     position: relative;
-                    /* Faking the donut effect using border and background colors */
-                    background: #F3F4F6; 
-                    border: 25px solid transparent; /* Slightly thicker border for larger size */
-                    box-sizing: border-box;
-                    
-                    /* Applying the conic-gradient to the chart container itself */
-                    background-clip: padding-box; 
-                    
-                    /* Inner circle cutout */
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    box-shadow: 0 0 0 15px #F3F4F6; /* Fakes the thickness */
                 }
 
                 .donut-center {
-                    /* INCREASED SIZE: 80px -> 100px */
                     position: absolute;
-                    width: 100px; 
-                    height: 100px; 
-                    background: #FFFFFF;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #FFFFFF;
+                    width: 100px;
+                    height: 100px;
                     border-radius: 50%;
                     display: flex;
                     flex-direction: column;
-                    align-items: center;
                     justify-content: center;
+                    align-items: center;
                     box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
                 }
-                
+
                 .donut-center-total-label {
-                    font-size: 11px; /* Slight increase for readability */
+                    font-size: 12px;
                     color: #9CA3AF;
-                    text-transform: uppercase;
-                    font-weight: 600;
+                    font-weight: 500;
                 }
-                
+
                 .donut-center-total-value {
-                    font-size: 24px; /* Increased font size */
+                    font-size: 24px;
                     font-weight: 800;
                     color: #1E293B;
                 }
 
                 .donut-legend {
                     display: flex;
-                    flex-wrap: wrap;
                     justify-content: space-around;
-                    gap: 10px;
-                    margin-top: 10px;
                     padding-top: 10px;
                     border-top: 1px dashed #F3F4F6;
+                    margin-top: auto;
                 }
 
                 .legend-item {
                     display: flex;
                     align-items: center;
-                    font-size: 12px;
+                    font-size: 13px;
                     color: #4B5563;
-                    font-weight: 500;
                 }
-                
+
                 .legend-dot {
                     width: 8px;
                     height: 8px;
                     border-radius: 50%;
-                    margin-right: 5px;
+                    margin-right: 6px;
                 }
                 
-                /* ---------------------------------------------------- */
-                /* REVENUE BY LOCATION CHART STYLES (Stacked Bar) - UPDATED FOR MODERN LOOK */
-                /* ---------------------------------------------------- */
+                /* --- STACKED BAR CHART STYLES (MODERN) --- */
                 .widget-header {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 15px;
+                    align-items: flex-start;
                 }
                 
                 .dropdown-year {
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: #4B5563;
-                    padding: 4px 8px;
-                    border: 1px solid #D1D5DB;
-                    border-radius: 4px;
+                    font-size: 13px;
+                    color: #6B7280;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
+                    padding: 4px 8px;
+                    border: 1px solid #E5E7EB;
+                    border-radius: 4px;
                 }
-                
+
                 .chart-legend-area {
                     display: flex;
                     justify-content: flex-start;
-                    gap: 20px;
+                    gap: 15px;
                     margin-bottom: 20px;
-                    padding-bottom: 10px;
-                    border-bottom: 1px dashed #F3F4F6;
+                    flex-wrap: wrap;
+                    font-size: 13px;
                 }
                 
                 .stacked-bar-chart {
                     display: flex;
-                    height: 250px; 
-                    gap: 15px; /* INCREASED GAP */
-                }
-                
-                .y-axis {
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                    text-align: right;
-                    font-size: 10px;
-                    color: #9CA3AF;
-                    padding-right: 5px;
-                    height: 100%;
-                }
-                
-                .y-axis-label-modern {
-                    height: 25%; 
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-end;
-                    /* Adjust vertical position for markers */
-                    &:last-child {
-                        height: 0;
-                        padding-bottom: 10px;
-                        align-items: flex-end;
-                    }
-                    &:first-child {
-                        align-items: flex-start;
-                        padding-top: 0;
-                    }
+                    height: 200px; 
+                    position: relative;
+                    padding-left: 30px; 
                 }
 
+                .y-axis {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column-reverse;
+                    justify-content: space-between;
+                    padding-bottom: 25px; /* Adjust for x-axis labels */
+                }
+
+                .y-axis-label-modern {
+                    font-size: 11px;
+                    color: #9CA3AF;
+                    transform: translateY(50%);
+                    text-align: right;
+                    width: 25px;
+                }
 
                 .bars-container {
                     flex-grow: 1;
                     display: flex;
-                    justify-content: space-around;
                     align-items: flex-end;
-                    padding-bottom: 10px; 
+                    justify-content: space-around;
                     position: relative;
-                }
-
-                .bars-container::before {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 1px;
-                    background-color: #D1D5DB; /* X-axis line */
+                    padding: 0 5px;
+                    border-bottom: 1px solid #E5E7EB; /* X-axis line */
                 }
                 
-                /* MODERN: Horizontal Grid Lines */
                 .horizontal-grid {
                     position: absolute;
                     top: 0;
                     left: 0;
-                    right: 0;
-                    bottom: 10px; /* Aligns with the bar container bottom */
-                    z-index: 0;
+                    width: 100%;
+                    height: 100%;
                 }
-
+                
                 .grid-line {
                     position: absolute;
                     left: 0;
-                    right: 0;
-                    height: 1px;
-                    background-color: #F3F4F6; /* Very light, subtle grid line */
-                    transform: translateY(50%);
+                    width: 100%;
+                    border-top: 1px dashed #F3F4F6;
+                    z-index: 0; 
                 }
 
+
                 .stacked-bar-column {
-                    width: 20px; /* INCREASED BAR WIDTH */
+                    width: 15px; /* Bar width */
                     height: 100%;
                     display: flex;
                     flex-direction: column-reverse;
-                    justify-content: flex-start;
+                    align-items: center;
                     position: relative;
-                    z-index: 1; /* Keep bars above grid lines */
                 }
-                
+
                 .bar {
                     width: 100%;
-                    transition: height 0.5s ease-out;
-                    min-height: 0; 
-                    /* UPDATED SHADOW for modern, defined look */
-                    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15); 
+                    transition: height 0.3s ease;
+                    position: relative;
                 }
                 
-                /* MODERN: Rounded Corners */
-                .bar.rounded-top {
+                /* Background Colors for bars */
+                .bg-primary { background-color: #6366F1; } /* Blue/HQ */
+                .bg-warning { background-color: #F59E0B; } /* Amber/South */
+                .bg-success { background-color: #10B981; } /* Green/North */
+
+                /* Rounded corners logic */
+                .rounded-top {
                     border-top-left-radius: 4px;
                     border-top-right-radius: 4px;
                 }
                 
-                .bar.rounded-bottom {
+                /* Only need rounded bottom if it's the very bottom bar */
+                .stacked-bar-column > .bar:last-child { 
                     border-bottom-left-radius: 4px;
                     border-bottom-right-radius: 4px;
                 }
-
-                .stacked-bar-column:hover .bar {
-                    opacity: 0.9; /* Slight hover to show interactivity */
-                }
                 
+                /* Fix for cases where one bar is 0, the next is rounded-top */
+                .stacked-bar-column > .bar:first-child.rounded-top {
+                    border-bottom-left-radius: 0;
+                    border-bottom-right-radius: 0;
+                }
+
+
                 .x-axis-label-modern {
                     position: absolute;
-                    bottom: -15px; 
-                    font-size: 10px;
-                    color: #4B5563;
-                    font-weight: 600;
-                    transform: translateX(-50%);
-                    left: 50%; 
-                }
-
-                /* Bar Colors */
-                .bg-success { background-color: #10B981; } /* Shop 1 (North) - Green */
-                .bg-warning { background-color: #F59E0B; } /* Shop 2 (South) - Orange */
-                .bg-primary { background-color: #6366F1; } /* Shop 3 (HQ) - Indigo */
-
-
-                /* ---------------------------------------------------- */
-                /* NEW SALES ORDERS TABLE STYLES */
-                /* ---------------------------------------------------- */
-                .table-widget {
-                    padding: 0; /* Adjust padding for full-width table */
+                    bottom: -20px;
+                    font-size: 11px;
+                    color: #9CA3AF;
                 }
                 
-                .table-widget .widget-title {
-                    padding: 20px 20px 0;
+                /* --- TABLE STYLES --- */
+                .table-widget {
+                    padding: 20px 0;
+                    overflow-x: auto;
                 }
 
-                table {
+                .table-widget h3 {
+                    padding: 0 20px;
+                }
+
+                .table-widget table {
                     width: 100%;
                     border-collapse: collapse;
                     margin-top: 15px;
                 }
 
-                th, td {
+                .table-widget th, .table-widget td {
+                    padding: 10px 20px;
                     text-align: left;
-                    padding: 12px 20px;
                     font-size: 13px;
+                    border-bottom: 1px solid #F3F4F6;
                 }
 
-                th {
-                    background-color: #F9FAFB; /* Light header background */
-                    color: #4B5563;
+                .table-widget th {
                     font-weight: 600;
+                    color: #4B5563;
                     text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    border-bottom: 1px solid #E5E7EB;
+                    background-color: #F9FAFB;
                 }
-
-                td {
+                
+                .table-widget td {
                     color: #374151;
-                    border-bottom: 1px solid #F3F4F6; /* Very light divider */
                 }
 
-                tr:hover {
+                .table-widget tr:hover {
                     background-color: #F9FAFB;
                 }
 
+                .status-badge {
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    font-size: 11px;
+                    text-transform: uppercase;
+                }
+                
+                .status-paid { background-color: #D1FAE5; color: #065F46; } /* Green */
+                .status-out-of-date { background-color: #FEE2E2; color: #991B1B; } /* Red */
+                /* Add more statuses as needed */
+                
                 .more-options-icon {
                     color: #9CA3AF;
                     cursor: pointer;
-                    transition: color 0.2s;
-                }
-                
-                .more-options-icon:hover {
-                    color: #1E293B;
                 }
 
-                /* Status Badges */
-                .status-badge {
-                    display: inline-block;
-                    padding: 4px 10px;
-                    border-radius: 9999px;
-                    font-weight: 600;
-                    font-size: 11px;
-                    text-transform: capitalize;
-                }
-
-                .status-paid { background-color: #D1FAE5; color: #059669; } /* Green */
-                .status-out-of-date { background-color: #FEE2E2; color: #EF4444; } /* Red */
-                /* Placeholder for other statuses */
-                .status-pending { background-color: #FEF3C7; color: #D97706; } /* Yellow/Orange */
-
-
-                /* ---------------------------------------------------- */
-                /* TOP SELLING PARTS LIST STYLES */
-                /* ---------------------------------------------------- */
+                /* --- TOP SELLING PARTS LIST STYLES --- */
                 .timeframe-tabs {
-                    margin-bottom: 15px;
-                    border-bottom: 1px solid #E5E7EB;
                     display: flex;
                     gap: 10px;
+                    margin-bottom: 20px;
                 }
-                
+
                 .tab-btn {
-                    background: none;
-                    border: none;
-                    padding: 8px 15px;
-                    font-size: 13px;
-                    font-weight: 600;
+                    background-color: #F3F4F6;
                     color: #6B7280;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    font-size: 12px;
                     cursor: pointer;
-                    border-bottom: 2px solid transparent;
-                    transition: all 0.2s;
+                    transition: background-color 0.2s;
                 }
-                
+
+                .tab-btn:hover {
+                    background-color: #E5E7EB;
+                }
+
                 .tab-btn.active {
-                    color: #6366F1;
-                    border-bottom-color: #6366F1;
+                    background-color: #6366F1;
+                    color: #FFFFFF;
                 }
 
                 .applications-list {
                     display: flex;
                     flex-direction: column;
-                    gap: 15px;
                 }
 
                 .app-item {
                     display: flex;
                     align-items: center;
                     padding: 10px 0;
-                    border-bottom: 1px dashed #F3F4F6;
-                    
-                    /* Last item border fix */
-                    &:last-child {
-                        border-bottom: none;
-                        padding-bottom: 0;
-                    }
+                    border-bottom: 1px solid #F3F4F6;
                 }
                 
+                .app-item:last-child {
+                    border-bottom: none;
+                }
+
                 .app-icon {
-                    width: 32px;
-                    height: 32px;
+                    width: 40px;
+                    height: 40px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    margin-right: 15px;
-                }
-
-                .app-dot {
-                    width: 12px;
-                    height: 12px;
                     border-radius: 50%;
+                    margin-right: 15px;
+                    position: relative;
                 }
                 
+                .app-dot {
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    border: 2px solid #FFFFFF;
+                }
+
+
                 .app-details {
                     flex-grow: 1;
                     display: flex;
                     flex-direction: column;
                 }
-                
+
                 .app-name {
-                    font-size: 14px;
                     font-weight: 600;
                     color: #1E293B;
+                    font-size: 14px;
                 }
 
                 .app-version {
-                    font-size: 11px;
+                    font-size: 12px;
                     color: #9CA3AF;
-                    margin-bottom: 5px;
-                }
-                
-                .app-metrics {
-                    display: flex;
-                    gap: 10px;
-                    font-size: 11px;
-                    color: #4B5563;
-                    font-weight: 500;
-                }
-                
-                .app-metrics span {
-                    display: flex;
-                    align-items: center;
-                    gap: 3px;
                 }
 
+                .app-metrics {
+                    font-size: 12px;
+                    color: #6B7280;
+                    margin-top: 5px;
+                }
+
+                .app-metrics span {
+                    margin-right: 15px;
+                    display: inline-flex;
+                    align-items: center;
+                }
+                
                 .app-metrics svg {
+                    margin-right: 4px;
                     font-size: 10px;
                 }
-
-
-                /* ---------------------------------------------------- */
-                /* KANBAN STYLES */
-                /* ---------------------------------------------------- */
+                
+                /* --- KANBAN BOARD STYLES --- */
                 .kanban-section {
-                    margin-top: 20px;
-                    padding: 20px;
-                    background-color: #F9FAFB; /* Slightly off-white for contrast */
+                    background-color: #FFFFFF;
                     border-radius: 8px;
+                    padding: 20px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
                     border: 1px solid #E5E7EB;
+                    margin-top: 30px; 
                 }
 
                 .kanban-title {
                     font-size: 18px;
                     font-weight: 700;
-                    color: #1E293B;
                     margin-bottom: 15px;
+                    color: #1E293B;
                 }
 
                 .kanban-grid-placeholder {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                     gap: 20px;
+                    margin-bottom: 15px;
                 }
 
                 .kanban-column-placeholder {
-                    background-color: #FFFFFF;
-                    border-radius: 8px;
-                    padding: 15px;
-                    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-                    border-top: 4px solid #E5E7EB; /* Default border */
+                    background-color: #F9FAFB;
+                    border-radius: 6px;
+                    padding: 10px;
+                    border-top: 4px solid;
                 }
 
                 .column-title {
                     font-size: 14px;
                     font-weight: 700;
-                    margin: 0 0 10px 0;
-                    padding-bottom: 10px;
-                    border-bottom: 1px dashed #E5E7EB;
-                    border-top-width: 4px; /* Use inline style override for color */
+                    margin-bottom: 10px;
                 }
 
                 .column-content {
-                    color: #6B7280;
-                    font-style: italic;
                     font-size: 13px;
+                    color: #6B7280;
+                    min-height: 50px;
+                    background-color: #FFFFFF;
+                    padding: 10px;
+                    border-radius: 4px;
+                    border: 1px solid #E5E7EB;
                 }
                 
                 .kanban-info {
                     font-size: 12px;
                     color: #9CA3AF;
                     text-align: center;
-                    margin-top: 20px;
+                    margin-top: 10px;
                 }
-
-
+                
             `}</style>
         </div>
     );
