@@ -7,6 +7,7 @@ import {
     FaSignOutAlt, 
     FaCheckCircle, 
     FaTimesCircle,
+    FaBars,
     FaCog, // Settings Cog
     // Icons for Settings Dropdown
     FaMoon, // Mode/Dark
@@ -1046,7 +1047,9 @@ const TopNavigationBar = ({
     isProfileMenuOpen,  
     toggleProfileMenu,  
     userAvatarUrl,         
-    onLogout,           
+    onLogout,
+    onMobileMenuToggle,
+    isMobile,          
     navigate          
 }) => {
     
@@ -1166,6 +1169,28 @@ const TopNavigationBar = ({
 
     return (
         <header className="top-nav-bar">
+
+            {/* 🛑 ADD MOBILE MENU BUTTON TO TOP NAV 🛑 */}
+            {isMobile && (
+                <button 
+                    className="top-nav-mobile-toggle"
+                    onClick={onMobileMenuToggle}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'white',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        marginRight: '15px',
+                        padding: '5px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <FaBars />
+                </button>
+            )}
             
             {/* 🛑 RENDER TOAST HERE */}
             <ToastNotification 

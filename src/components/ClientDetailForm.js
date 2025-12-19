@@ -442,14 +442,21 @@ const ClientForm = () => {
             });
 
             // SUCCESS BLOCK
-            const savedClientData = response.data;
-            const successMessage = isEdit 
-                ? `Successfully updated client: **${getClientName(savedClientData)}**.`
-                : `Successfully added new client: **${getClientName(savedClientData)}**!`;
-            
-            // 🚨 SUCCESS NOTIFICATION REMOVED FROM HERE
-            // The notification logic is now only passed to the next route via state
-            navigate('/clients', { state: { successMessage: successMessage } }); 
+           // SUCCESS BLOCK
+const savedClientData = response.data;
+const successMessage = isEdit 
+    ? `Successfully updated client: **${getClientName(savedClientData)}**.`
+    : `Successfully added new client: **${getClientName(savedClientData)}**!`;
+
+if (isEdit) {
+    // For edits: go back to clients list
+    navigate('/clients', { state: { successMessage: successMessage } });
+} else {
+    // 🛑 FIX: For new clients - navigate to vehicle form WITH the client ID
+    navigate(`/vehicles/new/${savedClientData.id}`, { 
+        state: { successMessage: successMessage } 
+    });
+}
 
         } catch (err) {
             // ERROR BLOCK
@@ -509,17 +516,17 @@ const ClientForm = () => {
     
     // 🚗 NEW HANDLER: Directs to the Vehicle Form
     const handleAddVehicleClick = (e) => {
-        e.preventDefault();
+    e.preventDefault();
         
         // Check 1: Must be in edit mode (client must already exist and have an ID)
-        if (isEditMode && clientId) {
-            // Navigate to the vehicle creation form, passing the client ID via the URL
-            navigate(`/vehicles/new/${clientId}`);
-        } else {
-             // NOTE: Keep error notification here for user action requirement
-             showToastNotification("Please save the client details before adding a vehicle.", 'error'); 
-        }
-    };
+       if (isEditMode && formData.id) {
+        // Navigate to the vehicle creation form, passing the client ID via the URL
+        navigate(`/vehicles/new/${formData.id}`);
+    } else {
+        // NOTE: Keep error notification here for user action requirement
+        showToastNotification("Please save the client details before adding a vehicle.", 'error'); 
+    }
+};
 
 
     // --- Render Logic ---

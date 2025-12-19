@@ -416,8 +416,8 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo, isOpenMo
             top: 0;
             left: 0;
             padding: 0; 
-            /* 🛑 IMPORTANT: Added a 100% width transition for mobile slide-in */
-            transition: width 0.3s ease, left 0.3s ease; 
+            /* 🛑 IMPORTANT: Added transition for mobile slide-in */
+            transition: width 0.3s ease, left 0.3s ease, transform 0.3s ease; 
             display: flex;
             flex-direction: column;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -830,27 +830,33 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo, isOpenMo
             }
             
             /* ----------------------------------------------------------------- */
-            /* 🛑 MOBILE RESPONSIVENESS (MAX-WIDTH: 992px) 🛑 */
+            /* 🛑 MOBILE RESPONSIVENESS (MAX-WIDTH: 992px) - UPDATED 🛑 */
             /* ----------------------------------------------------------------- */
             @media (max-width: 992px) {
                 
                 .sidebar {
                     /* Initial state: Hidden off-screen */
-                    left: -250px; 
-                    width: 250px;
+                    left: -250px !important;
+                    width: 250px !important;
                     /* Ensure mobile sidebar is never visually collapsed */
                     transform: none !important;
+                    transition: left 0.3s ease !important;
                 }
                 
                 .sidebar--open-mobile {
                     /* Open state: Slide in */
-                    left: 0;
-                    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5); /* Overlay effect */
+                    left: 0 !important;
+                    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3);
                 }
                 
                 /* 🛑 CRITICAL: Force the sidebar out of the collapsed state on mobile 🛑 */
                 .sidebar--collapsed {
-                    width: 250px; /* Force full width on mobile */
+                    width: 250px !important;
+                    left: -250px !important;
+                }
+                
+                .sidebar--collapsed.sidebar--open-mobile {
+                    left: 0 !important;
                 }
                 
                 .sidebar--collapsed .logo-text,
@@ -858,52 +864,71 @@ const Sidebar = ({ currentPath, isCollapsed, toggleSidebar, navigateTo, isOpenMo
                 .sidebar--collapsed .highlight-tag,
                 .sidebar--collapsed .dropdown-indicator {
                     /* Re-show elements hidden by the desktop collapsed state */
-                    display: block; 
-                    opacity: 1;
-                    visibility: visible;
+                    display: block !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
                 }
                 
                 /* Reset icon margin */
                 .sidebar--collapsed .logo-icon {
-                    margin-right: 10px;
+                    margin-right: 10px !important;
                 }
                 
                 /* Disable the Flyout Menu logic for mobile */
                 .sidebar--collapsed .submenu-list {
                     /* Re-enable smooth transition for click-based dropdown on mobile */
-                    transition: max-height 0.3s ease-out; 
-                    position: static; 
-                    box-shadow: none;
+                    transition: max-height 0.3s ease-out !important;
+                    position: static !important;
+                    box-shadow: none !important;
+                    display: none;
+                    left: auto !important;
+                    top: auto !important;
                 }
                 
                 .sidebar--collapsed .submenu-list.open {
                     /* Use the expanded dropdown logic for mobile open state */
                     max-height: 500px !important;
-                    display: block; 
+                    display: block !important;
                 }
                 
                 /* Footer CTA adjustments */
                 .tour-cta-banner.collapsed {
                     /* Reset mobile footer to expanded look */
                     background-color: #242421ff;
-                    padding: 15px; 
+                    padding: 15px !important;
                 }
                 
                 .tour-cta-banner.collapsed .cta-content {
-                    justify-content: flex-start;
+                    justify-content: flex-start !important;
                 }
                 
                 .tour-cta-banner.collapsed .cta-icon {
-                    margin-right: 15px;
+                    margin-right: 15px !important;
                 }
                 
                 .tour-cta-banner.collapsed .cta-text-wrapper {
-                    max-width: 170px;
-                    opacity: 1;
+                    max-width: 170px !important;
+                    opacity: 1 !important;
                 }
                 
+                /* Ensure proper z-index */
+                .sidebar {
+                    z-index: 999 !important;
+                }
             }
-            
+
+            /* ----------------------------------------------------------------- */
+            /* 🛑 TABLET ADJUSTMENTS (768px - 992px) 🛑 */
+            /* ----------------------------------------------------------------- */
+            @media (min-width: 768px) and (max-width: 992px) {
+                .sidebar {
+                    width: 280px !important; /* Slightly wider for tablets */
+                }
+                
+                .sidebar--open-mobile {
+                    left: 0 !important;
+                }
+            }
             
         `}</style>
         </nav>

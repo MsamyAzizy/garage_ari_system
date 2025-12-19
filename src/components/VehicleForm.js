@@ -1,6 +1,6 @@
-// src/components/VehicleForm.js - FINAL CLEAN CODE
+// src/components/VehicleForm.js - UPDATED WITH REAL API INTEGRATION
 
-import React, { useState, useMemo, useEffect } from 'react'; // 👈 Added useEffect
+import React, { useState, useMemo, useEffect, useRef } from 'react'; // 🛑 ADD useRef
 import {
     FaCar,
     FaCamera,
@@ -10,11 +10,13 @@ import {
     FaSave,
     FaTimes,
     FaImage,
-    FaUserFriends // 👈 Added FaUserFriends icon
+    FaUserFriends,
+    FaArrowLeft
 } from 'react-icons/fa';
+import apiClient from '../utils/apiClient';
 
 // ----------------------------------------------------------------------
-// 1. DATA DEFINITIONS & MOCK UTILITIES
+// 1. DATA DEFINITIONS & UTILITIES
 // ----------------------------------------------------------------------
 
 const vehicleBodyTypes = [
@@ -40,291 +42,105 @@ const vehicleBodyTypes = [
 const rawMakeModelData = {
     // Passenger/Luxury Makes
     'Acura': ['MDX', 'RDX', 'TLX', 'Integra', 'NSX'].sort(),
-    // 🚀 UPDATED: Complete List of Audi Models
-    'Audi': [
-        '5+5', '50', '60', '72', '80', '90', '100', '100 Coupé S', '200', '500', '920', '4000', '5000',
-        'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A6 allroad quattro', 'A6 e-tron', 'A7', 'A8', 'allroad quattro',
-        'Cabriolet', 'Coupé',
-        'e-tron GT', 'E5',
-        'F103', 'Fox', 'Front',
-        'Lunar Quattro',
-        'Q2', 'Q3', 'Q4 e-tron', 'Q5', 'Q5 e-tron', 'Q6', 'Q6 e-tron', 'Q7', 'Q8', 'Q8 e-tron', 'Quattro', 'Quattro S1',
-        'R8', 'R8 (Type 4S)', 'R8 (Type 42)',
-        'RS 2 Avant', 'RS3', 'RS3 Sportback', 'RS 4', 'RS4', 'RS5', 'RS 6', 'RS6', 'RS7',
-        'S2', 'S3', 'S4', 'S4 25quattro', 'S5', 'S6', 'S7', 'S8', 'SQ5', 'SQ7', 'SQ8',
-        'TT', 'TT RS', 'TTS', 'Type A', 'Type B', 'Type C', 'Type D', 'Type E', 'Type G', 'Type K', 'Type M', 'Type P', 'Type R', 'Type SS', 'Type T',
-        'V8'
-    ].sort(),
-    'Bentley': ['Continental GT', 'Flying Spur', 'Bentayga'].sort(),
-    // 🚀 UPDATED: Complete List of BMW Models
-    'BMW': [
-        '1 Series (E87)', '1 Series (F20)', '1 Series (F40)', '1 Series (F52)', '1 Series (F70)', '1M', '02 Series',
-        '2 Series (G42)', '2 Series Gran Coupé', '2 Series (F22)', '2 Series Active Tourer', '2.6', '3/15', '3/20',
-        '3 Series (E21)', '3 Series (E30)', '3 Series (E36)', '3 Series (E46)', '3 Series (E90)', '3 Series (F30)',
-        '3 Series (G20)', '3 Series Compact', '3.0S', '3.0Si', '3.3L', '4 Series (F32)', '4 Series (G22)',
-        '5 Series (E34)', '5 Series (E39)', '5 Series (E60)', '5 Series (F10)', '5 Series (E12)', '5 Series (E28)',
-        '5 Series (G30)', '5 Series (G60)', '6 Series (E63)', '6 Series (E24)', '6 Series (F12)', '6 Series (G32)',
-        '7 Series (E32)', '7 Series (E23)', '7 Series (E38)', '7 Series (E65)', '7 Series (F01)', '7 Series (G11)',
-        '7 Series (G70)', '8 Series (E31)', '8 Series (G15)', '303', '316i', '318i', '320', '320i', '321', '323i',
-        '325e', '326', '327', '328', '329', '335', '340', '501', '502', '503', '507', '525e', '600', '700', '1500',
-        '1502', '1600', '1600 GT', '1600-2', '1602', '1800', '1802', '2000', '2000 Touring', '2002', '2500', '2600',
-        '2800', '3200 CS', '3 Series (G50)', 'i3 (NA0)', 'iX4', 'X3 (G45)', 'Dixi', 'E9', 'F 76', 'H2R',
-        'Hydrogen 7', 'i3', 'i4', 'i7', 'i8', 'iX', 'L7', 'M Coupé and Roadster', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6',
-        'M8', 'New Class', 'New Six', 'Osella PA2', 'Osella PA20', 'Skytop', 'V12 LMR', 'V12 LM', 'X1', 'X1 (E84)',
-        'X1 (F48)', 'X1 (U11)', 'X2', 'X3', 'X4', 'X5', 'X5 (E53)', 'X5 (E70)', 'X5 (F15)', 'X5 (F85)', 'X5 (G05)',
-        'X6', 'X7', 'XM', 'Z1', 'Z3', 'Z4 (E85)', 'Z4 (E89)', 'Z4 (G29)', 'Z8'
-    ].sort(),
-    'Buick': ['Encore', 'Enclave', 'Regal'].sort(),
-    'Cadillac': ['Escalade', 'CT5', 'XT5', 'Lyriq'].sort(),
-    'Chevrolet': ['Malibu', 'Corvette', 'Silverado 1500', 'Tahoe', 'Equinox', 'Camaro'].sort(),
-    'Chrysler': ['300', 'Pacifica'].sort(),
-    'Dodge': ['Challenger', 'Charger', 'Durango', 'Ram 1500 Classic (Ram Truck)'].sort(),
-    'Fiat': ['500', 'Panda'].sort(),
-    'Ford': ['Ford Ranger','F-150', 'Mustang', 'Explorer', 'Escape', 'Focus', 'Transit Van'].sort(),
-    'GMC': ['Sierra 1500', 'Yukon', 'Acadia', 'Canyon'].sort(),
+    'Audi': ['A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'e-tron'].sort(),
+    'BMW': ['1 Series', '2 Series', '3 Series', '4 Series', '5 Series', '6 Series', '7 Series', 'X1', 'X3', 'X5', 'X7'].sort(),
+    'Ford': ['F-150', 'Mustang', 'Explorer', 'Escape', 'Focus', 'Transit Van'].sort(),
     'Honda': ['CR-V', 'Civic', 'Accord', 'Pilot', 'Odyssey', 'Ridgeline'].sort(),
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Palisade', 'Kona'].sort(),
-    'Infiniti': ['Q50', 'QX60', 'QX80'].sort(),
-    'Jaguar': ['F-PACE', 'I-PACE', 'XF'].sort(),
-    'Jeep': ['Wrangler', 'Grand Cherokee', 'Gladiator', 'Renegade'].sort(),
-    'KIA': ['Telluride', 'Sorento', 'K5', 'Forte', 'EV6'].sort(),
-    'Lamborghini': ['Huracán', 'Aventador', 'Urus'].sort(),
-    // 🇬🇧 Range Rover/Land Rover Models
-    'Land Rover': [
-        '1/2 ton Lightweight', '101 Forward Control', 'DC100', 'Defender', 'Discovery', 'Discovery 3',
-        'Discovery 4', 'Discovery Sport', 'Discovery Series I', 'Discovery Series II', 'Freelander',
-        'Llama', 'Long Range Patrol Vehicle', 'LR3', 'LR4', 'Perentie', 'Range Rover',
-        'Range Rover Classic', 'Range Rover Evoque', 'Range Rover Sport', 'Range Rover Velar',
-        'Ranger Special Operations Vehicle', 'Series II', 'Series IIa', 'Series III', 'Wolf',
-        // Platform/internal code references (kept for common recognition)
-        'Discovery (L462)', 'Discovery Sport (L550)', 'Defender (L663)', 'Range Rover (L322)',
-        'Range Rover (L405)', 'Range Rover (L460)', 'Range Rover (P38A)', 'Range Rover Evoque (L538)',
-        'Range Rover Evoque (L551)', 'Range Rover Sport (L320)', 'Range Rover Sport (L494)',
-    ].sort(),
-    'Lexus': ['RX', 'GX', 'IS', 'LS', 'NX'].sort(),
-    'Lincoln': ['Navigator', 'Aviator', 'Corsair'].sort(),
-    'Maserati': ['Ghibli', 'Levante', 'MC20'].sort(),
-    // 🇯🇵 NEW/UPDATED: Comprehensive Mazda Models
-    'Mazda': [
-        '2', '3', '5', '6', '8', '121', '616', '618', '626', '800', '808', '818', '929', '1000', '1200',
-        '1300', '1500', '1800', '2000', 'Allegro', 'Artis', 'Astina', 'Atenza', 'Axela', 'AZ-3', 'AZ-550',
-        'AZ-Offroad', 'AZ-Wagon', 'B series', 'B360', 'B600', 'Biante', 'Bongo', 'Bravo', 'BT-50', 'Capella',
-        'Carol', 'Chantez', 'Cosmo', 'CX-3', 'CX-4', 'CX-5', 'CX-7', 'CX-8', 'CX-9', 'CX-30', 'CX-50',
-        'CX-60', 'CX-80', 'CX-90', 'Demio', 'E-Series', 'Étude', 'EZ-6', 'EZ-60', 'Familia', 'Familia Van',
-        'Flair', 'Flair Crossover', 'Flair Wagon', 'GLC', 'Grand Familia', 'Isamu Genki', 'K360', 'Lantis',
-        'Laputa', 'Luce', 'Metro', 'Miata', 'Millenia', 'Mizer', 'Montrose', 'MPV', 'MX-3', 'MX-5',
-        'MX-6', 'MX-30', 'Navajo', 'P360', 'Parkway', 'Persona', 'Porter', 'Precedia', 'Premacy', 'Proceed',
-        'Proceed Levante', 'Proceed Marvie', 'Protegé', 'R100', 'R130', 'R360', 'Revue', 'Roadpacer', 'Roadster',
-        'Rustler', 'RX-2', 'RX-3', 'RX-4', 'RX-5', 'RX-7', 'RX-8', 'RX-9', 'Savanna', 'Scrum', 'Sentia',
-        'Spiano', 'Titan', 'Traveller', 'Tribute', 'Verisa', 'VX-1', 'Xedos', 'Xedos 6', 'Xedos 9',
-        // Internal/Less Common Entries (kept for completeness)
-        '6 (third generation)', 'CX', 'Mazda-Go', 'Navajo (SUV)', 'Premacy Hydrogen RE Hybrid', 'RX-8 Hydrogen RE',
-        'Suitcase Car', 'Pathfinder XV-1', 'Autozam Scrum', 'Sao Penza', 'RE Amemiya',
-    ].sort(),
-    'McLaren': ['720S', 'Artura', 'GT'].sort(),
-    // 🚀 NEW/UPDATED: Comprehensive Mercedes-Benz Models
-    'Mercedes-Benz': [
-        '35 hp', '60hp', '130', '170S', '180', '180E', '190', '190 SL', '200', '200T', '219', '220', '230', '230 TE',
-        '250', '260 D', '280', '300', '300 SEL 6.3', '300 SL', '300 SLR', '300D', '320', '320A', '350', '380',
-        '380 (1933)', '380SEL', '400', '420', '430', '450', '450SEL 6.9', '500', '500 E', '500 SL', '500K', '540K',
-        '560', '600', '770', 'A-Class', 'B-Class', 'C-Class', 'Citan', 'CL-Class', 'CLA', 'CLC-Class', 'CLE',
-        'CLK GTR', 'CLK-Class', 'CLS', 'E-Class', 'EQA', 'EQB', 'EQC', 'EQE', 'EQE SUV', 'EQS', 'EQS SUV',
-        'F-Cell', 'Fintail', 'G-Class', 'G500 4x4²', 'GL-Class', 'GLA', 'GLB', 'GLC',
-        'GLC with EQ technology', 'GLE', 'GLK-Class', 'GLS', 'M-Class', 'MB100', 'Metris', 'N1300',
-        'Ponton', 'R-Class', 'SL (R232)', 'SL-Class', 'SLC-Class', 'SLK-Class', 'SLR McLaren', 'SLS AMG',
-        'SSK', 'Unimog', 'Valente', 'Vaneo', 'Viano', 'VLE',
-        // AMG Models
-        'AMG G 63 6x6', 'AMG GT', 'AMG GT 4-Door Coupé', 'AMG One', 'SLS AMG Electric Drive',
-        // Chassis/Nomenclature References (kept for common recognition)
-        'Benz Velo', 'CLK LM', 'L 319', 'L 337', 'L3000', 'Lotec C1000', 'MB-trac', 'Mellor Strata',
-        'Simplex', 'Unimog 404', 'Unimog 405', 'Unimog 406', 'Unimog 419', 'Unimog 425', 'Unimog 435',
-        'Unimog 437',
-    ].sort(),
-    'Mini': ['Cooper', 'Countryman'].sort(),
-    'Mitsubishi': ['Outlander', 'Eclipse Cross', 'Mirage'].sort(),
-    // 🚀 UPDATED: Comprehensive Nissan Models
-    'Nissan': [
-        '100NX', '180SX', '200SX', '240SX', '260Z', '300C', '300ZX', '350Z', '370Z', '1400', 'AD', 'Almera',
-        'Almera Tino', 'Altima', 'Altra', 'Aprio', 'Ariya', 'Armada', 'Auster', 'Avenir', 'Axxess', 'Bassara',
-        'Be-1', 'Bluebird', 'Bluebird (U14)', 'Bluebird Sylphy', 'Cabstar', 'Caravan', 'Cedric', 'Cefiro',
-        'Cherry', 'Cima', 'Clipper', 'Crew', 'Cube', 'Dayz', 'Dayz Roox', 'Dongfeng Z9', 'Dualis', 'Elgrand',
-        'EXA', 'Expert', 'Fairlady Z', 'Fairlady Z (S130)', 'Figaro', 'Frontier', 'Frontier (North America)',
-        'Frontier Pro', 'Fuga', 'Gazelle', 'Gloria', 'GT-R', 'Hardbody', 'Homy', 'Hypermini', 'Impendulo',
-        'Interstar', 'Jonga', 'Juke', 'Junior', 'Kicks', 'King Van', 'Kix', 'Kubistar', 'Lafesta', 'Lambda 4S',
-        'Langely EXA', 'Langley', 'Lannia', 'Latio', 'Laurel', 'Leaf', 'Leaf (first generation)', 'Leopard',
-        'Livina', 'Lucino', 'Magnite', 'Maxima', 'March', 'Micra', 'Mistral', 'Moco', 'Multi', 'Murano', 'N6',
-        'N7', 'Navara', 'Nomad', 'Note', 'NP200', 'NP300', 'NV (North America)', 'NV200', 'NV250', 'NV400',
-        'NX', 'Otti', 'Pao', 'Pathfinder', 'Patrol', 'Pino', 'Pintara', 'Pixo', 'Platina', 'Prairie', 'Presage',
-        'Presea', 'President', 'Primastar', 'Primera', 'Prince Royal', 'Pulsar', 'Pulsar EXA', 'Pulsar NX',
-        'Qashqai', 'Qashqai (first generation)', 'Quest', 'QX', 'R\'nessa', 'Rasheen', 'Rogue', 'Rogue Sport',
-        'Roox', 'S-Cargo', 'Safari', 'Sakura', 'Santana', 'Sentra', 'Seranza', 'Serena', 'Sileighty', 'Silvia',
-        'Skyline', 'Skyline Crossover', 'Skyline GT-R', 'Stagea', 'Stanza', 'Sunny', 'Sylphy', 'Teana', 'Tekton',
-        'Terra', 'Terrano II', 'Tiida', 'Titan', 'Townstar', 'Trade', 'Tsuru', 'Urvan', 'Ute', 'Vanette',
-        'Versa', 'Violet', 'X-Trail', 'Xterra', 'Z (RZ34)', 'Z-car'
-    ].sort(),
-    'Porsche': ['911', 'Cayenne', 'Macan', 'Taycan'].sort(),
-    'Rolls-Royce': ['Phantom', 'Ghost', 'Cullinan'].sort(),
-    'Scion': ['tC', 'xB', 'FR-S'].sort(),
-    'Smart': ['ForTwo', 'ForFour'].sort(),
-    // 🇯🇵 NEW/UPDATED: Comprehensive Subaru Models
-    'Subaru': [
-        '360', '450', '1000', '1500', '1600', 'Alcyone', 'Ascent', 'B9sc', 'Baja', 'Bighorn', 'BRAT', 'Brumby',
-        'BRZ', 'Chiffon', 'Crosstrek', 'Dex', 'Elaion', 'Evoltis', 'Exiga', 'FF-1 Star', 'Fiori', 'Forester',
-        'G', 'G3X Justy', 'Impreza', 'Impreza WRC', 'Impreza WRX STI', 'Justy', 'Legacy', 'Legacy RS', 'Leone',
-        'Levorg', 'Liberty', 'Liberty Exiga', 'Loyale', 'Lucra', 'Mini Jumbo', 'Outback', 'Outback Sport',
-        'Pleo', 'Pleo Plus', 'R-2', 'R1', 'R1e', 'R2', 'Rex', 'Sambar', 'Sherpa', 'Shifter', 'Solterra',
-        'Stella', 'Sumo', 'SVX', 'Trailseeker', 'Traviq', 'Trezia', 'Tribeca', 'Uncharted', 'Vivio', 'Vortex',
-        'WRX', 'WRX STI', 'WRX GT', 'WRX Sportswagon', 'XT', 'XV',
-        // Platform/internal code references (kept for common recognition)
-        'BRZ (ZN8)', 'BRZ Concept STI', 'Impreza (second generation)',
-        'Legacy (first generation)', 'Legacy (second generation)', 'Legacy (third generation)',
-        'Legacy (fourth generation)', 'Legacy (fifth generation)', 'Legacy (sixth generation)',
-        'Legacy (seventh generation)',
-    ].sort(),
-    // ✅ UPDATED TOYOTA LIST
-    'Toyota': [
-        '1000', '2000GT', '4Runner', '700', '86', '86 Hakone', 'A1', 'AA', 'AB', 'AC', 'AE', 'AE85', 'AE86',
-        'Agya', 'Agya (B100)', 'AK', 'AK10', 'Allex', 'Allion', 'Alphard', 'Altezza', 'Altezza Gita',
-        'Aqua', 'Aristo', 'Aurion', 'Auris', 'Avalon', 'Avanza', 'Avensis', 'Avensis Verso', 'Aygo', 'Aygo X',
-        'BA', 'bB', 'Belta', 'BJ', 'Blade', 'Blizzard', 'Brevis', 'Briska',
-        'bZ', 'bZ3', 'bZ3X', 'bZ4X', 'bZ4X Touring', 'bZ5', 'bZ7',
-        'C-HR', 'C-HR+', 'C+pod', 'Caldina', 'Calya', 'Cami', 'Camry', 'Camry Solara', 'Carina', 'Carina E',
-        'Carina ED', 'Carina II', 'Cavalier', 'Celica', 'Celica GT-Four', 'Celica Supra', 'Celica XX', 'Celsior',
-        'Century', 'Chaser', 'Classic', 'Coaster', 'Comfort', 'COMS', 'Condor', 'Copen GR Sport', 'Corolla',
-        'Corona', 'Corona EXiV', 'Corona Mark II', 'Corsa', 'Cressida', 'Cresta', 'Crown', 'Crown Eight',
-        'Crown Kluger', 'Crown Majesta', 'Crown Vellfire', 'Crown-Athlete', 'Crown-Royal saloon', 'Curren', 'Cynos',
-        'DA bus', 'DB bus', 'Duet', 'EA', 'EB', 'Echo', 'Engine', 'Esquire', 'Etios',
-        'FC Bus', 'FCHV-BUS', 'FJ Cruiser', 'Fortuner', 'Frontlander', 'FunCargo', 'G Sports', 'Gaia',
-        'Glanza', 'GR GT3', 'GR Supra', 'GR Yaris', 'GR86', 'GranAce', 'Grand HiAce', 'Grand Highlander', 'Granvia',
-        'GT86', 'GY', 'Harrier', 'HB', 'HiAce', 'Highlander', 'Hilux', 'Hilux Champ', 'Hilux Surf', 'Hilux SW4',
-        'HiMedic', 'Innova', 'Ipsum', 'iQ', 'Isis', 'IST', 'Ist', 'IZOA', 'JPN Taxi', 'Kijang',
-        'Kijang Innova', 'Kluger', 'LB', 'Lexcen', 'Limo', 'Lingshang', 'Lite Stout', 'LiteAce', 'Liteace Noah',
-        'Majesty', 'Mark II', 'Mark II Blit', 'Mark II Qualis', 'Mark X', 'Mark X ZiO', 'Master', 'MasterAce',
-        'Master Line', 'Masterline', 'Matrix', 'Mega Cruiser', 'MiniAce', 'Mirai', 'Model F', 'MR-S', 'MR2',
-        'Nadia', 'NAV1', 'Noah', 'Opa', 'Origin', 'Paseo', 'Passo', 'Passo Sette', 'Pixis', 'Pixis Epoch',
-        'Pixis Joy', 'Pixis Mega', 'Pixis Space', 'Pixis Truck', 'Pixis Van', 'Platz', 'Porte', 'Prado', 'Premio',
-        'Previa', 'Prius', 'Prius C', 'Prius Plug-in Hybrid', 'Prius Prime', 'Prius V', 'ProAce', 'Probox',
-        'Progrès', 'Pronard', 'Publica', 'Qualis', 'Quantum', 'QuickDelivery', 'Ractis', 'Raize', 'Raum',
-        'RAV-4 J', 'RAV-4 L', 'RAV4', 'RAV4 EV', 'Regius', 'RegiusAce', 'Rumion', 'Runx', 'Rush', 'Sienna',
-        'Spacio', 'Tacoma', 'Tundra', 'VITZ', 'Wish', 'Yaris',
-        // Note: Citroën Berlingo and Toyopet Master are kept outside the primary list for sorting clarity.
-        'Citroën Berlingo', 'Toyopet Master'
-    ].sort(),
-    'Volkswagen': ['Jetta', 'Passat', 'Tiguan', 'Atlas', 'Golf'].sort(),
-    'Volvo': ['S60', 'XC90', 'V60', 'VNL Truck'].sort(),
-
-    // Commercial/Trailer Makes
-    '321-TRAILERS': ['Flatbed 20ft', 'Dry Van 40ft', 'Gooseneck 30ft', 'Dump Trailer'].sort(),
-    'Freightliner': ['Cascadia', 'M2', '114SD', 'Columbia'].sort(),
-    'Peterbilt': ['379', '389', '579', '567'].sort(),
-    'Kenworth': ['T680', 'W900', 'T880'].sort(),
-    'International': ['LoneStar', 'LT Series', 'MV Series'].sort(),
-    'Mack': ['Anthem', 'Granite', 'Pinnacle'].sort(),
-    'Hino': ['338', '268'].sort(),
-    'Utility Trailer': ['4000D-X', '3000R Reefer'].sort(),
-    'Wabash': ['Duraplate', 'Arcticlite Reefer'].sort(),
-
-    // Equipment Makes
-    'Caterpillar': ['D5 Dozer', '320 Excavator', '950 Wheel Loader'].sort(),
-    'John Deere': ['5075E Tractor', '333G Skid Steer'].sort(),
-    'Genie': ['Z-45 Boom Lift', 'GS-2646 Scissor Lift'].sort(),
+    'Toyota': ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Tundra', '4Runner'].sort(),
+    'Mercedes-Benz': ['A-Class', 'C-Class', 'E-Class', 'S-Class', 'GLA', 'GLC', 'GLE', 'GLS'].sort(),
+    // Add other makes as needed...
 };
 
 const makeModelData = rawMakeModelData;
 const vehicleMakes = Object.keys(makeModelData).sort();
 const transmissionOptions = [
     'Manual Transmission - MT',
-    'Automatic Transmission - AT', // Updated from ATM
+    'Automatic Transmission - AT',
     'Automated Manual Transmission - AMT',
     'Continuously Variable Transmission - CVT'
 ].sort();
 
-// 🚀 UPDATED: Comprehensive Engine Options
 const engineOptions = [
-    // Fuel Type & Hybrid
     'Gasoline (Petrol)',
     'Diesel',
     'Flex Fuel (E85/Gas)',
     'Electric (EV)',
     'Hybrid (HEV)',
     'Plug-in Hybrid (PHEV)',
-    'Other Fuel (CNG/LPG/Hydrogen)',
-
-    // Cylinder Count / Configuration
-    '4-Cylinder Inline',
-    '6-Cylinder Inline',
-    '6-Cylinder V-Type (V6)',
-    '8-Cylinder V-Type (V8)',
-    '10-Cylinder V-Type (V10)',
-    '12-Cylinder V-Type (V12)',
-    '3-Cylinder Inline',
-    'Rotary Engine (Wankel)',
-
-    // Aspiration (For forced induction notes)
-    'Naturally Aspirated (NA)',
-    'Turbocharged',
-    'Supercharged',
-    'Twin-Turbo / Bi-Turbo'
+    'Other Fuel (CNG/LPG/Hydrogen)'
 ].sort();
 
-
-// Mock trim options (can be expanded later if trim becomes model-dependent)
 const mockTrimOptions = [
     'Base',
     'Sport (S)',
     'Luxury (L)',
     'Grand Touring (GT)',
     'Limited',
-    'Platinum / Denali',
-    'XLT / LT',
-    'Lariat / SLE',
-    'Off-Road (TRD / Rubicon)'
+    'Platinum / Denali'
 ].sort();
 
-
-// 🏆 NEW MOCK CLIENT DATA 🏆
-const mockClients = [
-    { id: 101, name: 'Tanzania Logistics Co.' },
-    { id: 102, name: 'Dar es Salaam Fleet Services' },
-    { id: 103, name: 'Zanzibar Transport Hub' },
-    { id: 104, name: 'Kilimanjaro Heavy Equipment Ltd.' },
-    { id: 105, name: 'Lake Victoria Fishing & Freight' },
-];
-
 /**
- * 🏆 NEW MOCK HOOK: Simulates fetching clients from an API endpoint.
+ * 🏆 REAL HOOK: Fetches clients from the actual API endpoint.
  */
 const useFetchClients = () => {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Simulate API delay
-        setTimeout(() => {
-            setClients(mockClients);
-            setLoading(false);
-        }, 800);
+        const fetchClients = async () => {
+            try {
+                console.log('🔄 Fetching clients from API...');
+                const response = await apiClient.get('/clients/');
+                
+                // Handle both paginated and non-paginated responses
+                const clientData = response.data.results || response.data || [];
+                
+                // Transform API data to match frontend format
+                const formattedClients = clientData.map(client => ({
+                    id: client.id,
+                    name: client.full_name || `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.company_name || 'Unnamed Client'
+                }));
+                
+                console.log('✅ Clients fetched successfully:', formattedClients);
+                setClients(formattedClients);
+            } catch (err) {
+                console.error('❌ Failed to fetch clients:', err);
+                setError('Failed to load clients. Please try again.');
+                setClients([]); // Fallback to empty array
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchClients();
     }, []);
 
-    return { clients, loading };
+    return { clients, loading, error };
 };
-
 
 // ----------------------------------------------------------------------
 // 2. REACT COMPONENT
 // ----------------------------------------------------------------------
 
-const VehicleForm = ({ onSave, onCancel }) => {
-    // State to hold the selected image file URL
+const VehicleForm = ({ onSave, onCancel, vehicleData, clientId: propClientId }) => {
+    // 🛑 DEBUG: Log when component renders
+    console.log('🎯 VehicleForm RENDERED - propClientId:', propClientId);
+    
+    const isEditMode = !!vehicleData?.id;
     const [vehicleImage, setVehicleImage] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { clients, loading: loadingClients, error: clientsError } = useFetchClients();
 
-    // 🏆 NEW: Client State and Loading
-    const { clients, loading: loadingClients } = useFetchClients();
+    // 🛑 Add submission tracking
+    const submissionRef = useRef(false);
+
+    // 🛑 FIX: Use propClientId directly as the effective client ID
+    const effectiveClientId = propClientId;
 
     // --- State to hold form values ---
     const [formData, setFormData] = useState({
-        // 🏆 NEW: Field for client ID
-        clientId: '',
+        clientId: effectiveClientId || '',
         vin: '',
         licensePlate: '',
         vehicleType: '',
@@ -334,7 +150,7 @@ const VehicleForm = ({ onSave, onCancel }) => {
         trim: '',
         transmission: '',
         drivetrain: '',
-        engine: '', // This value now uses the new comprehensive options
+        engine: '',
         odoReading: '',
         odoUnit: 'miles',
         color: '',
@@ -342,19 +158,45 @@ const VehicleForm = ({ onSave, onCancel }) => {
         notes: ''
     });
 
+    // 🏆 Load vehicle data when in edit mode
+    useEffect(() => {
+        if (vehicleData && isEditMode) {
+            console.log('🎯 Loading vehicle data into form:', vehicleData);
+            setFormData({
+                clientId: vehicleData.clientId || vehicleData.client_id || effectiveClientId || '',
+                vin: vehicleData.vin || '',
+                licensePlate: vehicleData.licensePlate || vehicleData.license_plate || '',
+                vehicleType: vehicleData.vehicleType || vehicleData.vehicle_type || '',
+                year: vehicleData.year || '',
+                make: vehicleData.make || '',
+                model: vehicleData.model || '',
+                trim: vehicleData.trim || '',
+                transmission: vehicleData.transmission || '',
+                drivetrain: vehicleData.drivetrain || '',
+                engine: vehicleData.engine || '',
+                odoReading: vehicleData.odoReading || vehicleData.odo_reading || '',
+                odoUnit: vehicleData.odoUnit || vehicleData.odo_unit || 'miles',
+                color: vehicleData.color || '',
+                unitNumber: vehicleData.unitNumber || vehicleData.unit_number || '',
+                notes: vehicleData.notes || ''
+            });
+            
+            if (vehicleData.image) {
+                setVehicleImage(vehicleData.image);
+            }
+        }
+    }, [vehicleData, isEditMode, effectiveClientId]);
+
     // 🏆 HELPER: Find the name of the selected client for display
     const selectedClientName = useMemo(() => {
         if (!formData.clientId) return '';
-        // Note: Compare clientId as strings to match select value attribute
         const client = clients.find(c => String(c.id) === String(formData.clientId));
         return client ? client.name : '';
     }, [formData.clientId, clients]);
 
-
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // 🌟 LOGIC: If Make or Model changes, reset subsequent fields (Model/Trim)
         if (name === 'make') {
             setFormData(prev => ({
                 ...prev,
@@ -370,12 +212,10 @@ const VehicleForm = ({ onSave, onCancel }) => {
                 trim: ''
             }));
         }
-        // 🌟 LOGIC: If Year changes, keep the value, but reset Make/Model/Trim if Year is cleared
         else if (name === 'year') {
              setFormData(prev => ({
                 ...prev,
                 year: value,
-                // Only reset if the new value is empty
                 ...(value === '' && { make: '', model: '', trim: '' })
             }));
         }
@@ -384,7 +224,6 @@ const VehicleForm = ({ onSave, onCancel }) => {
         }
     };
 
-    // 1. Handles the focus event on the 'Make' field (Requires Year)
     const handleMakeFocus = (e) => {
         if (!formData.year) {
             e.preventDefault();
@@ -393,7 +232,6 @@ const VehicleForm = ({ onSave, onCancel }) => {
         }
     };
 
-    // 2. Handles the focus event on the 'Trim' field (Requires Model)
     const handleTrimFocus = (e) => {
         if (!formData.model) {
             e.preventDefault();
@@ -402,16 +240,116 @@ const VehicleForm = ({ onSave, onCancel }) => {
         }
     };
 
-
-    const handleSubmit = (e) => {
+    // 🏆 FIXED SUBMISSION HANDLER
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const dataToSave = { ...formData, image: vehicleImage };
-        // 🏆 UPDATED VALIDATION: Client ID is now required
-        if (!formData.clientId || !formData.year || !formData.make || !formData.model) {
-            alert("Please complete the Client, Year, Make, and Model fields.");
+        
+        // 🛑 PREVENT DOUBLE SUBMISSION with multiple methods
+        if (isSubmitting || submissionRef.current) {
+            console.log('🛑 Form already submitting, ignoring duplicate submit');
             return;
         }
-        onSave(dataToSave);
+
+        console.log('🛑 SUBMIT TRIGGERED - Client ID:', effectiveClientId);
+        console.trace('📞 SUBMIT STACK TRACE');
+
+        // 🛑 Mark as submitting
+        submissionRef.current = true;
+        setIsSubmitting(true);
+
+        // 🛑 FIX: Use the effectiveClientId (which is propClientId) consistently
+        const finalClientId = effectiveClientId || formData.clientId;
+        
+        // 🛑 FIX: Better validation for client ID
+        if (!finalClientId || finalClientId === 'undefined' || finalClientId === undefined || finalClientId === '') {
+            alert("Please select a client first.");
+            submissionRef.current = false;
+            setIsSubmitting(false);
+            return;
+        }
+
+        // 🛑 FIX: Ensure client ID is a number
+        const clientIdNum = parseInt(finalClientId);
+        if (isNaN(clientIdNum)) {
+            alert("Invalid client selection. Please select a client again.");
+            submissionRef.current = false;
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (!formData.year || !formData.make || !formData.model) {
+            alert("Please complete the Year, Make, and Model fields.");
+            submissionRef.current = false;
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            console.log('🚀 Submitting vehicle data - Client ID:', clientIdNum);
+            
+            // Prepare data for backend (matching serializer fields)
+            const dataToSend = {
+                vin: formData.vin || '',
+                license_plate: formData.licensePlate || '',
+                vehicle_type: formData.vehicleType || '',
+                year: formData.year,
+                make: formData.make,
+                model: formData.model,
+                trim: formData.trim || '',
+                transmission: formData.transmission || '',
+                drivetrain: formData.drivetrain || '',
+                engine: formData.engine || '',
+                odo_reading: formData.odoReading || '',
+                odo_unit: formData.odoUnit || 'miles',
+                color: formData.color || '',
+                unit_number: formData.unitNumber || '',
+                notes: formData.notes || ''
+            };
+
+            console.log('🌐 Making SINGLE API request to:', `/clients/${clientIdNum}/vehicles/`);
+
+            // 🛑 FIX: Use the validated clientIdNum in the API call
+            const response = await apiClient.post(`/clients/${clientIdNum}/vehicles/`, dataToSend);
+            
+            console.log('✅ Vehicle saved successfully:', response.data);
+
+            // Call the parent onSave handler
+            if (onSave) {
+                await onSave(response.data, isEditMode);
+            }
+
+        } catch (error) {
+            console.error('❌ Failed to save vehicle:', error);
+            
+            let errorMessage = 'Failed to save vehicle. Please try again.';
+            
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                
+                // Handle validation errors from backend
+                if (typeof errorData === 'object') {
+                    const errorDetails = Object.entries(errorData)
+                        .map(([field, messages]) => {
+                            const cleanField = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            return `${cleanField}: ${Array.isArray(messages) ? messages.join(' ') : String(messages)}`;
+                        })
+                        .join('\n');
+                    errorMessage = `Validation errors:\n${errorDetails}`;
+                } else if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                }
+            } else if (error.response?.status === 400) {
+                errorMessage = 'Bad request. Please check your input data.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            alert(`Error saving vehicle: ${errorMessage}`);
+        } finally {
+            // 🛑 Reset submission state
+            submissionRef.current = false;
+            setIsSubmitting(false);
+        }
     };
 
     const handleImageUpload = (e) => {
@@ -426,7 +364,6 @@ const VehicleForm = ({ onSave, onCancel }) => {
         document.getElementById('vehicle-image-upload').click();
     };
 
-    // Generating years from 2050 down to 1980
     const mockYears = useMemo(() => {
         const startYear = 2050;
         const endYear = 1980;
@@ -437,40 +374,75 @@ const VehicleForm = ({ onSave, onCancel }) => {
         return years;
     }, []);
 
-    // 🌟 COMPUTED: Get the list of models based on the currently selected make
     const currentModels = useMemo(() => {
         const selectedMake = formData.make;
         return makeModelData[selectedMake] || [];
     }, [formData.make]);
 
-
-    // --- Custom Image Placeholder/Preview ---
     const ImagePreview = () => {
         if (vehicleImage) {
             return (
                 <div className="image-preview-wrapper" style={{ backgroundImage: `url(${vehicleImage})` }}>
-                    {/* Image preview will show here */}
                 </div>
             );
         }
         return (
             <div className="image-placeholder" onClick={triggerFileInput} title="Upload Vehicle Image">
-                {/* Placeholder content is applied via CSS */}
             </div>
         );
     };
-    // ----------------------------------------
-
 
     return (
         <div className="vehicle-form-container">
-            <header className="page-header vehicle-header">
-                <h2><FaCar /> New Vehicle</h2>
+            {/* 🏆 UPDATED HEADER */}
+            <header className="page-header">
+                <h2><FaCar /> {isEditMode ? 'Edit Vehicle' : 'New Vehicle'}</h2>
+                <button 
+                    type="button" 
+                    className="btn-back-to-list" 
+                    onClick={onCancel}
+                >
+                    <FaArrowLeft style={{ marginRight: '5px' }} /> Back to List
+                </button>
             </header>
+
+            {/* DEBUG INFO - Enhanced */}
+            <div style={{ 
+                background: '#fff3cd', 
+                padding: '10px', 
+                marginBottom: '20px', 
+                borderRadius: '4px',
+                border: '1px solid #ffeaa7',
+                fontSize: '0.9rem'
+            }}>
+                <strong>Debug Info:</strong><br />
+                Mode: {isEditMode ? 'EDIT' : 'CREATE'} | 
+                Prop Client ID: <strong>{propClientId || 'NOT IN PROPS'}</strong> |
+                Effective Client ID: <strong>{effectiveClientId || 'NOT FOUND'}</strong> |
+                Form Client ID: <strong>{formData.clientId || 'NOT IN FORM'}</strong> | 
+                Selected Client: {selectedClientName || 'None'}<br />
+                Year: {formData.year || 'Not set'} | 
+                Make: {formData.make || 'Not set'} | 
+                Model: {formData.model || 'Not set'}<br />
+                VIN: {formData.vin || 'Empty'}
+            </div>
+
+            {/* Clients Error Display */}
+            {clientsError && (
+                <div style={{ 
+                    background: '#f8d7da', 
+                    color: '#721c24', 
+                    padding: '10px', 
+                    marginBottom: '20px', 
+                    borderRadius: '4px',
+                    border: '1px solid #f5c6cb'
+                }}>
+                    <strong>Warning:</strong> {clientsError} Using fallback empty client list.
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="form-card full-page-form vehicle-form">
 
-                {/* HIDDEN FILE INPUT */}
                 <input
                     type="file"
                     id="vehicle-image-upload"
@@ -479,28 +451,22 @@ const VehicleForm = ({ onSave, onCancel }) => {
                     style={{ display: 'none' }}
                 />
 
-                {/* Image & Label Section (Top Bar) */}
+                {/* Image & Label Section */}
                 <div className="vehicle-header-actions">
-
-                    {/* Image Preview / Placeholder Component */}
                     <ImagePreview />
-
                     <button type="button" onClick={() => alert("Add Label function not yet implemented")} className="btn-secondary-action small-btn">
                         <FaTag /> Add Label
                     </button>
-
                     <button type="button" className="btn-primary-action small-btn" onClick={triggerFileInput}>
                         <FaImage /> Upload Image
                     </button>
-
-                    {/* Secondary Action Icons */}
                     <div className="icon-group">
                         <FaCamera className="icon-btn-form" title="Take Photo (Future feature)" />
                         <FaRulerHorizontal className="icon-btn-form" title="Measure" />
                     </div>
                 </div>
                 
-                {/* 🏆 1A. Client Assignment Section (NEW) 🏆 */}
+                {/* Client Assignment Section */}
                 <h4 className="form-section-title"><FaUserFriends /> Client Assignment</h4>
                 <div className="form-grid-1">
                     <div className="form-group">
@@ -510,35 +476,50 @@ const VehicleForm = ({ onSave, onCancel }) => {
                             name="clientId" 
                             onChange={handleChange} 
                             value={formData.clientId}
-                            disabled={loadingClients}
+                            disabled={loadingClients || !!effectiveClientId} // 🛑 Disable if we have a prop clientId
                         >
                             <option value="">
-                                {loadingClients ? 'Loading clients...' : 'Select client to assign vehicle'}
+                                {loadingClients ? 'Loading clients from database...' : 
+                                 effectiveClientId ? `Client ID: ${effectiveClientId} (pre-selected)` : 
+                                 'Select client to assign vehicle'}
                             </option>
-                            {/* Dynamically generated list of clients */}
                             {clients.map(client => (
-                                // Use client.id as the value for submission
                                 <option key={client.id} value={client.id}>
                                     {client.name}
                                 </option>
                             ))}
                         </select>
+                        {effectiveClientId && (
+                            <small style={{ marginTop: '5px', display: 'block', color: '#28a745', fontSize: '12px' }}>
+                                ✅ Client pre-selected from navigation
+                            </small>
+                        )}
                         {selectedClientName && (
                             <small style={{ marginTop: '5px', display: 'block', color: '#5d9cec', fontSize: '12px' }}>
-                                Vehicle will be assigned to: **{selectedClientName}**
+                                Vehicle will be assigned to: <strong>{selectedClientName}</strong>
+                            </small>
+                        )}
+                        {clients.length === 0 && !loadingClients && (
+                            <small style={{ marginTop: '5px', display: 'block', color: '#dc3545', fontSize: '12px' }}>
+                                No clients found. Please create a client first.
                             </small>
                         )}
                     </div>
                 </div>
-                {/* --- End Client Assignment --- */}
-                
 
-                {/* 1. Primary Identifiers */}
+                {/* Vehicle Details */}
                 <h4 className="form-section-title"><FaCar /> Vehicle Details</h4>
                 <div className="form-grid-1">
                     <div className="form-group">
-                        <label htmlFor="vin">VIN / Serial Number</label>
-                        <input type="text" id="vin" name="vin" placeholder="ENTER VIN OR SN" onChange={handleChange} value={formData.vin} />
+                        <label htmlFor="vin">VIN / Serial Number (Optional)</label>
+                        <input 
+                            type="text" 
+                            id="vin" 
+                            name="vin" 
+                            placeholder="ENTER VIN OR SN (Optional)" 
+                            onChange={handleChange} 
+                            value={formData.vin} 
+                        />
                     </div>
                     <div className="form-group">
                         <label htmlFor="licensePlate">License Plate</label>
@@ -546,13 +527,12 @@ const VehicleForm = ({ onSave, onCancel }) => {
                     </div>
                 </div>
 
-                {/* 2. Vehicle Specifications (3-column layout) */}
+                {/* Vehicle Specifications */}
                 <div className="form-grid-3">
                     <div className="form-group">
                         <label htmlFor="vehicleType">Vehicle Type</label>
                         <select id="vehicleType" name="vehicleType" onChange={handleChange} value={formData.vehicleType}>
                             <option value="">select vehicle type</option>
-                            {/* Dynamically generated list (SORTED) */}
                             {vehicleBodyTypes.map(type => (
                                 <option key={type} value={type}>{type}</option>
                             ))}
@@ -562,14 +542,11 @@ const VehicleForm = ({ onSave, onCancel }) => {
                         <label htmlFor="year">Year</label>
                         <select id="year" name="year" onChange={handleChange} value={formData.year}>
                             <option value="">select vehicle year</option>
-                            {/* Dynamically generated mock year list (Naturally sorted descending) */}
                             {mockYears.map(year => (
                                 <option key={year} value={year}>{year}</option>
                             ))}
                         </select>
                     </div>
-
-                    {/* MAKE/BRAND SELECT: Controlled by Year selection */}
                     <div className="form-group">
                         <label htmlFor="make">Make/Brand</label>
                         <select
@@ -586,7 +563,6 @@ const VehicleForm = ({ onSave, onCancel }) => {
                             >
                                 {formData.year ? 'select vehicle make' : 'Please! Choose "Year" first'}
                             </option>
-                            {/* Dynamically generated list of vehicle makes (SORTED) */}
                             {vehicleMakes.map(make => (
                                 <option key={make} value={make}>{make}</option>
                             ))}
@@ -610,14 +586,11 @@ const VehicleForm = ({ onSave, onCancel }) => {
                             >
                                 {formData.make ? 'select vehicle model' : 'Please! Choose "Make option" first'}
                             </option>
-                            {/* 🌟 DYNAMIC LIST: Filtered Models (ALREADY SORTED) */}
                             {currentModels.map(model => (
                                 <option key={model} value={model}>{model}</option>
                             ))}
                         </select>
                     </div>
-
-                    {/* TRIM OPTION SELECT: Controlled by Model selection */}
                     <div className="form-group">
                         <label htmlFor="trim">Trim Option</label>
                         <select
@@ -634,18 +607,15 @@ const VehicleForm = ({ onSave, onCancel }) => {
                             >
                                 {formData.model ? 'select vehicle trim' : 'Please! Choose "Model" first'}
                             </option>
-                            {/* Mock trim options added */}
                             {mockTrimOptions.map(trim => (
                                 <option key={trim} value={trim}>{trim}</option>
                             ))}
                         </select>
                     </div>
-
                     <div className="form-group">
                         <label htmlFor="transmission">Transmission Type</label>
                         <select id="transmission" name="transmission" onChange={handleChange} value={formData.transmission}>
                             <option value="">select vehicle transmission</option>
-                            {/* Dynamically generated list (SORTED) */}
                             {transmissionOptions.map(option => (
                                 <option key={option} value={option}>{option}</option>
                             ))}
@@ -653,14 +623,13 @@ const VehicleForm = ({ onSave, onCancel }) => {
                     </div>
                 </div>
 
-                {/* 3. Powertrain & Odometer */}
+                {/* Color & Powertrain */}
                 <h4 className="form-section-title"><FaPaintBrush /> Color & Powertrain</h4>
                 <div className="form-grid-3">
                     <div className="form-group">
                         <label htmlFor="color">Exterior Color</label>
                         <input type="text" id="color" name="color" placeholder="Red, White, Black, etc." onChange={handleChange} value={formData.color} />
                     </div>
-                    
                     <div className="form-group">
                         <label htmlFor="engine">Engine / Power Source</label>
                         <select id="engine" name="engine" onChange={handleChange} value={formData.engine}>
@@ -670,7 +639,6 @@ const VehicleForm = ({ onSave, onCancel }) => {
                             ))}
                         </select>
                     </div>
-
                     <div className="form-group">
                         <label htmlFor="drivetrain">Drivetrain</label>
                         <select id="drivetrain" name="drivetrain" onChange={handleChange} value={formData.drivetrain}>
@@ -683,14 +651,13 @@ const VehicleForm = ({ onSave, onCancel }) => {
                     </div>
                 </div>
                 
-                {/* 4. Odometer & Unit Number */}
+                {/* Mileage & Internal ID */}
                 <h4 className="form-section-title"><FaRulerHorizontal /> Mileage & Internal ID</h4>
                 <div className="form-grid-3">
                     <div className="form-group">
                         <label htmlFor="odoReading">Odometer Reading (Start)</label>
                         <input type="number" id="odoReading" name="odoReading" placeholder="0" onChange={handleChange} value={formData.odoReading} />
                     </div>
-                    
                     <div className="form-group">
                         <label htmlFor="odoUnit">Odometer Unit</label>
                         <select id="odoUnit" name="odoUnit" onChange={handleChange} value={formData.odoUnit}>
@@ -699,14 +666,13 @@ const VehicleForm = ({ onSave, onCancel }) => {
                             <option value="hours">Hours (for equipment)</option>
                         </select>
                     </div>
-
                     <div className="form-group">
                         <label htmlFor="unitNumber">Internal Unit Number</label>
                         <input type="text" id="unitNumber" name="unitNumber" placeholder="U0001 or 12345" onChange={handleChange} value={formData.unitNumber} />
                     </div>
                 </div>
 
-                {/* 5. Notes */}
+                {/* Notes */}
                 <div className="form-group full-width-group">
                     <label htmlFor="notes">Notes/Description</label>
                     <textarea 
@@ -719,17 +685,247 @@ const VehicleForm = ({ onSave, onCancel }) => {
                     ></textarea>
                 </div>
 
-
-                {/* FORM ACTIONS (Maintaining current position/style classes) */}
+                {/* FORM ACTIONS */}
                 <div className="page-form-actions">
-                    <button type="button" onClick={onCancel} className="btn-secondary-action large-btn action-cancel-style">
-                        <font color='white'><FaTimes style={{ marginRight: '8px' }} /> Cancel</font>
+                    <button type="button" onClick={onCancel} className="btn-secondary-action large-btn action-cancel-style" disabled={isSubmitting}>
+                        <FaTimes style={{ marginRight: '8px' }} /> Cancel
                     </button>
-                    <button type="submit" className="btn-primary-action large-btn action-save-style">
-                        <FaSave style={{ marginRight: '8px' }} /> Save Vehicle
+                    <button type="submit" className="btn-primary-action large-btn action-save-style" disabled={isSubmitting}>
+                        <FaSave style={{ marginRight: '8px' }} /> 
+                        {isSubmitting ? 'Saving...' : (isEditMode ? 'Update Vehicle' : 'Save Vehicle')}
                     </button>
                 </div>
             </form>
+
+            {/* COMPLETE STYLES */}
+            <style jsx>{`
+                .vehicle-form-container {
+                    background-color: #f7f9fc;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                    max-width: 1900px;
+                    margin: 20px auto;
+                }
+                .page-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 2px solid #e0e0e0;
+                    padding-bottom: 15px;
+                    margin-bottom: 20px;
+                }
+                .page-header h2 {
+                    margin: 0;
+                    color: #333;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .btn-back-to-list {
+                    background-color: #6c757d;
+                    color: white;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    transition: background-color 0.2s;
+                }
+                .btn-back-to-list:hover {
+                    background-color: #5a6268;
+                }
+                .form-card {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                    padding: 20px;
+                }
+                .full-page-form {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                }
+                .vehicle-header-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    padding: 15px;
+                    background-color: #f8f9fa;
+                    border-radius: 8px;
+                    border: 1px solid #e9ecef;
+                }
+                .image-preview-wrapper {
+                    width: 120px;
+                    height: 80px;
+                    border-radius: 6px;
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    border: 2px solid #dee2e6;
+                }
+                .image-placeholder {
+                    width: 120px;
+                    height: 80px;
+                    border-radius: 6px;
+                    background-color: #e9ecef;
+                    border: 2px dashed #adb5bd;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                }
+                .image-placeholder:hover {
+                    background-color: #dee2e6;
+                }
+                .btn-secondary-action, .btn-primary-action {
+                    padding: 8px 15px;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: background-color 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                .btn-secondary-action {
+                    background-color: #6c757d;
+                    color: white;
+                }
+                .btn-secondary-action:hover {
+                    background-color: #5a6268;
+                }
+                .btn-primary-action {
+                    background-color: #007bff;
+                    color: white;
+                }
+                .btn-primary-action:hover {
+                    background-color: #0056b3;
+                }
+                .small-btn {
+                    padding: 6px 12px;
+                    font-size: 0.875rem;
+                }
+                .large-btn {
+                    padding: 10px 20px;
+                    font-size: 1rem;
+                }
+                .icon-group {
+                    display: flex;
+                    gap: 10px;
+                    margin-left: auto;
+                }
+                .icon-btn-form {
+                    font-size: 1.2rem;
+                    color: #6c757d;
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+                .icon-btn-form:hover {
+                    color: #495057;
+                }
+                .form-section-title {
+                    color: #007bff;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 10px;
+                    margin-bottom: 15px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .form-grid-1 {
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 15px;
+                }
+                .form-grid-3 {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 15px 20px;
+                }
+                .form-group {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .full-width-group {
+                    grid-column: 1 / -1;
+                }
+                .form-group label {
+                    margin-bottom: 5px;
+                    font-weight: 600;
+                    color: #555;
+                }
+                .form-group input,
+                .form-group select,
+                .form-group textarea {
+                    padding: 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    font-size: 1em;
+                    width: 100%;
+                    box-sizing: border-box;
+                    transition: border-color 0.2s;
+                }
+                .form-group input:focus,
+                .form-group select:focus,
+                .form-group textarea:focus {
+                    outline: none;
+                    border-color: #007bff;
+                    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+                }
+                .form-group textarea {
+                    resize: vertical;
+                    min-height: 80px;
+                }
+                .page-form-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                    padding-top: 20px;
+                    border-top: 1px solid #e9ecef;
+                }
+                .action-cancel-style {
+                    background-color: #dc3545;
+                }
+                .action-cancel-style:hover {
+                    background-color: #c82333;
+                }
+                .action-save-style {
+                    background-color: #28a745;
+                }
+                .action-save-style:hover {
+                    background-color: #218838;
+                }
+
+                /* Responsive Design */
+                @media (max-width: 768px) {
+                    .vehicle-form-container {
+                        padding: 10px;
+                        margin: 10px;
+                    }
+                    .form-grid-3 {
+                        grid-template-columns: 1fr;
+                    }
+                    .vehicle-header-actions {
+                        flex-wrap: wrap;
+                        justify-content: center;
+                    }
+                    .page-form-actions {
+                        flex-direction: column;
+                        gap: 10px;
+                        align-items: stretch;
+                    }
+                    .page-form-actions button {
+                        width: 100%;
+                    }
+                    .btn-back-to-list {
+                        width: auto;
+                    }
+                }
+            `}</style>
         </div>
     );
 };

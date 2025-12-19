@@ -12,185 +12,332 @@ import {
     FaExclamationTriangle, 
     FaEdit, 
     FaTrashAlt, 
-    // 🏆 NEW ICONS FOR IMPORT/EXPORT
+    FaEye,
     FaFileImport, 
     FaFileExport,
+    //FaSearch,
+    FaBuilding,
+    FaUser,
+    FaMapMarkerAlt,
+    FaPhone,
+    FaEnvelope
 } from 'react-icons/fa'; 
-// Use useLocation to read navigation state
 import { useNavigate, useLocation } from 'react-router-dom'; 
 
-import SearchBar from './SearchBar'; 
 import apiClient from '../utils/apiClient'; 
 
-// Define theme colors for consistency (Used in static styling)
-const PRIMARY_BLUE = '#5d9cec';
-// 🏆 UPDATED FOR LIGHT THEME (Keep these for the main app)
-const BG_MAIN_LIGHT = '#f4f7f9'; // Very light grey/white background
-const BG_CARD_LIGHT = '#ffffff'; // White background for the card
-const TEXT_PRIMARY_LIGHT = '#333333'; // Dark text
-const TEXT_MUTED_LIGHT = '#747d6cff'; // Muted grey text
-const INPUT_BORDER_LIGHT = '#e5e5e5'; // Light border
+// Modern color palette
+const COLORS = {
+    primary: '#d16a33',
+    primaryDark: '#b3592b',
+    secondary: '#5d9cec',
+    success: '#10b981',
+    warning: '#f59e0b',
+    danger: '#ef4444',
+    dark: '#1f2937',
+    light: '#f8fafc',
+    white: '#ffffff',
+    gray: {
+        100: '#f3f4f6',
+        200: '#e5e7eb',
+        300: '#d1d5db',
+        400: '#9ca3af',
+        500: '#6b7280',
+        600: '#4b5563',
+        700: '#374151',
+        800: '#1f2937',
+        900: '#111827'
+    }
+};
 
-// 🏆 ADDED DARK MODE CONSTANTS ONLY FOR MODAL 🏆
-const BG_MODAL_DARK = '#252524ff'; // Slightly lighter dark for the modal card
-const TEXT_PRIMARY_DARK = '#ffffff'; // White text for modal content
-const TEXT_MUTED_DARK = '#aeb8c8'; // Light grey muted text for modal content
-const INPUT_BORDER_DARK = '#4a5568'; // Dark border for modal elements
-
-const DANGER_RED = '#ff4d4f'; 
-// NEW CONSTANT FOR EDIT BUTTON ORANGE 
-const EDIT_ORANGE = '#ffa726'; 
-// Green color for success notification (UNCOMMENTED/ADDED BACK)
-const SUCCESS_GREEN = '#2ecc71'; 
-const ERROR_RED = '#e74c3c'; 
-// Grey/Silver color for secondary actions (UNCOMMENTED/ADDED BACK)
-//const SECONDARY_ACTION_COLOR = '#95a5a6'; // Re-adding a clear color for light mode secondary actions, or using a specific dark shade for the modal cancel button.
-
-// Define the assumed items per page (must match your backend's page size)
 const ITEMS_PER_PAGE = 10;
 
-// -----------------------------------------------------------------
-// PAGINATION CONTROL COMPONENT (Google Style)
-// -----------------------------------------------------------------
+// Enhanced SearchBar component with search icon
+const SearchBar = ({ onSearch, initialTerm = '', placeholder = "Search clients..." }) => {
+    const [searchTerm, setSearchTerm] = useState(initialTerm);
 
-/**
- * Renders the Google-style numbered pagination control.
- */
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSearch(searchTerm);
+    };
+
+    const handleClear = () => {
+        setSearchTerm('');
+        onSearch('');
+    };
+
+    return (
+        <form className="search-bar" onSubmit={handleSubmit}>
+            <div className="search-input-container">
+                {/*<FaSearch className="search-icon" />*/}
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={placeholder}
+                    className="search-input"
+                />
+                {searchTerm && (
+                    <button type="button" className="clear-search" onClick={handleClear}>
+                        <FaTimes />
+                    </button>
+                )}
+            </div>
+            <button type="submit" className="search-btn">
+                Search
+            </button>
+        </form>
+    );
+};
+
+// Enhanced Pagination Control
 const PaginationControl = ({ currentPage, totalPages, totalItems, onPageChange }) => {
-    if (totalPages <= 1 && totalItems <= ITEMS_PER_PAGE) return null; // Hide if less than or equal to one page
+    if (totalPages <= 1 && totalItems <= ITEMS_PER_PAGE) return null;
 
-    // Generate visible page numbers (e.g., [1, 2, 3, 4, 5])
-    // Instead of showing all, let's limit it for cleaner design, typically 5 pages centered around the current page
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
-
-    if (currentPage <= 3) {
-        endPage = Math.min(totalPages, 5);
-        startPage = 1;
-    } else if (currentPage > totalPages - 2) {
-        startPage = Math.max(1, totalPages - 4);
-        endPage = totalPages;
-    }
-
-    const pageNumbers = [];
-    for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-    }
-    
-    // 🏆 CORRECTED LOGIC FOR PER-PAGE RANGE DISPLAY 🏆
-    // Page 1: (1-1) * 10 + 1 = 1
     const startRange = (currentPage - 1) * ITEMS_PER_PAGE + 1;
-    
-    // End range is either the theoretical end of the page or the total number of items
     let endRange = startRange + ITEMS_PER_PAGE - 1;
-    if (endRange > totalItems) {
-        endRange = totalItems;
-    }
-    // -----------------------------------------------------------------
+    if (endRange > totalItems) endRange = totalItems;
+
+    const generatePageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        
+        if (totalPages <= maxVisible) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            let start = Math.max(1, currentPage - 2);
+            let end = Math.min(totalPages, currentPage + 2);
+            
+            if (currentPage <= 3) {
+                end = maxVisible;
+            } else if (currentPage >= totalPages - 2) {
+                start = totalPages - maxVisible + 1;
+            }
+            
+            for (let i = start; i <= end; i++) pages.push(i);
+        }
+        return pages;
+    };
 
     const handlePageClick = (page, event) => {
         event.preventDefault();
-        // Ensure the page number is valid before calling the handler
         if (page > 0 && page <= totalPages && page !== currentPage) {
             onPageChange(page);
         }
     };
 
     return (
-        <div className="pagination-wrap">
-            {/* Range Text (Now Per-Page) */}
-            <p className="pagination-range-text">
-                Showing **{startRange} to {endRange}** of {totalItems} clients
-            </p>
-
-            <div className="pagination-container">
-                {/* 'Previous' Button */}
-                <a 
-                    href="/#" 
+        <div className="pagination-container">
+            <div className="pagination-info">
+                <span className="pagination-text">
+                    Showing <strong>{startRange}-{endRange}</strong> of <strong>{totalItems}</strong> clients
+                </span>
+            </div>
+            
+            <div className="pagination-controls">
+                <button
                     onClick={(e) => handlePageClick(currentPage - 1, e)}
-                    className={`pagination-link prev-next-link ${currentPage === 1 ? 'disabled' : ''}`}
-                    aria-disabled={currentPage === 1}
+                    disabled={currentPage === 1}
+                    className="pagination-btn pagination-prev"
                 >
-                    <FaChevronLeft size={10} style={{marginRight: '5px'}}/> Previous
-                </a>
+                    <FaChevronLeft size={12} />
+                    <span>Previous</span>
+                </button>
 
-                {/* Page Numbers */}
-                {pageNumbers.map(number => (
-                    <a
-                        key={number}
-                        href="/#"
-                        onClick={(e) => handlePageClick(number, e)}
-                        className={`pagination-link ${number === currentPage ? 'active' : ''}`}
-                    >
-                        {number}
-                    </a>
-                ))}
-                
-                {/* Optional Dots (if total pages is large and not all pages are shown) */}
-                {totalPages > 5 && endPage < totalPages && <span className="pagination-dots">...</span>}
-                
-                {/* Optional Last Page Link (if dots are showing) */}
-                {totalPages > 5 && endPage < totalPages && !pageNumbers.includes(totalPages) && (
-                    <a 
-                        href="/#"
-                        onClick={(e) => handlePageClick(totalPages, e)}
-                        className={`pagination-link ${totalPages === currentPage ? 'active' : ''}`}
-                    >
-                        {totalPages}
-                    </a>
-                )}
+                <div className="pagination-numbers">
+                    {generatePageNumbers().map(number => (
+                        <button
+                            key={number}
+                            onClick={(e) => handlePageClick(number, e)}
+                            className={`pagination-btn ${number === currentPage ? 'active' : ''}`}
+                        >
+                            {number}
+                        </button>
+                    ))}
+                </div>
 
-
-                {/* 'Next' Button */}
-                <a 
-                    href="/#" 
+                <button
                     onClick={(e) => handlePageClick(currentPage + 1, e)}
-                    className={`pagination-link prev-next-link ${currentPage === totalPages ? 'disabled' : ''}`}
-                    aria-disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages}
+                    className="pagination-btn pagination-next"
                 >
-                    Next <FaChevronRight size={10} style={{marginLeft: '5px'}}/>
-                </a>
+                    <span>Next</span>
+                    <FaChevronRight size={12} />
+                </button>
             </div>
         </div>
     );
 };
 
+// Client Card Component for Grid View
+const ClientCard = ({ client, onEdit, onView, onDelete, getClientName }) => {
+    const clientName = getClientName(client);
+    const isCompany = client.client_type === 'Company';
 
-// -----------------------------------------------------------------
-// CLIENTS LIST COMPONENT (Main)
-// -----------------------------------------------------------------
+    return (
+        <div className="client-card">
+            <div className="client-card-header">
+                <div className="client-avatar">
+                    {isCompany ? <FaBuilding /> : <FaUser />}
+                </div>
+                <div className="client-info">
+                    <h3 className="client-name">{clientName}</h3>
+                    <span className={`client-type ${client.client_type?.toLowerCase()}`}>
+                        {client.client_type || 'Individual'}
+                    </span>
+                </div>
+            </div>
+
+            <div className="client-details">
+                <div className="detail-item">
+                    <FaEnvelope className="detail-icon" />
+                    <span className="detail-text">{client.email || '—'}</span>
+                </div>
+                <div className="detail-item">
+                    <FaPhone className="detail-icon" />
+                    <span className="detail-text">{client.phone_number || '—'}</span>
+                </div>
+                {client.address && (
+                    <div className="detail-item">
+                        <FaMapMarkerAlt className="detail-icon" />
+                        <span className="detail-text">{client.address}</span>
+                    </div>
+                )}
+                {client.tax_id && (
+                    <div className="detail-item">
+                        <span className="detail-label">Tax ID:</span>
+                        <span className="detail-text">{client.tax_id}</span>
+                    </div>
+                )}
+            </div>
+
+            {client.notes && (
+                <div className="client-notes">
+                    <FaClipboardList className="notes-icon" />
+                    <span className="notes-text">{client.notes}</span>
+                </div>
+            )}
+
+            <div className="client-actions">
+                <button 
+                    className="action-btn view-btn"
+                    onClick={() => onView(client.id)}
+                    title="View Client"
+                >
+                    <FaEye size={14} />
+                </button>
+                <button 
+                    className="action-btn edit-btn"
+                    onClick={() => onEdit(client.id)}
+                    title="Edit Client"
+                >
+                    <FaEdit size={14} />
+                </button>
+                <button 
+                    className="action-btn delete-btn"
+                    onClick={() => onDelete(client)}
+                    title="Delete Client"
+                >
+                    <FaTrashAlt size={14} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// Updated No Results Popup Component with modern design
+const NoResultsPopup = ({ searchTerm, onClearSearch, onAddNew }) => {
+    return (
+        <div className="no-results-popup">
+            <div className="popup-content">
+                <div className="popup-icon">
+                    <FaUserFriends />
+                </div>
+                <h3>No Clients Found</h3>
+                <p className="popup-message">
+                    No clients match <strong>"{searchTerm}"</strong>. Try adjusting your search.
+                </p>
+                <div className="popup-actions">
+                    <button className="popup-btn secondary" onClick={onClearSearch}>
+                        Clear Search
+                    </button>
+                    <button className="popup-btn primary" onClick={onAddNew}>
+                        <FaPlusCircle />
+                        Add New Client
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Delete Confirmation Modal Component
+const DeleteConfirmationModal = ({ 
+    isOpen, 
+    onClose, 
+    onConfirm, 
+    clientName, 
+    isDeleting 
+}) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal">
+                <div className="modal-content">
+                    <div className="modal-icon">
+                        <FaExclamationTriangle />
+                    </div>
+                    <h3 className="modal-title">Delete chat?</h3>
+                    <p className="modal-message">
+                        Are you sure you want to delete this chat?
+                    </p>
+                    <div className="modal-actions">
+                        <button 
+                            className="modal-btn cancel-btn" 
+                            onClick={onClose}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            className="modal-btn delete-btn" 
+                            onClick={onConfirm}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? <FaSpinner className="spin" /> : 'Delete'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Main ClientsList Component
 const ClientsList = () => {
-    // 🏆 NEW: useRef to reference the hidden file input
     const fileInputRef = useRef(null);
+    const navigate = useNavigate();
+    const location = useLocation();
     
-    // Client data
+    // State management
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
-    // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [totalClients, setTotalClients] = useState(0); 
+    const [totalClients, setTotalClients] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
     
-    // Search state
-    const [searchTerm, setSearchTerm] = useState(''); 
-
-    const navigate = useNavigate();
-    const location = useLocation(); 
-    
-    // Custom Delete Modal State
+    // Modal and notification states
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [clientToDelete, setClientToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    
-    // 🏆 ADDED: STATE for Notification
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
-    
-    // 🏆 NEW: State for tracking import progress/status
     const [isImporting, setIsImporting] = useState(false);
 
-    // Helper to determine the client's name
+    // Helper functions
     const getClientName = (client) => {
         if (!client) return '';
         if (client.client_type === 'Company' && client.company_name) {
@@ -198,70 +345,54 @@ const ClientsList = () => {
         }
         return (client.full_name || `${client.first_name || ''} ${client.last_name || ''}`).trim();
     };
-    
-    // HELPER: Truncate notes for display
+
     const truncateNotes = (notes, maxLength = 50) => {
         if (!notes) return '—';
-        const cleanedNotes = String(notes).replace(/<[^>]*>?/gm, ''); 
-        if (cleanedNotes.length > maxLength) {
-            return cleanedNotes.substring(0, maxLength) + '...';
-        }
-        return cleanedNotes;
+        const cleanedNotes = String(notes).replace(/<[^>]*>?/gm, '');
+        return cleanedNotes.length > maxLength 
+            ? cleanedNotes.substring(0, maxLength) + '...'
+            : cleanedNotes;
     };
 
-
-    // -----------------------------------------------------------------
-    // 🏆 FUNCTION: Show Notification
-    // -----------------------------------------------------------------
-    const showToastNotification = (message, type = 'success') => {
+    const showToastNotification = useCallback((message, type = 'success') => {
         setNotification({ show: true, message, type });
-        // Automatically hide notification after 4 seconds
         setTimeout(() => {
             setNotification({ show: false, message: '', type: '' });
-        }, 4000); 
-    };
-    // -----------------------------------------------------------------
+        }, 4000);
+    }, []);
 
-
-    // -----------------------------------------------------------------
-    // Function to Fetch Clients (Now accepts page parameter)
-    // -----------------------------------------------------------------
+    // Data fetching
     const fetchClients = useCallback(async (currentSearchTerm, page = 1) => {
         setLoading(true);
         setError(null);
         
-        // Construct API URL with search and page query parameters
         let apiUrl = `/clients/?page=${page}`;
         if (currentSearchTerm) {
             apiUrl += `&search=${encodeURIComponent(currentSearchTerm)}`;
         }
 
         try {
-            const response = await apiClient.get(apiUrl); 
-            
+            const response = await apiClient.get(apiUrl);
             const receivedData = response.data;
+            
             let clientArray = [];
             let total = 0;
             let totalP = 1;
 
-            // Handle paginated response structure (Django REST Framework standard)
             if (receivedData && Array.isArray(receivedData.results)) {
                 clientArray = receivedData.results;
                 total = receivedData.count || 0;
-                // Calculate total pages based on count and ITEMS_PER_PAGE
                 totalP = Math.ceil(total / ITEMS_PER_PAGE) || 1;
-                
-            // Fallback for non-paginated or simple array response
             } else if (Array.isArray(receivedData)) {
                 clientArray = receivedData;
                 total = receivedData.length;
                 totalP = 1;
-            } 
+            }
             
-            setClients(clientArray); 
+            setClients(clientArray);
             setTotalClients(total);
             setTotalPages(totalP);
-            setCurrentPage(page); // Update current page state
+            setCurrentPage(page);
 
         } catch (err) {
             setError("Failed to load client data. Please check your backend API status or network connection.");
@@ -269,937 +400,1346 @@ const ClientsList = () => {
         } finally {
             setLoading(false);
         }
-    }, []); 
+    }, []);
 
-    // -----------------------------------------------------------------
-    // Function to handle search submission from SearchBar
-    // -----------------------------------------------------------------
-    const handleSearch = (term) => {
+    // Event handlers
+    const handleSearch = useCallback((term) => {
         setSearchTerm(term);
-        // CRITICAL: When searching, reset to page 1
         fetchClients(term, 1);
-    };
-    
-    // -----------------------------------------------------------------
-    // Function to handle page change from PaginationControl
-    // -----------------------------------------------------------------
-    const handlePageChange = (newPage) => {
-        // Fetch clients for the new page, retaining the current search term
-        fetchClients(searchTerm, newPage);
-    };
-    
-    // -----------------------------------------------------------------
-    // Function to clear search and return to the main list
-    // -----------------------------------------------------------------
-    const handleClearSearch = () => {
-        // Clear the search term state
+    }, [fetchClients]);
+
+    const handleClearSearch = useCallback(() => {
         setSearchTerm('');
-        // Fetch clients without a search term, starting on page 1
         fetchClients('', 1);
-    };
+    }, [fetchClients]);
 
+    const handlePageChange = useCallback((newPage) => {
+        fetchClients(searchTerm, newPage);
+    }, [fetchClients, searchTerm]);
 
-    // -----------------------------------------------------------------
-    // 🏆 UPDATED: IMPORT HANDLERS (Directly opens file dialog and uploads)
-    // -----------------------------------------------------------------
-    
-    const handleImport = () => {
-        // Only allow import if no other import is currently in progress
+    const handleImport = useCallback(() => {
         if (!isImporting) {
-            // Programmatically trigger the click on the hidden file input
             fileInputRef.current.click();
         } else {
             showToastNotification('An import is already in progress.', 'info');
         }
-    };
+    }, [isImporting, showToastNotification]);
 
-    const handleFileSelection = async (event) => {
+    const handleFileSelection = useCallback(async (event) => {
         const file = event.target.files[0];
-
         if (!file) {
-            // User cancelled the file selection
-            event.target.value = null; 
+            event.target.value = null;
             return;
         }
 
-        const clientName = file.name;
-        
-        // Reset the file input value so selecting the same file again triggers onChange
-        event.target.value = null; 
-        
         setIsImporting(true);
-        showToastNotification(`Processing file **${clientName}**... Uploading to API.`, 'info');
+        showToastNotification(`Processing file **${file.name}**...`, 'info');
         
-        // 🏆 ACTUAL FILE UPLOAD LOGIC 🏆
         const formData = new FormData();
-        // IMPORTANT: 'file' must match the field name your backend expects for the uploaded file
-        formData.append('file', file); 
+        formData.append('file', file);
         
         try {
-            // Perform the file upload using the POST method
-            const response = await apiClient.post('/clients/import/', formData, {
-                headers: { 
-                    // This header tells the backend it's a file upload
-                    'Content-Type': 'multipart/form-data' 
-                },
+            await apiClient.post('/clients/import/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
             
-            // Assume the API returns { message: "..." } on success
-            const successMsg = response.data.message || `Client data successfully imported from **${clientName}**!`;
-
-            showToastNotification(successMsg, 'success');
-            // Refresh the client list after a successful import
-            await fetchClients(searchTerm, currentPage); 
+            showToastNotification(`Client data successfully imported from **${file.name}**!`, 'success');
+            await fetchClients(searchTerm, currentPage);
 
         } catch (err) {
-            console.error("Client import error:", err.response ? err.response.data : err.message);
-            
-            // Attempt to extract a meaningful error message from the backend response
-            let errorMsg = err.response?.data?.detail || err.response?.data?.error || err.response?.data?.file?.[0] || 'Unknown error occurred.';
-            
-            // Fallback for network issues
-            if (!err.response) {
-                errorMsg = 'Network Error. Could not connect to API.';
-            }
-
-            showToastNotification(`Failed to import client data from **${clientName}**. ${errorMsg}`, 'error');
+            const errorMsg = err.response?.data?.detail || err.response?.data?.error || 'Unknown error occurred.';
+            showToastNotification(`Failed to import client data: ${errorMsg}`, 'error');
         } finally {
             setIsImporting(false);
+            event.target.value = null;
         }
-    };
-    
-    const handleExport = async () => {
+    }, [showToastNotification, fetchClients, searchTerm, currentPage]);
+
+    const handleExport = useCallback(async () => {
         try {
-            // Assuming your Django API has an endpoint that returns a file stream (e.g., CSV)
             const response = await apiClient.get('/clients/export/', {
-                responseType: 'blob', // Important for handling file downloads
+                responseType: 'blob',
             });
             
-            // Create a blob URL and trigger download
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'clients_export.csv'); // Default filename
+            link.setAttribute('download', `clients_export_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            showToastNotification('Client data export successfully started!', 'success');
+            showToastNotification('Client data export started successfully!', 'success');
 
         } catch (err) {
-            console.error("Client export error:", err.response ? err.response.data : err.message);
-            showToastNotification('Failed to export client data. Check API endpoint.', 'error');
+            showToastNotification('Failed to export client data. Please try again.', 'error');
         }
-    };
-    
-    // -----------------------------------------------------------------
+    }, [showToastNotification]);
 
-
-    // -----------------------------------------------------------------
-    // EFFECT TO CONSUME AND CLEAR NAVIGATION STATE
-    // -----------------------------------------------------------------
-    useEffect(() => {
-        // Initial fetch on mount (only if search is empty, otherwise search does the initial fetch)
-        if (!searchTerm) {
-            fetchClients('', 1);
-        }
-        
-        // IMPORTANT: Check for error messages from navigation state (SUCCESS MESSAGE IGNORED)
-        const navState = location.state;
-
-        if (navState && navState.errorMessage) {
-            const message = navState.errorMessage;
-            const type = 'error';
-
-            // 1. CRITICAL: Clear the state *first* and synchronously (as much as possible)
-            navigate(location.pathname, { replace: true, state: {} }); 
-            
-            // 2. Now show the notification using the cached message/type.
-            showToastNotification(message, type);
-            
-        } else if (navState && navState.successMessage) {
-             // Clears success message immediately without showing the toast here
-            navigate(location.pathname, { replace: true, state: {} }); 
-        }
-        
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [navigate, location.pathname, fetchClients, searchTerm]); 
-
-    const navigateToAddClient = () => {
-        navigate('/clients/add');
-    };
-    
-    // -----------------------------------------------------------------
-    // MODAL FUNCTIONS 
-    // -----------------------------------------------------------------
-    
-    // 1. Prepare to delete (Open modal)
-    const prepareDelete = (client) => {
+    const prepareDelete = useCallback((client) => {
         setClientToDelete(client);
         setShowDeleteModal(true);
-    };
+    }, []);
 
-    // 2. Execute Delete (Perform API call)
-    const executeDelete = async () => {
+    const executeDelete = useCallback(async () => {
         if (!clientToDelete) return;
 
         const clientName = getClientName(clientToDelete);
         setIsDeleting(true);
         
         try {
-            // Assuming this DELETE endpoint performs the 'deactivation' (soft delete)
             await apiClient.delete(`/clients/${clientToDelete.id}/`);
-            
-            // After successful deletion, refresh the current page 
             const pageToFetch = clients.length === 1 && totalClients > 1 && currentPage > 1 ? currentPage - 1 : currentPage;
             await fetchClients(searchTerm, pageToFetch);
             
             setShowDeleteModal(false);
             setClientToDelete(null);
-            
-            // Show success notification for deactivation
-            showToastNotification(`Successfully deactivated client: **${clientName}**.`);
+            showToastNotification(`Successfully deactivated client: **${clientName}**`);
 
         } catch (err) {
-            console.error("Client delete error:", err.response ? err.response.data : err.message);
-            // Show error notification
-            showToastNotification(`Failed to deactivate client: **${clientName}**. ${err.message || ''}`, 'error');
+            showToastNotification(`Failed to deactivate client: **${clientName}**`, 'error');
         } finally {
             setIsDeleting(false);
         }
-    };
-    
-    // 3. Cancel Delete (Close modal)
-    const cancelDelete = () => {
+    }, [clientToDelete, clients.length, totalClients, currentPage, fetchClients, searchTerm, showToastNotification]);
+
+    const cancelDelete = useCallback(() => {
         setShowDeleteModal(false);
         setClientToDelete(null);
-    };
-    
-    // -----------------------------------------------------------------
-    // HELPER: Navigate to Edit Client (used by the new link)
-    // -----------------------------------------------------------------
-    const navigateToEditClient = (clientId) => {
+    }, []);
+
+    const navigateToViewClient = useCallback((clientId) => {
+        navigate(`/clients/${clientId}/view`);
+    }, [navigate]);
+
+    const navigateToEditClient = useCallback((clientId) => {
         navigate(`/clients/${clientId}`);
-    };
-    // -----------------------------------------------------------------
+    }, [navigate]);
 
+    const navigateToAddClient = useCallback(() => {
+        navigate('/clients/add');
+    }, [navigate]);
 
-    // -----------------------------------------------------------------
-    // Conditional Rendering 
-    // -----------------------------------------------------------------
-    
-    // Function to render the top header area (reusable)
+    // Effects
+    useEffect(() => {
+        if (!searchTerm) {
+            fetchClients('', 1);
+        }
+        
+        const navState = location.state;
+        if (navState && navState.errorMessage) {
+            const message = navState.errorMessage;
+            navigate(location.pathname, { replace: true, state: {} });
+            showToastNotification(message, 'error');
+        } else if (navState && navState.successMessage) {
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [navigate, location.pathname, location.state, fetchClients, searchTerm, showToastNotification]);
+
+    // Render components
     const renderHeader = () => (
         <header className="page-header">
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-                {/* Back Button first if search is active */}
+            <div className="header-left">
                 {searchTerm && (
-                    <button 
-                        className="btn-back-to-list" 
-                        onClick={handleClearSearch}
-                        title="Clear search filter and view all clients"
-                    >
-                        <FaArrowLeft style={{ marginRight: '5px' }}/> Back to All Clients
+                    <button className="btn-back" onClick={handleClearSearch}>
+                        <FaArrowLeft />
+                        <span>Back to All</span>
                     </button>
                 )}
-                <h2 style={{ flexGrow: 0, marginLeft: searchTerm ? '20px' : '0' }}>
-                    <FaUserFriends style={{ marginRight: '8px' }}/> Clients ({loading ? '...' : totalClients})
-                </h2>
+                <div className="header-title">
+                    <FaUserFriends className="header-icon" />
+                    <h1>Clients</h1>
+                    {!loading && <span className="client-count">{totalClients}</span>}
+                </div>
             </div>
-            
-            <div className="search-and-button-container">
-                <SearchBar 
-                    onSearch={handleSearch} 
-                    initialTerm={searchTerm} // Added to keep search term visible in search box
-                    placeholder="Search by name, email, tax ID..."
-                />
-                
-                {/* 🏆 NEW: Hidden File Input (For import dialog) */}
+
+            <div className="header-actions">
+                <div className="view-toggle">
+                    <button 
+                        className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
+                        onClick={() => setViewMode('table')}
+                        title="Table View"
+                    >
+                        Table
+                    </button>
+                    <button 
+                        className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                        onClick={() => setViewMode('grid')}
+                        title="Grid View"
+                    >
+                        Grid
+                    </button>
+                </div>
+
                 <input
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileSelection}
-                    // IMPORTANT: Accept CSV/Excel file types
                     accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-                    style={{ display: 'none' }} 
+                    style={{ display: 'none' }}
                 />
 
-                {/* 🏆 NEW: Import Button (Triggers hidden input click) */}
                 <button 
-                    className="btn-secondary-action import-export-btn" 
-                    onClick={handleImport} 
-                    title="Import Clients from CSV/Excel"
-                    disabled={isImporting} // Disable button while import is running
+                    className="btn-secondary" 
+                    onClick={handleImport}
+                    disabled={isImporting}
                 >
-                    {isImporting ? (
-                        <FaSpinner className="spin-icon" style={{ marginRight: '5px' }} />
-                    ) : (
-                        <FaFileImport style={{ marginRight: '5px' }} />
-                    )}
-                    {isImporting ? 'Importing...' : 'Import'}
+                    {isImporting ? <FaSpinner className="spin" /> : <FaFileImport />}
+                    <span>{isImporting ? 'Importing...' : 'Import'}</span>
                 </button>
                 
-                {/* 🏆 NEW: Export Button */}
-                <button className="btn-secondary-action import-export-btn" onClick={handleExport} title="Export All Clients to CSV/Excel">
-                    <FaFileExport style={{ marginRight: '5px' }} /> Export
+                <button className="btn-secondary" onClick={handleExport}>
+                    <FaFileExport />
+                    <span>Export</span>
                 </button>
                 
-                {/* Original Add Button */}
-                <button className="btn-primary-action" onClick={navigateToAddClient}>
-                    <FaPlusCircle style={{ marginRight: '5px' }} /> Add New Client
+                <button className="btn-primary" onClick={navigateToAddClient}>
+                    <FaPlusCircle />
+                    <span>Add Client</span>
                 </button>
             </div>
         </header>
     );
 
-    // Loading State
+    const renderTableRow = (client) => {
+        const clientName = getClientName(client);
+        return (
+            <tr key={client.id} className="client-row">
+                <td>
+                    <button className="client-name-link" onClick={() => navigateToEditClient(client.id)}>
+                        {clientName}
+                    </button>
+                </td>
+                <td>
+                    <div className="contact-info">
+                        <div className="email">{client.email}</div>
+                        {client.phone_number && (
+                            <div className="phone">{client.phone_number}</div>
+                        )}
+                    </div>
+                </td>
+                <td>
+                    <div className="address">
+                        {[client.address, client.city].filter(Boolean).join(', ')}
+                    </div>
+                </td>
+                <td>
+                    <span className={`client-type-badge ${client.client_type?.toLowerCase()}`}>
+                        {client.client_type || 'Individual'}
+                    </span>
+                </td>
+                <td>
+                    <span className="tax-id">{client.tax_id || '—'}</span>
+                </td>
+                <td>
+                    <span className="notes" title={client.notes}>
+                        {truncateNotes(client.notes)}
+                    </span>
+                </td>
+                <td>
+                    <div className="action-buttons">
+                        <button className="action-btn view" onClick={() => navigateToViewClient(client.id)}>
+                            <FaEye />
+                        </button>
+                        <button className="action-btn edit" onClick={() => navigateToEditClient(client.id)}>
+                            <FaEdit />
+                        </button>
+                        <button className="action-btn delete" onClick={() => prepareDelete(client)}>
+                            <FaTrashAlt />
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        );
+    };
+
+    // Loading state
     if (loading && clients.length === 0) {
         return (
-            <div className="list-page-container">
+            <div className="container">
                 {renderHeader()}
-                <div style={{ textAlign: 'center', padding: '50px', fontSize: '18px', color: TEXT_MUTED_LIGHT }}>
-                    <FaSpinner className="spin" style={{ marginRight: '10px' }}/> Loading client data...
+                <div className="loading-state">
+                    <FaSpinner className="spinner" />
+                    <p>Loading client data...</p>
                 </div>
-                <style jsx>{`
-                    .spin {
-                        animation: spin 1s linear infinite;
-                    }
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                `}</style>
             </div>
         );
     }
-    
-    // Error State
+
+    // Error state
     if (error) {
         return (
-            <div className="list-page-container">
+            <div className="container">
                 {renderHeader()}
-                <div className="error-message-box">
-                    **Error:** {error}
+                <div className="error-state">
+                    <FaExclamationTriangle />
+                    <h3>Unable to Load Clients</h3>
+                    <p>{error}</p>
+                    <button className="btn-primary" onClick={() => fetchClients(searchTerm, 1)}>
+                        Try Again
+                    </button>
                 </div>
-                <style jsx>{`
-                    .error-message-box {
-                        text-align: center; 
-                        padding: 20px; 
-                        color: ${ERROR_RED}; 
-                        border: 1px solid ${ERROR_RED}40; 
-                        border-radius: 8px; 
-                        margin: 20px 0; 
-                        background-color: #fdd; 
-                        font-size: 18px;
-                    }
-                `}</style>
             </div>
         );
     }
 
-    // Empty State (No results)
-    if (clients.length === 0) {
-        return (
-            <div className="list-page-container">
-                {renderHeader()}
-                <div className="list-content-area list-empty-state">
-                    <p style={{ fontSize: '18px' }}>
-                        {searchTerm.trim() 
-                            ? `No clients found matching "${searchTerm}".` 
-                            : 'No active clients found in the system.'
-                        }
-                    </p>
-                    {!searchTerm.trim() && 
-                        <p style={{ marginTop: '10px', color: '#aaaaaa' }}>Click "Add New Client" above to get started.</p>
-                    }
-                </div>
-                <style jsx>{`
-                    .list-empty-state {
-                        text-align: center; 
-                        padding: 50px; 
-                        color: #999999; 
-                        font-size: 18px; 
-                        background-color: ${BG_CARD_LIGHT};
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                    }
-                `}</style>
-            </div>
-        );
-    }
-
-    // -----------------------------------------------------------------
-    // Success State: Render Client Table
-    // -----------------------------------------------------------------
     return (
-        <div className="list-page-container">
+        <div className="container">
             {renderHeader()}
 
-            <div className="list-content-area client-list-container">
-                <div className="client-table-responsive">
-                    <table className="client-table">
-                        <thead>
-                            <tr>
-                                <th>Client Name</th>
-                                <th>Email / Phone</th>
-                                <th>Address</th>
-                                <th>Type</th>
-                                <th>Tax ID</th>
-                                <th><FaClipboardList style={{ marginRight: '5px' }} /> Notes</th> 
-                                <th style={{ textAlign: 'center' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {Array.isArray(clients) && clients.map((client) => {
-                                const clientName = getClientName(client);
-                                
-                                return (
-                                <tr key={client.id} className="client-row">
-                                    <td>
-                                        {/* Client Name Link */}
-                                        <button 
-                                            className="client-name-link"
-                                            onClick={() => navigateToEditClient(client.id)}
-                                            title={`View/Edit ${clientName}`}
-                                        >
-                                            {clientName}
-                                        </button>
-                                    </td>
-                                    <td>
-                                        {client.email}<br />
-                                        <small className="client-phone-small">{client.phone_number}</small>
-                                    </td>
-                                    <td>
-                                        <span className="client-address-small">
-                                            {client.address}
-                                            {client.city ? `, ${client.city}` : ''}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`client-type-badge type-${client.client_type ? client.client_type.toLowerCase() : 'individual'}`}>
-                                            {client.client_type || 'Individual'}
-                                        </span>
-                                    </td>
-                                    <td className="client-tax-id-cell">
-                                        {client.tax_id || '—'}
-                                    </td>
-                                    <td className="client-notes-cell">
-                                        <span title={client.notes}>
-                                            {truncateNotes(client.notes)}
-                                        </span>
-                                    </td>
-                                    <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}> 
-                                        {/* 🏆 UPDATED: Edit Button with Icon */}
-                                        <button 
-                                            className="icon-action-btn edit-icon" 
-                                            onClick={() => navigate(`/clients/${client.id}`)}
-                                            title="Edit Client Profile"
-                                        >
-                                            <FaEdit size={14} />
-                                        </button>
-                                        
-                                        {/* 🏆 UPDATED: Delete Button with Icon */}
-                                        <button 
-                                            className="icon-action-btn delete-icon" 
-                                            onClick={() => prepareDelete(client)}
-                                            title="Deactivate Client"
-                                        >
-                                            <FaTrashAlt size={14} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            )})}
-                        </tbody>
-                    </table>
+            <main className="main-content">
+                {/* Search Bar */}
+                <div className="search-section">
+                    <SearchBar 
+                        onSearch={handleSearch}
+                        initialTerm={searchTerm}
+                        placeholder="Search by name, email, phone, tax ID..."
+                    />
                 </div>
-                
-                {/* PAGINATION CONTROL INTEGRATION */}
-                <PaginationControl 
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={totalClients}
-                    onPageChange={handlePageChange}
-                />
-            </div>
-            
-            {/* CUSTOM DELETE MODAL STRUCTURE - UPDATED TEXT */}
-            {showDeleteModal && clientToDelete && (
-                <div className="custom-modal-backdrop">
-                    <div className="custom-modal">
-                        {/* Close button at the top right */}
-                        <button className="modal-close-icon" onClick={cancelDelete}>
-                            <FaTimes />
-                        </button>
 
-                        <div className="modal-body-content">
-                            {/* Caution Icon */}
-                            <FaExclamationTriangle className="modal-caution-icon" size={30} />
-                            
-                            {/* UPDATED: Main Question */}
-                            <h4 className="modal-title-bold">Do you want to remove client?</h4>
-                            
-                            {/* UPDATED: Warning Text with Client Name */}
-                            <p className="modal-warning-secondary">
-                                If you remove client ({getClientName(clientToDelete)}), you cannot undo.
-                            </p>
-                        </div>
-                        
-                        <div className="modal-footer">
-                            {/* Button 1: Cancel (Secondary action) */}
-                            <button 
-                                className="modal-btn btn-secondary-action-styled" 
-                                onClick={cancelDelete} 
-                                disabled={isDeleting}
-                            >
-                                Cancel
-                            </button>
-                            {/* Button 2: Remove (Primary/Danger action) - Text changed to "Remove" */}
-                            <button 
-                                className="modal-btn btn-danger-action-styled" 
-                                onClick={executeDelete}
-                                disabled={isDeleting}
-                            >
-                                {isDeleting ? 
-                                    (<>
-                                        <FaSpinner className="spin-icon" /> Removing...
-                                    </>)
-                                    : 'Remove'
-                                }
-                            </button>
-                        </div>
+                {/* Show No Results Popup when search returns no results */}
+                {clients.length === 0 && searchTerm && !loading && (
+                    <NoResultsPopup 
+                        searchTerm={searchTerm}
+                        onClearSearch={handleClearSearch}
+                        onAddNew={navigateToAddClient}
+                    />
+                )}
+
+                {/* Show regular empty state when no clients exist at all */}
+                {clients.length === 0 && !searchTerm && !loading && (
+                    <div className="empty-state">
+                        <FaUserFriends />
+                        <h3>No Clients Found</h3>
+                        <p>Get started by adding your first client.</p>
+                        <button className="btn-primary" onClick={navigateToAddClient}>
+                            <FaPlusCircle />
+                            Add Your First Client
+                        </button>
                     </div>
-                </div>
-            )}
-            
-            {/* TOAST NOTIFICATION COMPONENT (Top-Right Position) */}
+                )}
+
+                {/* Show client list when there are results */}
+                {clients.length > 0 && (
+                    <>
+                        {viewMode === 'table' ? (
+                            <div className="table-container">
+                                <table className="client-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Client Name</th>
+                                            <th>Contact Info</th>
+                                            <th>Address</th>
+                                            <th>Type</th>
+                                            <th>Tax ID</th>
+                                            <th>Notes</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {clients.map(renderTableRow)}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="grid-container">
+                                {clients.map(client => (
+                                    <ClientCard
+                                        key={client.id}
+                                        client={client}
+                                        onEdit={navigateToEditClient}
+                                        onView={navigateToViewClient}
+                                        onDelete={prepareDelete}
+                                        getClientName={getClientName}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        <PaginationControl
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalClients}
+                            onPageChange={handlePageChange}
+                        />
+                    </>
+                )}
+            </main>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={cancelDelete}
+                onConfirm={executeDelete}
+                clientName={clientToDelete ? getClientName(clientToDelete) : ''}
+                isDeleting={isDeleting}
+            />
+
+            {/* Notification Toast */}
             {notification.show && (
-                <div className={`toast-notification ${notification.type}`}>
+                <div className={`toast ${notification.type}`}>
                     {notification.type === 'success' ? <FaCheckCircle /> : <FaExclamationTriangle />}
                     <span>{notification.message}</span>
                 </div>
             )}
 
-
-            {/* --- STYLES INTEGRATED FOR A SMART, MODERN LOOK (UPDATED ONLY MODAL STYLES) --- */}
-            <style>{`
-                /* General Page Layout - Keep Light */
-                .list-page-container {
-                    padding: 25px;
-                    background-color: ${BG_MAIN_LIGHT}; /* Keep Light */
+            <style jsx>{`
+                .container {
                     min-height: 100vh;
-                    font-family: 'Inter', sans-serif, 'Helvetica Neue', Arial; 
+                    background: ${COLORS.light};
+                    padding: 0;
                 }
-                
+
+                /* Header Styles */
                 .page-header {
+                    background: ${COLORS.white};
+                    padding: 24px 32px;
+                    border-bottom: 1px solid ${COLORS.gray[200]};
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 25px;
-                    padding-bottom: 15px;
-                    border-bottom: 1px solid ${INPUT_BORDER_LIGHT}; 
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                 }
 
-                .page-header h2 {
+                .header-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                }
+
+                .btn-back {
+                    background: ${COLORS.gray[100]};
+                    border: 1px solid ${COLORS.gray[300]};
+                    color: ${COLORS.gray[700]};
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                }
+
+                .btn-back:hover {
+                    background: ${COLORS.gray[200]};
+                }
+
+                .header-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .header-title h1 {
+                    margin: 0;
                     font-size: 24px;
                     font-weight: 700;
-                    color: ${TEXT_PRIMARY_LIGHT}; 
-                    display: flex;
-                    align-items: center;
-                }
-                
-                .search-and-button-container {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                
-                .btn-back-to-list {
-                    background: #5d9cec;
-                    border: none;
-                    color: white; 
-                    cursor: pointer;
-                    padding: 8px 15px;
-                    border-radius: 6px;
-                    transition: background-color 0.2s;
-                    font-size: 14px;
-                    font-weight: 600;
-                    display: flex;
-                    align-items: center;
-                }
-                .btn-back-to-list:hover {
-                    background-color: #e9ecef; 
-                    color: ${TEXT_PRIMARY_LIGHT};
-                }
-                
-                /* Action Buttons (General) */
-                .btn-primary-action {
-                    background-color: ${PRIMARY_BLUE};
-                    color: white;
-                    border: none;
-                    padding: 10px 18px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    transition: background-color 0.2s;
-                    display: flex;
-                    align-items: center;
+                    color: ${COLORS.dark};
                 }
 
-                .btn-primary-action:hover {
-                    background-color: #4a89dc;
+                .header-icon {
+                    color: ${COLORS.primary};
+                    font-size: 24px;
                 }
-                
-                .btn-secondary-action {
-                    background-color: #f0f0f0; 
-                    color: ${TEXT_PRIMARY_LIGHT}; 
+
+                .client-count {
+                    background: ${COLORS.primary};
+                    color: ${COLORS.white};
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+
+                .header-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .view-toggle {
+                    display: flex;
+                    background: ${COLORS.gray[100]};
+                    border-radius: 8px;
+                    padding: 4px;
+                    margin-right: 8px;
+                }
+
+                .view-btn {
+                    background: none;
                     border: none;
-                    padding: 10px 15px;
+                    padding: 8px 16px;
                     border-radius: 6px;
                     cursor: pointer;
                     font-weight: 500;
-                    transition: background-color 0.2s;
+                    color: ${COLORS.gray[600]};
+                    transition: all 0.2s;
                 }
-                
-                .btn-secondary-action:hover {
-                    background-color: #e5e5e5; 
+
+                .view-btn.active {
+                    background: ${COLORS.white};
+                    color: ${COLORS.primary};
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                 }
-                
-                /* Client Table Styles - Keep Light */
-                .client-list-container {
-                    background-color: ${BG_CARD_LIGHT}; 
+
+                .btn-primary, .btn-secondary {
+                    padding: 10px 20px;
+                    border: none;
                     border-radius: 8px;
-                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+                    cursor: pointer;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s;
+                    font-size: 14px;
+                }
+
+                .btn-primary {
+                    background: ${COLORS.primary};
+                    color: ${COLORS.white};
+                }
+
+                .btn-primary:hover {
+                    background: ${COLORS.primaryDark};
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(209, 106, 51, 0.3);
+                }
+
+                .btn-secondary {
+                    background: ${COLORS.gray[100]};
+                    color: ${COLORS.gray[700]};
+                    border: 1px solid ${COLORS.gray[300]};
+                }
+
+                .btn-secondary:hover {
+                    background: ${COLORS.gray[200]};
+                }
+
+                .btn-secondary:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+
+                /* Search Section */
+                .search-section {
+                    margin-bottom: 24px;
+                }
+
+                .search-bar {
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                }
+
+                .search-input-container {
+                    position: relative;
+                    flex: 1;
+                    max-width: 400px;
+                }
+
+                .search-icon {
+                    position: absolute;
+                    left: 12px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: ${COLORS.gray[400]};
+                }
+
+                .search-input {
+                    width: 100%;
+                    padding: 10px 40px 10px 40px;
+                    border: 1px solid ${COLORS.gray[300]};
+                    border-radius: 8px;
+                    font-size: 14px;
+                    transition: all 0.2s;
+                }
+
+                .search-input:focus {
+                    outline: none;
+                    border-color: ${COLORS.primary};
+                    box-shadow: 0 0 0 3px rgba(209, 106, 51, 0.1);
+                }
+
+                .clear-search {
+                    position: absolute;
+                    right: 8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    color: ${COLORS.gray[400]};
+                    cursor: pointer;
+                    padding: 4px;
+                }
+
+                .clear-search:hover {
+                    color: ${COLORS.gray[600]};
+                }
+
+                .search-btn {
+                    background: ${COLORS.primary};
+                    color: ${COLORS.white};
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                }
+
+                .search-btn:hover {
+                    background: ${COLORS.primaryDark};
+                }
+
+                /* No Results Popup */
+                .no-results-popup {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 400px;
+                    padding: 40px 20px;
+                }
+
+                .popup-content {
+                    background: ${COLORS.white};
+                    border-radius: 16px;
+                    padding: 48px 40px;
+                    text-align: center;
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+                    border: 1px solid ${COLORS.gray[200]};
+                    max-width: 480px;
+                    width: 100%;
+                }
+
+                .popup-icon {
+                    width: 80px;
+                    height: 80px;
+                    background: linear-gradient(135deg, ${COLORS.gray[100]}, ${COLORS.gray[200]});
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 24px;
+                    font-size: 32px;
+                    color: ${COLORS.gray[500]};
+                }
+
+                .popup-content h3 {
+                    margin: 0 0 16px 0;
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: ${COLORS.dark};
+                }
+
+                .popup-message {
+                    color: ${COLORS.gray[600]};
+                    font-size: 16px;
+                    line-height: 1.6;
+                    margin-bottom: 32px;
+                }
+
+                .popup-actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                }
+
+                .popup-btn {
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s;
+                    font-size: 14px;
+                }
+
+                .popup-btn.primary {
+                    background: ${COLORS.primary};
+                    color: ${COLORS.white};
+                }
+
+                .popup-btn.primary:hover {
+                    background: ${COLORS.primaryDark};
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(209, 106, 51, 0.3);
+                }
+
+                .popup-btn.secondary {
+                    background: ${COLORS.gray[100]};
+                    color: ${COLORS.gray[700]};
+                    border: 1px solid ${COLORS.gray[300]};
+                }
+
+                .popup-btn.secondary:hover {
+                    background: ${COLORS.gray[200]};
+                }
+
+                /* Modern Delete Modal Styles */
+                .modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
                     padding: 20px;
                 }
 
-                .client-table-responsive {
-                    overflow-x: auto;
+                .modal {
+                    background: ${COLORS.white};
+                    border-radius: 16px;
+                    width: 100%;
+                    max-width: 400px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                    animation: modalSlideIn 0.2s ease-out;
+                }
+
+                .modal-content {
+                    padding: 32px;
+                    text-align: center;
+                }
+
+                .modal-icon {
+                    width: 64px;
+                    height: 64px;
+                    background: ${COLORS.gray[100]};
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 20px;
+                    font-size: 24px;
+                    color: ${COLORS.gray[600]};
+                }
+
+                .modal-title {
+                    margin: 0 0 12px 0;
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: ${COLORS.dark};
+                }
+
+                .modal-message {
+                    color: ${COLORS.gray[600]};
+                    font-size: 14px;
+                    line-height: 1.5;
+                    margin-bottom: 24px;
+                }
+
+                .modal-actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: center;
+                }
+
+                .modal-btn {
+                    padding: 10px 24px;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-size: 14px;
+                    transition: all 0.2s;
+                    min-width: 80px;
+                }
+
+                .modal-btn.cancel-btn {
+                    background: ${COLORS.gray[100]};
+                    color: ${COLORS.gray[700]};
+                    border: 1px solid ${COLORS.gray[300]};
+                }
+
+                .modal-btn.cancel-btn:hover:not(:disabled) {
+                    background: ${COLORS.gray[200]};
+                }
+
+                .modal-btn.delete-btn {
+                    background: ${COLORS.danger};
+                    color: ${COLORS.white};
+                }
+
+                .modal-btn.delete-btn:hover:not(:disabled) {
+                    background: #dc2626;
+                    transform: translateY(-1px);
+                }
+
+                .modal-btn:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                    transform: none !important;
+                }
+
+                @keyframes modalSlideIn {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.95) translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1) translateY(0);
+                    }
+                }
+
+                /* Main Content */
+                .main-content {
+                    padding: 32px;
+                    max-width: 1900px;
+                    margin: 0 auto;
+                }
+
+                /* Table Styles */
+                .table-container {
+                    background: ${COLORS.white};
+                    border-radius: 12px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    overflow: hidden;
+                    margin-bottom: 24px;
                 }
 
                 .client-table {
                     width: 100%;
-                    border-collapse: separate;
-                    border-spacing: 0; 
-                    font-size: 15px; 
+                    border-collapse: collapse;
+                    font-size: 14px;
                 }
 
                 .client-table th {
+                    background: ${COLORS.gray[50]};
+                    padding: 16px;
                     text-align: left;
-                    padding: 12px 15px;
-                    background-color: #f7f7f7; /* Light header background */
-                    color: ${TEXT_MUTED_LIGHT}; 
                     font-weight: 600;
+                    color: ${COLORS.gray[700]};
+                    border-bottom: 1px solid ${COLORS.gray[200]};
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
-                    border-bottom: 2px solid ${INPUT_BORDER_LIGHT};
+                    font-size: 12px;
                 }
 
                 .client-table td {
-                    padding: 12px 15px;
-                    border-bottom: 1px solid ${INPUT_BORDER_LIGHT}; 
-                    vertical-align: middle;
-                    color: ${TEXT_PRIMARY_LIGHT}; 
+                    padding: 16px;
+                    border-bottom: 1px solid ${COLORS.gray[100]};
+                    vertical-align: top;
                 }
 
                 .client-row:hover {
-                    background-color: #fafafa; 
+                    background: ${COLORS.gray[50]};
                 }
-                
-                /* Client Name Link Styles */
+
                 .client-name-link {
                     background: none;
                     border: none;
-                    padding: 0;
-                    font-weight: 700; 
-                    color: ${PRIMARY_BLUE}; 
+                    color: ${COLORS.primary};
+                    font-weight: 600;
                     cursor: pointer;
                     text-align: left;
-                    transition: color 0.2s;
-                    text-decoration: none; 
-                    font-size: 15px; 
-                }
-                
-                .client-name-link:hover {
-                    color: #4a89dc; 
+                    padding: 0;
+                    font-size: 14px;
+                    text-decoration: none;
                 }
 
-                .client-phone-small, .client-address-small {
-                    font-size: 13px; 
-                    color: ${TEXT_MUTED_LIGHT}; 
-                    display: block;
-                    margin-top: 2px;
+                .client-name-link:hover {
+                    color: ${COLORS.primaryDark};
                 }
-                
-                .client-tax-id-cell, .client-notes-cell {
-                    color: ${TEXT_MUTED_LIGHT}; 
+
+                .contact-info .email {
+                    color: ${COLORS.gray[700]};
+                    margin-bottom: 4px;
                 }
-                
-                /* Badges */
+
+                .contact-info .phone {
+                    color: ${COLORS.gray[500]};
+                    font-size: 13px;
+                }
+
+                .address {
+                    color: ${COLORS.gray[600]};
+                    font-size: 13px;
+                }
+
                 .client-type-badge {
-                    display: inline-block;
                     padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px; 
+                    border-radius: 6px;
+                    font-size: 12px;
                     font-weight: 600;
                     text-transform: uppercase;
                 }
-                .type-individual {
-                    background-color: #e3f2fd; 
-                    color: #1565c0; 
+
+                .client-type-badge.individual {
+                    background: #dbeafe;
+                    color: #1d4ed8;
                 }
-                .type-company {
-                    background-color: #fffde7; 
-                    color: #fbc02d; 
+
+                .client-type-badge.company {
+                    background: #fef3c7;
+                    color: #92400e;
                 }
-                
-                /* Action Icons */
-                .icon-action-btn {
-                    background: none;
-                    border: 1px solid ${INPUT_BORDER_LIGHT};
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 4px;
+
+                .tax-id {
+                    color: ${COLORS.gray[500]};
+                    font-family: 'Monaco', 'Consolas', monospace;
+                }
+
+                .notes {
+                    color: ${COLORS.gray[600]};
+                    font-size: 13px;
+                }
+
+                .action-buttons {
+                    display: flex;
+                    gap: 8px;
+                }
+
+                .action-btn {
+                    width: 32px;
+                    height: 32px;
+                    border: none;
+                    border-radius: 6px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     transition: all 0.2s;
-                    color: ${TEXT_MUTED_LIGHT};
+                    color: ${COLORS.gray[600]};
                 }
 
-                .icon-action-btn:hover {
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                .action-btn.view {
+                    background: #dbeafe;
                 }
 
-                .edit-icon {
-                    color: ${EDIT_ORANGE};
-                }
-                .edit-icon:hover {
-                    background-color: #fff3e0; 
-                    border-color: ${EDIT_ORANGE};
+                .action-btn.view:hover {
+                    background: #93c5fd;
+                    color: ${COLORS.white};
                 }
 
-                .delete-icon {
-                    color: ${DANGER_RED};
+                .action-btn.edit {
+                    background: #fef3c7;
                 }
-                .delete-icon:hover {
-                    background-color: #ffebee; 
-                    border-color: ${DANGER_RED};
+
+                .action-btn.edit:hover {
+                    background: #f59e0b;
+                    color: ${COLORS.white};
                 }
-                
-                /* 🏆 Custom Modal Styles (UPDATED FOR DARK MODE) 🏆 */
-                .custom-modal-backdrop {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker backdrop */
+
+                .action-btn.delete {
+                    background: #fee2e2;
+                }
+
+                .action-btn.delete:hover {
+                    background: #ef4444;
+                    color: ${COLORS.white};
+                }
+
+                /* Grid Styles */
+                .grid-container {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                    gap: 24px;
+                    margin-bottom: 24px;
+                }
+
+                .client-card {
+                    background: ${COLORS.white};
+                    border-radius: 12px;
+                    padding: 20px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    transition: all 0.2s;
+                    border: 1px solid ${COLORS.gray[200]};
+                }
+
+                .client-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                }
+
+                .client-card-header {
                     display: flex;
-                    justify-content: center;
                     align-items: center;
-                    z-index: 1050; 
+                    gap: 12px;
+                    margin-bottom: 16px;
                 }
 
-                .custom-modal {
-                    background-color: ${BG_MODAL_DARK}; /* 🏆 DARK MODAL BACKGROUND 🏆 */
-                    padding: 30px;
+                .client-avatar {
+                    width: 48px;
+                    height: 48px;
+                    background: ${COLORS.primary};
                     border-radius: 10px;
-                    width: 90%;
-                    max-width: 400px;
-                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-                    position: relative;
-                }
-
-                .modal-close-icon {
-                    position: absolute;
-                    top: 15px;
-                    right: 15px;
-                    background: none;
-                    border: none;
-                    font-size: 18px;
-                    cursor: pointer;
-                    color: ${TEXT_MUTED_DARK}; /* Light grey text */
-                }
-                .modal-close-icon:hover {
-                    color: ${TEXT_PRIMARY_DARK}; 
-                }
-
-
-                .modal-body-content {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-
-                .modal-caution-icon {
-                    color: ${DANGER_RED};
-                    margin-bottom: 15px;
-                }
-
-                .modal-title-bold {
-                    font-size: 20px;
-                    font-weight: 700;
-                    color: ${TEXT_PRIMARY_DARK}; /* White text */
-                    margin: 0 0 10px 0;
-                }
-
-                .modal-warning-secondary {
-                    color: ${TEXT_MUTED_DARK}; /* Muted light text */
-                    font-size: 14px;
-                    margin: 0;
-                }
-                
-                .modal-footer {
-                    display: flex;
-                    justify-content: flex-end;
-                    gap: 10px;
-                    border-top: 1px solid ${INPUT_BORDER_DARK}; /* Dark border line */
-                    padding-top: 20px;
-                }
-
-                .modal-btn {
-                    padding: 10px 18px;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    transition: background-color 0.2s;
-                }
-
-                /* 🏆 Cancel Button Updated for Dark Mode 🏆 */
-                .btn-secondary-action-styled {
-                    background-color: ${INPUT_BORDER_DARK}; /* Dark grey background */
-                    color: ${TEXT_PRIMARY_DARK}; /* White text */
-                }
-                .btn-secondary-action-styled:hover {
-                    background-color: #6a7488;
-                }
-
-                .btn-danger-action-styled {
-                    background-color: ${DANGER_RED};
-                    color: white;
-                }
-                .btn-danger-action-styled:hover {
-                    background-color: #cc0000;
-                }
-                
-                /* Toast Notification Styles */
-                .toast-notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    padding: 10px 20px;
-                    border-radius: 6px;
-                    color: white;
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    justify-content: center;
+                    color: ${COLORS.white};
+                    font-size: 20px;
+                }
+
+                .client-info h3 {
+                    margin: 0 0 4px 0;
+                    font-size: 16px;
                     font-weight: 600;
-                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
-                    z-index: 1100;
-                    animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 3.5s forwards;
+                    color: ${COLORS.dark};
                 }
 
-                .toast-notification.success {
-                    background-color: ${SUCCESS_GREEN}; 
+                .client-type {
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
                 }
 
-                .toast-notification.error {
-                    background-color: ${ERROR_RED}; 
-                }
-                
-                .toast-notification.info {
-                    background-color: ${PRIMARY_BLUE}; 
-                }
-                
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
+                .client-type.individual {
+                    background: #dbeafe;
+                    color: #1d4ed8;
                 }
 
-                @keyframes fadeOut {
-                    to { opacity: 0; }
+                .client-type.company {
+                    background: #fef3c7;
+                    color: #92400e;
                 }
 
-                /* Spin icon for loading states */
-                .spin-icon {
-                    animation: spin 1s linear infinite;
-                    margin-right: 5px;
+                .client-details {
+                    margin-bottom: 16px;
                 }
-                
-                /* ---------------------------------------------------- */
-                /* PAGINATION STYLES (Keep Light) */
-                /* ---------------------------------------------------- */
-                
-                .pagination-wrap {
+
+                .detail-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                }
+
+                .detail-icon {
+                    color: ${COLORS.gray[500]};
+                    width: 14px;
+                }
+
+                .detail-label {
+                    color: ${COLORS.gray[600]};
+                    font-weight: 500;
+                }
+
+                .detail-text {
+                    color: ${COLORS.gray[700]};
+                }
+
+                .client-notes {
+                    background: ${COLORS.gray[50]};
+                    padding: 12px;
+                    border-radius: 6px;
+                    margin-bottom: 16px;
+                    display: flex;
+                    gap: 8px;
+                    font-size: 13px;
+                }
+
+                .notes-icon {
+                    color: ${COLORS.gray[500]};
+                    flex-shrink: 0;
+                }
+
+                .notes-text {
+                    color: ${COLORS.gray[600]};
+                    line-height: 1.4;
+                }
+
+                .client-actions {
+                    display: flex;
+                    gap: 8px;
+                }
+
+                /* Empty State */
+                .empty-state {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 80px 40px;
+                    text-align: center;
+                    background: ${COLORS.white};
+                    border-radius: 16px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                }
+
+                .empty-state svg {
+                    font-size: 64px;
+                    margin-bottom: 16px;
+                    opacity: 0.5;
+                    color: ${COLORS.gray[400]};
+                }
+
+                .empty-state h3 {
+                    color: ${COLORS.dark};
+                    margin: 16px 0 8px 0;
+                    font-size: 24px;
+                }
+
+                .empty-state p {
+                    color: ${COLORS.gray[600]};
+                    font-size: 16px;
+                    margin: 0 0 24px 0;
+                }
+
+                /* Pagination */
+                .pagination-container {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding-top: 15px;
-                    margin-top: 20px;
-                    border-top: 1px solid ${INPUT_BORDER_LIGHT};
+                    padding: 20px 0;
+                    border-top: 1px solid ${COLORS.gray[200]};
                 }
 
-                .pagination-range-text {
+                .pagination-text {
+                    color: ${COLORS.gray[600]};
                     font-size: 14px;
-                    color: ${TEXT_MUTED_LIGHT};
-                    font-weight: 500;
-                    margin: 0;
                 }
 
-                .pagination-container {
+                .pagination-controls {
                     display: flex;
                     align-items: center;
-                    gap: 5px; 
+                    gap: 8px;
                 }
 
-                .pagination-link {
-                    text-decoration: none;
-                    color: ${PRIMARY_BLUE};
+                .pagination-btn {
                     padding: 8px 12px;
+                    border: 1px solid ${COLORS.gray[300]};
+                    background: ${COLORS.white};
+                    color: ${COLORS.gray[700]};
+                    cursor: pointer;
                     border-radius: 6px;
                     font-size: 14px;
-                    font-weight: 500;
-                    transition: background-color 0.2s, color 0.2s;
                     display: flex;
                     align-items: center;
-                    line-height: 1; 
-                }
-                
-                .pagination-link:hover:not(.active):not(.disabled) {
-                    background-color: #e3f2fd; 
+                    gap: 6px;
+                    transition: all 0.2s;
                 }
 
-                .pagination-link.active {
-                    background-color: ${PRIMARY_BLUE};
-                    color: white;
-                    font-weight: 60;
+                .pagination-btn:hover:not(:disabled) {
+                    background: ${COLORS.gray[50]};
+                    border-color: ${COLORS.gray[400]};
                 }
 
-                .pagination-link.disabled {
-                    color: #bdbdbd; 
-                    opacity: 0.8;
+                .pagination-btn.active {
+                    background: ${COLORS.primary};
+                    color: ${COLORS.white};
+                    border-color: ${COLORS.primary};
+                }
+
+                .pagination-btn:disabled {
+                    opacity: 0.5;
                     cursor: not-allowed;
-                    pointer-events: none; 
-                }
-                
-                /* Style for "Previous" and "Next" to be slightly different if desired */
-                .pagination-link.prev-next-link {
-                    padding: 8px 15px; 
-                    border: 1px solid ${INPUT_BORDER_LIGHT};
-                }
-                
-                .pagination-link.prev-next-link:hover:not(.disabled) {
-                    border-color: #c0c0c0;
                 }
 
-                .pagination-dots {
-                    font-size: 16px;
-                    color: ${TEXT_MUTED_LIGHT};
-                    padding: 0 5px;
+                .pagination-numbers {
+                    display: flex;
+                    gap: 4px;
                 }
-                
-                /* ---------------------------------------------------- */
+
+                /* Toast */
+                .toast {
+                    position: fixed;
+                    top: 24px;
+                    right: 24px;
+                    padding: 16px 20px;
+                    border-radius: 8px;
+                    color: ${COLORS.white};
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-weight: 500;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    z-index: 1100;
+                    animation: slideIn 0.3s ease-out;
+                }
+
+                .toast.success {
+                    background: ${COLORS.success};
+                }
+
+                .toast.error {
+                    background: ${COLORS.danger};
+                }
+
+                .toast.info {
+                    background: ${COLORS.secondary};
+                }
+
+                /* Loading and Error States */
+                .loading-state, .error-state {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 80px 40px;
+                    text-align: center;
+                }
+
+                .spinner {
+                    animation: spin 1s linear infinite;
+                    font-size: 32px;
+                    color: ${COLORS.primary};
+                    margin-bottom: 16px;
+                }
+
+                .loading-state p, .error-state p {
+                    color: ${COLORS.gray[600]};
+                    font-size: 16px;
+                    margin: 8px 0 0 0;
+                }
+
+                .error-state h3 {
+                    color: ${COLORS.dark};
+                    margin: 16px 0 8px 0;
+                }
+
+                .error-state {
+                    color: ${COLORS.danger};
+                }
+
+                /* Animations */
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+
+                /* Responsive Design */
+                @media (max-width: 1024px) {
+                    .page-header {
+                        flex-direction: column;
+                        gap: 16px;
+                        align-items: stretch;
+                    }
+
+                    .header-actions {
+                        justify-content: space-between;
+                    }
+
+                    .grid-container {
+                        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    }
+
+                    .popup-actions {
+                        flex-direction: column;
+                        align-items: center;
+                    }
+
+                    .popup-btn {
+                        width: 200px;
+                        justify-content: center;
+                    }
+
+                    .modal-actions {
+                        flex-direction: column;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .main-content {
+                        padding: 20px;
+                    }
+
+                    .header-actions {
+                        flex-wrap: wrap;
+                    }
+
+                    .pagination-container {
+                        flex-direction: column;
+                        gap: 16px;
+                        align-items: stretch;
+                    }
+
+                    .table-container {
+                        overflow-x: auto;
+                    }
+
+                    .client-table {
+                        min-width: 800px;
+                    }
+
+                    .grid-container {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .search-bar {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+
+                    .search-input-container {
+                        max-width: none;
+                    }
+
+                    .popup-content {
+                        padding: 32px 24px;
+                    }
+
+                    .modal-content {
+                        padding: 24px;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .page-header {
+                        padding: 16px;
+                    }
+
+                    .main-content {
+                        padding: 16px;
+                    }
+
+                    .header-actions {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+
+                    .view-toggle {
+                        align-self: center;
+                    }
+
+                    .popup-content {
+                        margin: 0 16px;
+                        padding: 24px 20px;
+                    }
+
+                    .popup-icon {
+                        width: 60px;
+                        height: 60px;
+                        font-size: 24px;
+                    }
+
+                    .popup-content h3 {
+                        font-size: 20px;
+                    }
+
+                    .popup-message {
+                        font-size: 14px;
+                    }
+
+                    .modal {
+                        margin: 20px;
+                    max-width: none;
+                    width: calc(100% - 40px);
+                    }
+                }
             `}</style>
         </div>
     );

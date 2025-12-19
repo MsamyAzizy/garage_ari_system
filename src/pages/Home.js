@@ -6,7 +6,8 @@ import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 're
 // 🏆 Updated: Imported FaFileInvoice for Payments List header, FaBell for reminders
 import { 
     FaCar, FaPlusCircle, FaCheckCircle, FaTimesCircle, FaUsers, FaBell, 
-   FaTrashAlt, FaEdit, FaEye, FaExclamationTriangle // 🛑 Added FaExclamationTriangle for the modal
+   FaTrashAlt, FaEdit, FaEye, FaExclamationTriangle, FaInfoCircle, // 🛑 Added FaInfoCircle for info modal
+    // 🆕 Added for inventory
 } from 'react-icons/fa'; // Combined all icons for completeness
 // IMPORT the apiClient instance
 import apiClient from '../utils/apiClient';
@@ -18,6 +19,7 @@ import TopNavBar from '../components/TopNavigationBar';
 import Sidebar from '../components/Sidebar';
 
 // Import Page Components
+import RequestServiceGarage from '../components/RequestServiceGarage'; // 🛑 UPDATED IMPORT
 import EmployeeDetailView from '../components/EmployeeDetailView';
 import StatisticsPage from '../components/StatisticsPage'; // Add this import
 import DataExportPage from '../components/DataExportPage'; // Add this import
@@ -34,8 +36,10 @@ import SalesPurchasesReport from '../components/SalesPurchasesReport';
 import Dashboard from '../components/Dashboard';
 import ClientsList from '../components/ClientsList';
 import ClientForm from '../components/ClientDetailForm';
+// Add this import with the other component imports
+import ClientDetailView from '../components/ClientDetailView';
 import VehicleForm from '../components/VehicleForm';
-import InventoryForm from '../components/InventoryForm';
+//import InventoryForm from '../components/InventoryForm';
 import TireForm from '../components/TireForm';
 import LaborForm from '../components/LaborForm';
 import CannedJobForm from '../components/CannedJobForm';
@@ -78,12 +82,16 @@ import PurchaseOrderList from '../components/PurchaseOrderList';
 // 📈 NEW REPORTS IMPORTS
 import ReportsLandingPage from '../components/ReportsLandingPage'; // Added Reports Landing Page
 
+// 🆕 IMPORT INVENTORY PAGE
+import InventoryPage from './InventoryPage';
+
 
 // Define common colors for the Toast
 const SUCCESS_COLOR = '#2ecc71';
 const ERROR_COLOR = '#e74c3c';
 // 🛑 Custom dark color for the modal background
 const MODAL_BG_COLOR = '#252525';
+const INFO_COLOR = '#3498db'; // Blue for info modals
 
 
 // -----------------------------------------------------------------
@@ -260,17 +268,129 @@ const ConfirmationModal = ({ isOpen, title, message, confirmText, onConfirm, onC
     );
 };
 
+// -----------------------------------------------------------------
+// 🆕 INFORMATION MODAL COMPONENT (For the client selection message)
+// -----------------------------------------------------------------
+const InformationModal = ({ isOpen, title, message, confirmText, onConfirm, onCancel }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content">
+                <button className="modal-close" onClick={onCancel}>
+                    <FaTimesCircle style={{ color: '#aaa' }} />
+                </button>
+                <div className="modal-icon">
+                    <FaInfoCircle size={32} color={INFO_COLOR} />
+                </div>
+                
+                <h3 className="modal-title">{title}</h3>
+                <p className="modal-message">{message}</p>
+                
+                <div className="modal-actions">
+                    <button className="btn-secondary-action" onClick={onCancel} style={{ 
+                        backgroundColor: '#4a4a4a', 
+                        color: 'white', 
+                        border: '1px solid #5a5a5a'
+                    }}>
+                        Cancel
+                    </button>
+                    <button className="btn-primary-action" onClick={onConfirm} style={{ 
+                        backgroundColor: INFO_COLOR, 
+                        color: 'white', 
+                        border: 'none',
+                        marginLeft: '10px'
+                    }}>
+                        {confirmText}
+                    </button>
+                </div>
+            </div>
+
+            {/* Modal CSS */}
+            <style jsx>{`
+                .modal-backdrop {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.8);
+                    backdrop-filter: blur(3px);
+                    z-index: 11000;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .modal-content {
+                    background-color: ${MODAL_BG_COLOR}; 
+                    color: white;
+                    border-radius: 12px;
+                    padding: 30px;
+                    width: 90%;
+                    max-width: 400px;
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+                    text-align: center;
+                    position: relative;
+                }
+                .modal-close {
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 1.2rem;
+                    line-height: 1;
+                    padding: 0;
+                }
+                .modal-icon {
+                    margin-bottom: 15px;
+                }
+                .modal-title {
+                    font-size: 1.5rem;
+                    margin: 0 0 5px 0;
+                    font-weight: 600;
+                }
+                .modal-message {
+                    font-size: 0.9rem;
+                    color: #bbb;
+                    margin-bottom: 30px;
+                    line-height: 1.5;
+                }
+                .modal-actions {
+                    display: flex;
+                    justify-content: center;
+                    gap: 10px;
+                }
+                .btn-secondary-action, .btn-primary-action {
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: opacity 0.2s;
+                    min-width: 120px;
+                }
+                .btn-secondary-action:hover { opacity: 0.8; }
+                .btn-primary-action:hover { opacity: 0.8; }
+            `}</style>
+        </div>
+    );
+};
+
 
 // -----------------------------------------------------------------
 // 🚗 UPDATED VEHICLE LIST COMPONENT (Matching full file structure)
 // -----------------------------------------------------------------
-const VehicleList = ({ navigateTo, vehicles, onDeleteVehicle }) => (
+const VehicleList = ({ navigateTo, vehicles, onDeleteVehicle, onShowClientModal }) => (
     <div className="list-page-container">
         <header className="page-header vehicle-list-header">
             <h2 style={{ flexGrow: 1 }}><FaCar style={{ marginRight: '8px' }}/> Customer Vehicles ({vehicles.length})</h2>
             <button
                 className="btn-primary-action"
-                onClick={() => navigateTo('/vehicles/new')}
+                onClick={() => {
+                    // Show the beautiful modal instead of basic alert
+                    onShowClientModal();
+                }}
                 style={{ marginLeft: 'auto' }}
             >
                 <FaPlusCircle style={{ marginRight: '5px' }} /> Add New Vehicle
@@ -349,8 +469,11 @@ const VehicleList = ({ navigateTo, vehicles, onDeleteVehicle }) => (
         </div>
     </div>
 );
+
 // -----------------------------------------------------------------
 // 🏆 MOCK/REAL EMPLOYEE LIST COMPONENT (UPDATED TO INCLUDE EMPLOYEE ID)
+// -----------------------------------------------------------------
+// 🏆 UPDATED EMPLOYEE LIST COMPONENT - FIXED EDIT BUTTON
 // -----------------------------------------------------------------
 const EmployeeList = ({ navigateTo, employees, onDeleteEmployee }) => (
     <div className="list-page-container">
@@ -374,10 +497,9 @@ const EmployeeList = ({ navigateTo, employees, onDeleteEmployee }) => (
                 <table className="data-table">
                     <thead>
                         <tr>
-                            {/* 🛑 NEW COLUMN: Employee ID */}
                             <th>Employee ID</th> 
                             <th>Name</th>
-                            <th>Middle Name</th>
+                            <th>Last Name</th>
                             <th>JOB TITLE</th>
                             <th>Department</th>
                             <th>Email</th>
@@ -387,42 +509,51 @@ const EmployeeList = ({ navigateTo, employees, onDeleteEmployee }) => (
                         </tr>
                     </thead>
                     <tbody>
-                        {employees.map((e) => (
-                            <tr key={e.id}>
-                                {/* 🛑 NEW DATA: Employee ID */}
-                                <td>{e.employeeId}</td> 
-                                <td>{e.firstName}</td>
-                                <td>{e.middleName}</td>
-                                <td>{e.jobTitle}</td>
-                                <td>{e.department}</td>
-                                <td>{e.email}</td>
-                                <td>{e.phoneNumber}</td>
-                                <td>{e.employmentStatus}</td>
-                                {/* 🏆 UPDATED: Using icon-action class for modern look */}
+                        {employees.map((employee) => (
+                            <tr key={employee.id}>
+                                <td>{employee.employee_id || employee.employeeId}</td> 
+                                <td>
+                                    {employee.first_name || employee.firstName} 
+                                    {/*{employee.last_name || employee.lastName ? ` ${employee.last_name || employee.lastName}` : ''}*/}
+                                </td>
+                                <td>{employee.last_name || employee.lastName}</td>
+                                <td>{employee.job_title || employee.jobTitle}</td>
+                                <td>{employee.department}</td>
+                                <td>{employee.email}</td>
+                                <td>{employee.phone_number || employee.phoneNumber}</td>
+                                <td>
+                                    <span className={`status-badge ${(employee.employment_status || employee.employmentStatus)?.toLowerCase() || 'active'}`}>
+                                        {employee.employment_status || employee.employmentStatus}
+                                    </span>
+                                </td>
+                                {/* 🛑 CRITICAL FIX: UPDATED ACTION BUTTONS */}
                                 <td className="action-column-cell icon-action-container"> 
                                     
-                                    {/* 🛑 VIEW Icon */}
+                                    {/* VIEW Icon */}
                                     <button 
                                         className="icon-action view" 
-                                        onClick={() => navigateTo(`/employees/${e.id}/view`)}
+                                        onClick={() => navigateTo(`/employees/${employee.id}/view`)}
                                         title="View Details"
                                     >
                                         <FaEye />
                                     </button>
                                     
-                                    {/* 🛑 EDIT Icon */}
+                                    {/* 🛑 FIXED EDIT BUTTON: Use employee.id and proper route */}
                                     <button 
                                         className="icon-action edit" 
-                                        onClick={() => navigateTo(`/employees/${e.id}`)}
+                                        onClick={() => navigateTo(`/employees/${employee.id}/edit`)}
                                         title="Edit Employee"
                                     >
                                         <FaEdit />
                                     </button>
                                     
-                                    {/* 🛑 DELETE Icon */}
+                                    {/* DELETE Icon */}
                                     <button 
                                         className="icon-action delete" 
-                                        onClick={() => onDeleteEmployee(e.id, e.name)}
+                                        onClick={() => onDeleteEmployee(
+                                            employee.id, 
+                                            `${employee.first_name || employee.firstName} ${employee.last_name || employee.lastName}`
+                                        )}
                                         title="Delete Employee"
                                     >
                                         <FaTrashAlt />
@@ -434,6 +565,33 @@ const EmployeeList = ({ navigateTo, employees, onDeleteEmployee }) => (
                 </table>
             )}
         </div>
+
+        {/* Add status badge styles */}
+        <style jsx>{`
+            .status-badge {
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: capitalize;
+            }
+            .status-badge.active {
+                background-color: #d4edda;
+                color: #155724;
+            }
+            .status-badge.suspended {
+                background-color: #fff3cd;
+                color: #856404;
+            }
+            .status-badge.terminated {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+            .status-badge.on-leave {
+                background-color: #cce7ff;
+                color: #004085;
+            }
+        `}</style>
     </div>
 );
 
@@ -519,29 +677,33 @@ const ServiceReminderList = ({ navigateTo, reminders, onDeleteReminder }) => (
 // -----------------------------------------------------------------
 // 🏆 NEW: A wrapper component to handle fetching data for EmployeeForm
 // -----------------------------------------------------------------
+// 🏆 UPDATED EMPLOYEE FORM WRAPPER COMPONENT - ADDED DATA TRANSFORMATION
+// -----------------------------------------------------------------
+// -----------------------------------------------------------------
+// 🏆 UPDATED EMPLOYEE FORM WRAPPER COMPONENT - FIXED DATA LOADING
+// -----------------------------------------------------------------
 const EmployeeFormWrapper = ({ onSave, onCancel }) => {
-    // 🛑 Use employeeId, as defined in the route path="/employees/:employeeId"
     const { employeeId } = useParams(); 
     const [employeeData, setEmployeeData] = useState(null);
     const [isLoading, setIsLoading] = useState(!!employeeId);
+    const [error, setError] = useState(null);
 
-    // Mock Fetch employee data if in edit mode (ready to be replaced with API call)
     useEffect(() => {
         if (employeeId) {
-            setIsLoading(true); // Always set loading to true when fetching
+            setIsLoading(true);
+            setError(null);
 
             const fetchEmployee = async () => {
-        try {
-            // 🏆 UNCOMMENT THIS LINE TO USE THE REAL API 🏆
-            const response = await apiClient.get(`/employees/${employeeId}/`);
-            
-            // The DRF serializer ensures response.data contains fields like 
-            // response.data.firstName, response.data.jobTitle, etc.
-            setEmployeeData(response.data);
+                try {
+                    console.log(`🔄 Fetching employee data for ID: ${employeeId}`);
+                    const response = await apiClient.get(`/employees/${employeeId}/`);
+                    console.log('📥 API Response:', response.data);
                     
+                    // 🏆 CRITICAL FIX: Set the employee data directly
+                    setEmployeeData(response.data);
                 } catch (error) {
-                    console.error("Failed to fetch employee data:", error);
-                    // Add error handling here
+                    console.error('❌ Failed to fetch employee:', error);
+                    setError('Failed to load employee data. Please try again.');
                 } finally {
                     setIsLoading(false);
                 }
@@ -556,10 +718,24 @@ const EmployeeFormWrapper = ({ onSave, onCancel }) => {
     }, [employeeId]);
 
     if (isLoading) {
-        return <div className="page-content-area" style={{padding: '20px', textAlign: 'center'}}>Loading Employee Data...</div>;
+        return (
+            <div className="page-content-area" style={{ padding: '40px', textAlign: 'center' }}>
+                <div>Loading Employee Data...</div>
+            </div>
+        );
     }
-    
-    // Pass the fetched data to the form
+
+    if (error) {
+        return (
+            <div className="page-content-area" style={{ padding: '40px', textAlign: 'center' }}>
+                <div style={{ color: 'red', marginBottom: '20px' }}>{error}</div>
+                <button className="btn-secondary" onClick={onCancel}>
+                    Back to List
+                </button>
+            </div>
+        );
+    }
+
     return (
         <EmployeeForm
             onSave={onSave}
@@ -569,6 +745,22 @@ const EmployeeFormWrapper = ({ onSave, onCancel }) => {
     );
 };
 
+// 🏆 NEW: Vehicle Form Wrapper to extract route parameters
+const VehicleFormWrapper = ({ onSave, onCancel }) => {
+    const { clientId, vehicleId } = useParams(); 
+
+    console.log('🔍 VehicleFormWrapper - URL clientId:', clientId);
+    console.log('🔍 VehicleFormWrapper - URL vehicleId:', vehicleId)
+    
+    return (
+        <VehicleForm 
+            onSave={onSave} 
+            onCancel={onCancel} 
+            clientId={clientId}  // 🛑 CRITICAL: Pass the clientId from URL params
+            vehicleId={vehicleId} // Pass vehicleId if needed for edit mode
+        />
+    );
+};
 
 // -----------------------------------------------------------------
 // HOME COMPONENT (MAIN APPLICATION LAYOUT)
@@ -576,17 +768,15 @@ const EmployeeFormWrapper = ({ onSave, onCancel }) => {
 const Home = () => {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation(); // 🛑 Hook to read navigation state
+    const location = useLocation();// 🛑 Hook to read navigation state
 
-    // State Hooks
     // State Hooks
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    // 🏆 Note: vehicles are mock states for now
     const [vehicles] = useState([]); 
     
     // 🏆 NEW/REPLACED: purchaseOrders is now a mutable state variable
-    const [purchaseOrders, setPurchaseOrders] = useState([
+   const [purchaseOrders, setPurchaseOrders] = useState([
         { poId: 'PO-2025-001', poNo: 'PO-001', supplierName: 'Auto Parts Inc.', poDate: '2025-10-20', expectedDeliveryDate: '2025-10-25', status: 'Received', currency: 'TZS', grandTotalAmount: 1250000 },
         { poId: 'PO-2025-002', poNo: 'PO-002', supplierName: 'Tool Mart Ltd.', poDate: '2025-11-01', expectedDeliveryDate: '2025-11-15', status: 'Sent', currency: 'USD', grandTotalAmount: 850.50 },
     ]);
@@ -594,7 +784,6 @@ const Home = () => {
         { id: 1, customerName: 'Azizi Bongo', plate: 'T 789 DFG', type: 'Oil Change', nextDueDate: '2026-01-15', status: 'Active' },
         { id: 2, customerName: 'John Doe', plate: 'T 123 ABC', type: 'Insurance Renewal', nextDueDate: '2025-12-01', status: 'Overdue' },
     ]);
-    // 🏆 NEW: Payment List State (moved from PaymentList.js)
     const [payments, setPayments] = useState([
         { id: 101, invoice: 'INV-2025-001', date: '2025-11-01', amount: '1,200,000 TZS', method: 'Bank Transfer', collectedBy: 'SA Jane' },
         { id: 102, invoice: 'INV-2025-003', date: '2025-11-05', amount: '450,000 TZS', method: 'Cash', collectedBy: 'SA John' },
@@ -602,9 +791,8 @@ const Home = () => {
     ]);
 
     // 🏆 NEW: State for Employee List Data (Replacing hardcoded array)
-    const [employeeList, setEmployeeList] = useState([]);
+     const [employeeList, setEmployeeList] = useState([]);
     const [isEmployeeListLoading, setIsEmployeeListLoading] = useState(true);
-
 
     // 🛑 NEW: Toast state for application-wide messages
     const [appToast, setAppToast] = useState({ message: '', type: '' });
@@ -615,14 +803,21 @@ const Home = () => {
         title: '',
         message: '',
         confirmText: '',
-        // The function that runs if the user clicks 'Confirm'
         onConfirmAction: () => {}, 
+    });
+
+    // 🆕 NEW: State for Information Modal (Client Selection)
+    const [infoModalConfig, setInfoModalConfig] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmText: '',
+        onConfirmAction: () => {},
     });
 
 
     // 🏆 NEW HELPER: Standardized navigation function for success/error messages
     const handleNavigationSuccess = useCallback((path, message, type = 'success') => {
-        // Log to console for debugging
         console.log(`Navigating to ${path} with ${type} message: ${message}`);
         navigate(path, {
             replace: true,
@@ -632,12 +827,10 @@ const Home = () => {
         });
     }, [navigate]);
 
-
     // EFFECT: Read and display success/error message from navigation state
-    useEffect(() => {
+     useEffect(() => {
         if (location.state?.successMessage) {
             setAppToast({ message: location.state.successMessage, type: 'success' });
-            // Clear the state so the message doesn't reappear on subsequent visits
             navigate(location.pathname, { replace: true, state: {} });
         } else if (location.state?.errorMessage) {
             setAppToast({ message: location.state.errorMessage, type: 'error' });
@@ -645,34 +838,31 @@ const Home = () => {
         }
     }, [location.state, location.pathname, navigate]);
 
+    // 🏆 EFFECT: Fetch Employee List Data (Now using real API)
+    const fetchEmployees = useCallback(async () => {
+        setIsEmployeeListLoading(true);
+        try {
+            const response = await apiClient.get('/employees/');
+            
+            // ✅ CRITICAL FIX: Handle both paginated and non-paginated responses
+            const employeeData = response.data.results || response.data || [];
+            setEmployeeList(employeeData);
 
-    // 🏆 EFFECT: Fetch Employee List Data (Setup for real API)
-   // 🏆 EFFECT: Fetch Employee List Data (Now using real API)
-   // ... inside the Home component in Home.js ...
-
-    // 🏆 EFFECT: Fetch Employee List Data (Now correctly extracting the array)
-    const fetchEmployees = useCallback(async () => {
-        setIsEmployeeListLoading(true);
-        try {
-            const response = await apiClient.get('/employees/');
-            
-            // ✅ CRITICAL FIX: Extract the 'results' array from the DRF paginated response
-            setEmployeeList(response.data.results); // <--- CHANGE IS HERE!
-
-            console.log("SUCCESS: Fetched employee list from API.");
-            
-        } catch (error) {
-            console.error("Failed to fetch employee list from API:", error);
-            setAppToast({ message: "Failed to load employees. Please try again.", type: 'error' });
-        } finally {
-            setIsEmployeeListLoading(false);
-        }
-    }, [setAppToast]);
+            console.log("SUCCESS: Fetched employee list from API.");
+            
+        } catch (error) {
+            console.error("Failed to fetch employee list from API:", error);
+            setAppToast({ message: "Failed to load employees. Please try again.", type: 'error' });
+        } finally {
+            setIsEmployeeListLoading(false);
+        }
+    }, []);
 
     // Initial fetch
     useEffect(() => {
         fetchEmployees();
     }, [fetchEmployees]);
+
 
 
     // --- Navigation & UI Handlers ---
@@ -691,34 +881,46 @@ const Home = () => {
 
     // Helper to close modal
     // 🏆 FIX 1: Wrap closeModal in useCallback to give it a stable reference
-    const closeModal = useCallback(() => {
+     const closeModal = useCallback(() => {
         setModalConfig(prevConfig => ({ ...prevConfig, isOpen: false }));
-    }, [setModalConfig]); // Dependency: setModalConfig (stable setter)
+    }, []); // Dependency: setModalConfig (stable setter)
+
+    // 🆕 NEW: Helper to close info modal
+    const closeInfoModal = useCallback(() => {
+        setInfoModalConfig(prevConfig => ({ ...prevConfig, isOpen: false }));
+    }, []);
+
+    // 🆕 NEW: Show client selection modal
+    const showClientSelectionModal = useCallback(() => {
+        setInfoModalConfig({
+            isOpen: true,
+            title: 'Select Client First',
+            message: 'Please select a client first, then add a vehicle for that client.',
+            confirmText: 'Go to Clients',
+            onConfirmAction: () => {
+                closeInfoModal();
+                navigate('/clients');
+            },
+        });
+    }, [navigate, closeInfoModal]);
 
     // 🛑 New function to handle the actual API call/logic (Defined first)
     // 🏆 FIXED: Wrapped in useCallback with correct dependencies, including closeModal
    const performDeleteEmployee = useCallback(async (id, name) => {
-    closeModal(); // Close modal first
-
-    try {
-        // ✅ CRITICAL FIX: Make the actual DELETE request to the API
-        await apiClient.delete(`/employees/${id}/`);
-
-        console.log(`SUCCESS: Deleted employee with ID: ${id} from the API.`);
-        
-        // 2. ONLY THEN, update the local state to trigger a re-render
-        setEmployeeList(prevList => prevList.filter(e => e.id !== id));
-
-        const message = `Employee **${name}** was successfully deleted.`;
-        setAppToast({ message, type: 'success' });
-        
-    } catch (error) {
-        // If the API delete fails, the employee will remain in the database and the list on refresh.
-        console.error("Failed to delete employee on API:", error);
-        // Show an error toast to the user
-        setAppToast({ message: `Error deleting employee ${name}. Server error.`, type: 'error' });
-    }
-}, [closeModal, setAppToast, setEmployeeList]); 
+        closeModal();
+        try {
+            await apiClient.delete(`/employees/${id}/`);
+            console.log(`SUCCESS: Deleted employee with ID: ${id} from the API.`);
+            
+            setEmployeeList(prevList => prevList.filter(e => e.id !== id));
+            const message = `Employee **${name}** was successfully deleted.`;
+            setAppToast({ message, type: 'success' });
+            
+        } catch (error) {
+            console.error("Failed to delete employee on API:", error);
+            setAppToast({ message: `Error deleting employee ${name}. Server error.`, type: 'error' });
+        }
+    }, [closeModal]);  
     
     
     // 🏆 NEW EMPLOYEE DELETE HANDLER (UPDATED to use Modal)
@@ -729,35 +931,28 @@ const Home = () => {
             title: `Delete Employee: ${name}?`,
             message: 'Permanently remove this employee. You cannot undo this action.',
             confirmText: 'Delete',
-            // CRITICAL FIX: Pass a function that calls the logic with the specific employee's data
             onConfirmAction: () => performDeleteEmployee(id, name), 
         });
     }, [performDeleteEmployee]);
 
     // 🏆 NEW EMPLOYEE SAVE HANDLER (Called from EmployeeForm -> onSave)
-    const handleSaveEmployee = useCallback((savedEmployee, isNew) => {
+   const handleSaveEmployee = useCallback((savedEmployee, isNew) => {
         const action = isNew ? 'created' : 'updated';
         const successMsg = `Employee **${savedEmployee.firstName} ${savedEmployee.lastName}** was successfully ${action}.`;
 
-        // 1. Update the local list state immediately for a smooth UX
+        // Update the local list state
         setEmployeeList(prevList => {
             if (isNew) {
-                // For a new employee (POST), add the newly created object (which includes the real DB 'id')
                 return [savedEmployee, ...prevList];
             } else {
-                // For an update (PUT), replace the old object with the saved data in the list
                 return prevList.map(e => 
                     e.id === savedEmployee.id ? savedEmployee : e
                 );
             }
         });
 
-        // 2. Navigate away from the form immediately back to the list
-        // This stops the EmployeeFormWrapper from re-rendering the form with the saved data
-        // and triggering an unintended second submission.
         handleNavigationSuccess('/employees', successMsg, 'success');
-
-    }, [handleNavigationSuccess, setEmployeeList]);
+    }, [handleNavigationSuccess]);
 
     // --- Form Handlers (All handlers below remain functional as per previous steps) ---
 
@@ -1009,26 +1204,106 @@ const Home = () => {
     };
     // ---------------------------------
 
-    const handleVehicleSave = (data) => {
-        // Mocking the required fields from VehicleForm
-        const newVehicle = {
-            vin: data.vin || 'N/A',
-            licensePlate: data.licensePlate || 'N/A',
-            make: data.make || 'Mock Make',
-            model: data.model || 'Mock Model',
-            year: data.year || 'N/A',
-            odoReading: data.odoReading || 'N/A'
+   const handleVehicleSave = useCallback(async (formData) => {
+    try {
+        console.log('🚀 Saving vehicle data:', formData);
+        
+        // Prepare data for backend
+        const dataToSend = {
+            client_id: formData.clientId,
+            vin: formData.vin,
+            license_plate: formData.licensePlate,
+            vehicle_type: formData.vehicleType,
+            year: formData.year,
+            make: formData.make,
+            model: formData.model,
+            trim: formData.trim,
+            transmission: formData.transmission,
+            drivetrain: formData.drivetrain,
+            engine: formData.engine,
+            odo_reading: formData.odoReading,
+            odo_unit: formData.odoUnit,
+            color: formData.color,
+            unit_number: formData.unitNumber,
+            notes: formData.notes,
         };
-        // In a real project, this would be api.post('/vehicles/', newVehicle)
 
-        // 🛑 Use the standard navigation helper
-        handleNavigationSuccess('/clients', `Vehicle **${newVehicle.make} ${newVehicle.model}** added successfully!`);
-    };
+        // Use nested route: /api/clients/{clientId}/vehicles/
+        const clientId = formData.clientId;
+        const url = `/clients/${clientId}/vehicles/`;
+
+        console.log('🌐 Making API call to:', url);
+
+        const response = await apiClient({
+            method: 'post',
+            url: url,
+            data: dataToSend,
+        });
+
+        console.log('✅ Vehicle saved successfully:', response.data);
+
+        // Show success message
+        const message = `Vehicle **${formData.make} ${formData.model}** added successfully!`;
+        handleNavigationSuccess('/vehicles', message, 'success');
+
+    } catch (error) {
+        console.error('❌ Failed to save vehicle:', error);
+        
+        const errorData = error.response?.data;
+        let errorMsg = 'Failed to save vehicle. Please check your connection and try again.';
+        
+        if (errorData) {
+            errorMsg = Object.keys(errorData)
+                .map(key => {
+                    const errorValue = errorData[key];
+                    if (Array.isArray(errorValue)) {
+                        return `${key}: ${errorValue.join(' ')}`;
+                    } else if (typeof errorValue === 'string') {
+                        return `${key}: ${errorValue}`;
+                    } else {
+                        return `${key}: ${JSON.stringify(errorValue)}`;
+                    }
+                })
+                .join('\n');
+        }
+
+        setAppToast({ message: errorMsg, type: 'error' });
+    }
+}, [handleNavigationSuccess]);
 
     const handleVehicleCancel = () => {
-        // Safe navigation back to the client list
-        navigate('/vehicles');
-    };
+    navigate('/vehicles');
+};
+
+const performDeleteVehicle = useCallback(async (id, name) => {
+    closeModal();
+    try {
+        await apiClient.delete(`/vehicles/${id}/`);
+        console.log(`SUCCESS: Deleted vehicle with ID: ${id}`);
+        
+        // Update vehicles state if you have it
+        // setVehicles(prev => prev.filter(v => v.id !== id));
+        
+        const message = `Vehicle **${name}** was successfully deleted.`;
+        setAppToast({ message, type: 'success' });
+        
+    } catch (error) {
+        console.error("Failed to delete vehicle:", error);
+        setAppToast({ message: `Error deleting vehicle ${name}. Server error.`, type: 'error' });
+    }
+}, [closeModal]);
+
+const handleDeleteVehicle = useCallback((id, name) => {
+    setModalConfig({
+        isOpen: true,
+        title: `Delete Vehicle: ${name}?`,
+        message: 'Permanently remove this vehicle. This action cannot be undone.',
+        confirmText: 'Delete',
+        onConfirmAction: () => performDeleteVehicle(id, name),
+    });
+}, [performDeleteVehicle]);
+
+
 
     const handleGenericInventorySave = (data) => {
         console.log("Inventory Item Saved!", data);
@@ -1274,7 +1549,6 @@ const handleEmployeeSave = useCallback(async (formData) => {
             ? `${user.first_name} ${user.last_name || ''}`.trim()
             : 'Loading User...',
         shopLocation: user?.email || "No Email Provided",
-        // 🏆 CRITICAL FIX: Use the actual user.avatar_url, with no mock fallback
         userAvatarUrl: user?.avatar_url,
     };
 
@@ -1299,8 +1573,18 @@ const handleEmployeeSave = useCallback(async (formData) => {
                 onCancel={closeModal}
             />
 
+            {/* 🆕 RENDER INFORMATION MODAL HERE */}
+            <InformationModal
+                isOpen={infoModalConfig.isOpen}
+                title={infoModalConfig.title}
+                message={infoModalConfig.message}
+                confirmText={infoModalConfig.confirmText}
+                onConfirm={infoModalConfig.onConfirmAction}
+                onCancel={closeInfoModal}
+            />
 
-            {/* Top Navigation Bar (Fixed at top) */}
+
+             {/* Top Navigation Bar (Fixed at top) */}
             <TopNavBar
                 {...navBarProps}
                 isSidebarCollapsed={isSidebarCollapsed}
@@ -1327,29 +1611,45 @@ const handleEmployeeSave = useCallback(async (formData) => {
                     <Routes>
                         <Route path="/" element={<Dashboard navigateTo={handleNavigate} />} />
                         <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                        {/* 🛑 UPDATED REQUEST SERVICE ROUTE 🛑 */}
+                        <Route path="/request-service" element={<RequestServiceGarage />} />
+    
                         
                         {/* -------------------- 1. Clients & Vehicles -------------------- */}
                         <Route path="/clients" element={<ClientsList navigateTo={handleNavigate} />} />
                         <Route path="/clients/new" element={<ClientForm onSave={handleClientSave} onCancel={handleClientCancel} />} />
                         <Route path="/clients/:clientId" element={<ClientForm onSave={handleClientSave} onCancel={handleClientCancel} />} />
+                        <Route path="/clients/:clientId/view" element={<ClientDetailView onCancel={() => navigate('/clients')} />} />
                         
-                        <Route path="/vehicles" element={<VehicleList navigateTo={handleNavigate} vehicles={vehicles} />} />
-                        <Route path="/vehicles/new/:clientId?/:vehicleId?" element={<VehicleForm onSave={handleVehicleSave} onCancel={handleVehicleCancel} />} />
-                        <Route path="/vehicles/:vin" element={<VehicleForm onSave={handleVehicleSave} onCancel={handleVehicleCancel} />} />
+                         {/* Vehicle Routes */}
+<Route path="/vehicles" element={
+    <VehicleList 
+        navigateTo={handleNavigate} 
+        vehicles={vehicles} 
+        onDeleteVehicle={handleDeleteVehicle} 
+        onShowClientModal={showClientSelectionModal}
+    />
+} />
+<Route path="/vehicles/new/:clientId?/:vehicleId?" element={
+    <VehicleFormWrapper onSave={handleVehicleSave} onCancel={handleVehicleCancel} />
+} />
+<Route path="/vehicles/:vin" element={
+    <VehicleFormWrapper onSave={handleVehicleSave} onCancel={handleVehicleCancel} />
+} />
                         
                         {/* -------------------- 2. Work Orders (Job Cards) -------------------- */}
-                        <Route path="/jobcards/kanban" element={<JobCardKanban navigateTo={handleNavigate} />} />
+                         <Route path="/jobcards/kanban" element={<JobCardKanban navigateTo={handleNavigate} />} />
                         <Route path="/jobcards/new/:clientId?/:vehicleId?" element={<JobCardForm onSave={handleJobCardSave} onCancel={handleJobCardCancel} />} />
                         <Route path="/jobcards/:jobCardId" element={<JobCardForm onSave={handleJobCardSave} onCancel={handleJobCardCancel} />} />
 
                         {/* -------------------- 3. Estimates & Invoices -------------------- */}
-                        <Route path="/invoices-estimates" element={<InvoiceEstimateLanding navigateTo={handleNavigate} />} />
+                         <Route path="/invoices-estimates" element={<InvoiceEstimateLanding navigateTo={handleNavigate} />} />
                         <Route path="/invoices-estimates/new/:type/:jobCardId?" element={<InvoiceEstimateForm onSave={handleInvoiceEstimateSave} onCancel={handleInvoiceEstimateCancel} />} />
                         <Route path="/invoices-estimates/:invoiceEstimateId" element={<InvoiceEstimateForm onSave={handleInvoiceEstimateSave} onCancel={handleInvoiceEstimateCancel} />} />
 
                         {/* -------------------- 4. Inventory & Assets & Vendors -------------------- */}
-                        {/* Parts List is the default inventory view */}
-                        <Route path="/inventory/parts" element={<InventoryForm navigateTo={handleNavigate} onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} />} />
+                        {/* 🆕 UPDATED: Now using InventoryPage for main inventory management */}
+                        <Route path="/inventory/parts" element={<InventoryPage />} />
                         <Route path="/inventory/tires" element={<TireForm navigateTo={handleNavigate} onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} />} />
                         <Route path="/inventory/labor" element={<LaborForm navigateTo={handleNavigate} onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} />} />
                         <Route path="/inventory/canned-jobs" element={<CannedJobForm navigateTo={handleNavigate} onSave={handleGenericInventorySave} onCancel={handleGenericInventoryCancel} />} />
@@ -1357,13 +1657,14 @@ const handleEmployeeSave = useCallback(async (formData) => {
                         <Route path="/inventory/asset/new" element={<BusinessAssetForm onSave={handleAssetSave} onCancel={handleAssetCancel} />} />
                         <Route path="/inventory/vendors" element={<VendorForm navigateTo={handleNavigate} onSave={handleVendorSave} onCancel={handleVendorCancel} />} />
 
+
                         {/* -------------------- 5. Purchase Orders -------------------- */}
                         <Route path="/purchase-orders" element={<PurchaseOrderList navigateTo={handleNavigate} purchaseOrders={purchaseOrders} onDeletePO={handleDeletePO} />} />
                         <Route path="/purchase-orders/new/:supplierId?/:jobCardId?" element={<PurchaseOrderForm onSave={handlePOSave} onCancel={handlePOCancel}  />} />
                         <Route path="/purchase-orders/:poId" element={<PurchaseOrderForm onSave={handlePOSave} onCancel={handlePOCancel} />} />
 
                         {/* -------------------- 6. Appointments & Reminders -------------------- */}
-                        <Route path="/appointments/new" element={<AppointmentForm onSave={handleAppointmentSave} onCancel={handleAppointmentCancel} />} />
+                         <Route path="/appointments/new" element={<AppointmentForm onSave={handleAppointmentSave} onCancel={handleAppointmentCancel} />} />
                         <Route path="/reminders" element={<ServiceReminderList navigateTo={handleNavigate} reminders={reminders} onDeleteReminder={handleDeleteReminder}/>} />
                         <Route path="/reminders/new/:clientId?/:vehicleId?" element={<ServiceReminderForm onSave={handleServiceReminderSave} onCancel={handleServiceReminderCancel} />} />
                         <Route path="/reminders/:reminderId" element={<ServiceReminderForm onSave={handleServiceReminderSave} onCancel={handleServiceReminderCancel} />} />
@@ -1373,7 +1674,7 @@ const handleEmployeeSave = useCallback(async (formData) => {
                         <Route path="/accounting/account/new" element={<AccountForm onSave={handleAccountSave} onCancel={handleAccountCancel} />} />
                         <Route path="/accounting/account/:accountId" element={<AccountForm onSave={handleAccountSave} onCancel={handleAccountCancel} />} />
 
-                        <Route path="/accounting/journal" element={<TransactionJournal navigateTo={handleNavigate} />} />
+                         <Route path="/accounting/journal" element={<TransactionJournal navigateTo={handleNavigate} />} />
                         <Route path="/accounting/expenses" element={<ExpenseForm navigateTo={handleNavigate} onSave={handleExpenseSave} onCancel={handleExpenseCancel} />} />
 
                         <Route path="/payments" element={<PaymentList navigateTo={handleNavigate} payments={payments} onDeletePayment={handleDeletePayment} />} />
@@ -1394,16 +1695,16 @@ const handleEmployeeSave = useCallback(async (formData) => {
                             )
                         } />
                         {/* 🛑 NEW VIEW ROUTE (FOR READ-ONLY DETAIL PAGE) */}
-<Route 
-    path="/employees/:employeeId/view" 
-    element={
-        <EmployeeDetailView 
-            onCancel={() => handleNavigate('/employees')} 
-        />
-    } 
-/>
+<Route path="/employees/:employeeId/view" element={
+                            <EmployeeDetailView onCancel={() => handleNavigate('/employees')} />
+                        } />
+                        <Route path="/employees/:employeeId/edit" element={
+                            <EmployeeFormWrapper onSave={handleSaveEmployee} onCancel={() => handleNavigate('/employees')} />
+                        } />
                         {/* The wrapper handles fetching data for new/edit modes */}
-                        <Route path="/employees/new" element={<EmployeeFormWrapper onSave={handleSaveEmployee} onCancel={() => handleNavigate('/employees')} />} />
+                        <Route path="/employees/new" element={
+                            <EmployeeFormWrapper onSave={handleSaveEmployee} onCancel={() => handleNavigate('/employees')} />
+                        } />
                         <Route path="/employees/:employeeId" element={<EmployeeFormWrapper onSave={handleEmployeeSave} onCancel={handleEmployeeCancel} />} />
 
                       {/* -------------------- 9. Reports & Settings -------------------- */}
@@ -1415,81 +1716,30 @@ const handleEmployeeSave = useCallback(async (formData) => {
  {/* -------------------- 9. Reports & Settings (UPDATED) -------------------- */}
     
     {/* Income and Expenses Report Route */}
-    <Route 
-        path="/reports/financial-summary" 
-        element={<IncomeExpenseReport navigateTo={handleNavigate} />} 
-    />
-    
-    {/* Sales and Purchases Report Route */}
-    <Route 
-        path="/reports/sales-purchases" 
-        element={<SalesPurchasesReport navigateTo={handleNavigate} />} 
-    />
-    
-    {/* Debit and Credit Report Route */}
-    <Route 
-        path="/reports/ar-ap" 
-        element={<DebitCreditReport navigateTo={handleNavigate} />} 
-    />
-    
-    {/* Route for Parts and Services */}
-    <Route 
-        path="/reports/parts-services" 
-        element={<PartsServicesReport navigateTo={handleNavigate} />} 
-    />
-    
-    {/* Route for Inventory and Profit */}
-    <Route 
-        path="/reports/inventory-profit" 
-        element={<InventoryAndProfitReport navigateTo={handleNavigate} />} 
-    />
-
-    <Route 
-        path="/reports/employees-salaries" 
-        element={<EmployeesAndSalariesReport navigateTo={handleNavigate} />} 
-    />
-    
-    {/* Tax Report Route */}
-    <Route 
-        path="/reports/tax-report" 
-        element={<TaxReport navigateTo={handleNavigate} />} 
-    />
-
-    {/* **NEW: Clients Report Route** */}
-    <Route 
-        path="/reports/clients" 
-        element={<ClientsReport navigateTo={handleNavigate} />} 
-    />
-    <Route 
-    path="/reports/vehicles" 
-    element={<VehiclesReport navigateTo={handleNavigate} />} 
-/>
-<Route 
-    path="/reports/vendors" 
-    element={<VendorsReport navigateTo={handleNavigate} />} 
-/>
-<Route 
-    path="/reports/data-export" 
-    element={<DataExportPage navigateTo={handleNavigate} />} 
-/>
-<Route 
-    path="/reports/statistics" 
-    element={<StatisticsPage navigateTo={handleNavigate} />} 
-/>
-    
-    {/* Reports Landing Page */}
-    <Route path="/reports" element={<ReportsLandingPage navigateTo={handleNavigate} />} />
-    <Route path="/profile" element={<ProfilePage />} />
+    <Route path="/reports/financial-summary" element={<IncomeExpenseReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/sales-purchases" element={<SalesPurchasesReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/ar-ap" element={<DebitCreditReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/parts-services" element={<PartsServicesReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/inventory-profit" element={<InventoryAndProfitReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/employees-salaries" element={<EmployeesAndSalariesReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/tax-report" element={<TaxReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/clients" element={<ClientsReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/vehicles" element={<VehiclesReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/vendors" element={<VendorsReport navigateTo={handleNavigate} />} />
+                        <Route path="/reports/data-export" element={<DataExportPage navigateTo={handleNavigate} />} />
+                        <Route path="/reports/statistics" element={<StatisticsPage navigateTo={handleNavigate} />} />
+                        <Route path="/reports" element={<ReportsLandingPage navigateTo={handleNavigate} />} />
+                        <Route path="/profile" element={<ProfilePage />} />
 
 {/* -------------------- Catch All -------------------- */}
     <Route path="*" element={
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-            <h2>404 - Page Not Found</h2>
-            <p>The page you are looking for does not exist.</p>
-            <button className="btn-secondary" onClick={() => navigate('/')}>Go to Dashboard</button>
-        </div>
-    } />
-</Routes>
+                            <div style={{ padding: '20px', textAlign: 'center' }}>
+                                <h2>404 - Page Not Found</h2>
+                                <p>The page you are looking for does not exist.</p>
+                                <button className="btn-secondary" onClick={() => navigate('/')}>Go to Dashboard</button>
+                            </div>
+                        } />
+                    </Routes>
 
                     
                 </div>

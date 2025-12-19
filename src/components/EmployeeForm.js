@@ -1,8 +1,7 @@
-// src/components/EmployeeForm.js (FINAL FRONTEND CODE WITH VALIDATION FIXES)
+// src/components/EmployeeForm.js - CLEANED UP VERSION
 
-import React, { useState, useCallback } from 'react';
-//import { useNavigate } from 'react-router-dom';
-import apiClient from '../utils/apiClient'; // Import the configured API client
+import React, { useState, useCallback, useEffect } from 'react';
+import apiClient from '../utils/apiClient';
 import {
     FaUser, FaHome, FaBriefcase, FaMoneyBillAlt, FaGraduationCap,
     FaSave, FaTimes, FaArrowLeft
@@ -138,13 +137,12 @@ const BANK_OPTIONS = [
     'National Bank of Commerce Ltd',
     'NCBA Bank (Tanzania) Ltd',
     'NMB Bank Plc',
-    'People’s Bank of Zanzibar Ltd',
+    'People\'s Bank of Zanzibar Ltd',
     'Stanbic Bank (Tanzania) Ltd',
     'Standard Chartered Bank (Tanzania) Ltd',
     'Tanzania Commercial Bank Plc',
     'United Bank for Africa (Tanzania) Ltd',
 ].sort();
-
 
 // --- Mock ID Generator Function ---
 const generateEmployeeId = () => {
@@ -155,12 +153,9 @@ const generateEmployeeId = () => {
 const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
     const isEditMode = !!employeeData?.id;
     
-    const initialEmployeeId = isEditMode 
-        ? employeeData.employeeId 
-        : (employeeData?.employeeId || generateEmployeeId()); 
-
-    const [formData, setFormData] = useState(employeeData ? employeeData : {
-        employeeId: initialEmployeeId,
+    // Initialize form data with proper loading
+    const [formData, setFormData] = useState({
+        employeeId: '',
         firstName: '',
         middleName: '',
         lastName: '',
@@ -206,6 +201,18 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
         languages: '',
     });
 
+    // Load employee data when component mounts or employeeData changes
+    useEffect(() => {
+    if (employeeData && isEditMode) {
+        console.log('🎯 Loading employee data into form:', employeeData);
+        setFormData(employeeData);
+    } else if (!isEditMode) {
+        // Generate new employee ID for create mode
+        const newEmployeeId = generateEmployeeId();
+        setFormData(prev => ({ ...prev, employeeId: newEmployeeId }));
+    }
+}, [employeeData, isEditMode]);
+
     const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -214,69 +221,49 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
         }));
     }, []);
 
-    // 🏆 CRITICAL FIX: REAL API SUBMISSION HANDLER - Data Cleansing & Error Handling Added
+    // 🏆 SIMPLIFIED SUBMISSION HANDLER - No transformation needed
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // --- PRE-PROCESSING THE DATA FOR BACKEND VALIDATION ---
-        const dataToSend = { ...formData };
-        
-        // List of fields that must send null (not "") if left blank, as per the serializer setup
-        // This resolves 'Date has wrong format' and 'A valid integer is required' errors for optional fields.
-        const optionalNullFields = [
-            'dob', 'contractStartDate', 'contractEndDate', 
-            'graduationYear', 'basicSalary', 'allowances', 'deductions'
-        ];
-
-        optionalNullFields.forEach(field => {
-            const value = dataToSend[field];
-            // If the value is an empty string, set it to JSON null
-            if (value === '' || value === undefined) {
-                dataToSend[field] = null;
-            }
-        });
-        // --------------------------------------------------------
-
-        // 1. Determine API method and URL
-        const method = isEditMode ? 'put' : 'post';
-        const url = isEditMode 
-            ? `/employees/${employeeData.id}/` 
-            : '/employees/'; 
+        console.log('🚀 Submitting form data:', formData);
+        console.log('📝 Mode:', isEditMode ? 'EDIT' : 'CREATE');
 
         try {
-            // 2. Perform the API call using the cleaned dataToSend
+            const method = isEditMode ? 'put' : 'post';
+            const url = isEditMode 
+                ? `/employees/${formData.id}/` 
+                : '/employees/';
+
+            console.log('🌐 Making API call:', method, url);
+
+            // 🏆 Send formData directly since backend uses camelCase
             const response = await apiClient({
                 method: method,
                 url: url,
-                data: dataToSend, // <--- Use dataToSend here
+                data: formData,
             });
 
-            // 3. Success Handling
+            console.log('✅ API Response:', response.data);
+
             if (onSave) {
-                onSave(response.data, !isEditMode); 
-            } else {
-                 console.log("Employee saved successfully but onSave prop is missing.");
+                onSave(response.data, !isEditMode);
             }
 
         } catch (error) {
-            console.error(`Failed to ${isEditMode ? 'update' : 'create'} employee:`, error);
+            console.error(`❌ Failed to ${isEditMode ? 'update' : 'create'} employee:`, error);
             
             const errorData = error.response?.data;
-            let errorMsg = 'Please check API connection.';
+            let errorMsg = 'Failed to save employee. Please check your connection and try again.';
             
             if (errorData) {
-                // Corrected error formatting (FIXES: errorData[key].join is not a function)
                 errorMsg = Object.keys(errorData)
                     .map(key => {
                         const errorValue = errorData[key];
                         if (Array.isArray(errorValue)) {
-                            // If it's an array of errors (the usual case), join them
                             return `${key}: ${errorValue.join(' ')}`;
                         } else if (typeof errorValue === 'string') {
-                            // If it's a simple string error, use it directly
                             return `${key}: ${errorValue}`;
                         } else {
-                            // Handle general object/non-string errors
                             return `${key}: ${JSON.stringify(errorValue)}`;
                         }
                     })
@@ -289,18 +276,30 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
 
     return (
         <div className="form-page-container">
-            {/* 🏆 UPDATED HEADER: Added Back button here for top-right positioning */}
             <header className="page-header">
                 <h2>{isEditMode ? 'Edit Employee Profile' : 'New Employee Registration'}</h2>
                 <button 
                     type="button" 
                     className="btn-back-to-list" 
-                    onClick={onCancel} // Use onCancel to navigate back to the list
+                    onClick={onCancel}
                 >
                     <FaArrowLeft style={{ marginRight: '5px' }} /> Back to List
                 </button>
             </header>
-            {/* ----------------------------------------------------------------- */}
+
+            {/* 🐛 DEBUG INFO - Remove in production */}
+            <div style={{ 
+                background: '#fff3cd', 
+                padding: '10px', 
+                marginBottom: '20px', 
+                borderRadius: '4px',
+                border: '1px solid #ffeaa7',
+                fontSize: '0.9rem'
+            }}>
+                <strong>Debug Info:</strong> Mode: {isEditMode ? 'EDIT' : 'CREATE'} | 
+                ID: {formData.id || 'N/A'} | 
+                Employee ID: {formData.employeeId}
+            </div>
 
             <form onSubmit={handleSubmit} className="app-form">
 
@@ -327,40 +326,80 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                         </div>
                         <div className="form-group">
                             <label htmlFor="firstName">First Name *</label>
-                            <input type="text" id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} required />
+                            <input 
+                                type="text" 
+                                id="firstName" 
+                                name="firstName" 
+                                value={formData.firstName} 
+                                onChange={handleChange} 
+                                required 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="middleName">Middle Name</label>
-                            <input type="text" id="middleName" name="middleName" value={formData.middleName} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="middleName" 
+                                name="middleName" 
+                                value={formData.middleName} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="lastName">Last Name *</label>
-                            <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required />
+                            <input 
+                                type="text" 
+                                id="lastName" 
+                                name="lastName" 
+                                value={formData.lastName} 
+                                onChange={handleChange} 
+                                required 
+                            />
                         </div>
 
                         <div className="form-group">
                             <label htmlFor="gender">Gender</label>
-                            <select id="gender" name="gender" value={formData.gender} onChange={handleChange}>
+                            <select 
+                                id="gender" 
+                                name="gender" 
+                                value={formData.gender} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Gender</option>
                                 {GENDER_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label htmlFor="dob">Date of Birth</label>
-                            {/* NOTE: type="date" handles YYYY-MM-DD format, but the value must be "" or a valid date string */}
-                            <input type="date" id="dob" name="dob" value={formData.dob} onChange={handleChange} />
+                            <input 
+                                type="date" 
+                                id="dob" 
+                                name="dob" 
+                                value={formData.dob} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         
                         <div className="form-group">
                             <label htmlFor="nationality">Nationality</label>
-                            <select id="nationality" name="nationality" value={formData.nationality} onChange={handleChange}>
+                            <select 
+                                id="nationality" 
+                                name="nationality" 
+                                value={formData.nationality} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Nationality</option>
                                 {NATIONALITY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label htmlFor="maritalStatus">Marital Status</label>
-                            <select id="maritalStatus" name="maritalStatus" value={formData.maritalStatus} onChange={handleChange}>
+                            <select 
+                                id="maritalStatus" 
+                                name="maritalStatus" 
+                                value={formData.maritalStatus} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Status</option>
                                 {MARITAL_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
@@ -368,11 +407,23 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
 
                         <div className="form-group">
                             <label htmlFor="nationalId">National ID / Passport Number</label>
-                            <input type="text" id="nationalId" name="nationalId" value={formData.nationalId} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="nationalId" 
+                                name="nationalId" 
+                                value={formData.nationalId} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="tin">Tax Identification Number (TIN)</label>
-                            <input type="text" id="tin" name="tin" value={formData.tin} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="tin" 
+                                name="tin" 
+                                value={formData.tin} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group"></div>
                         <div className="form-group"></div>
@@ -388,34 +439,78 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                     <div className="form-grid">
                         <div className="form-group">
                             <label htmlFor="phoneNumber">Phone Number *</label>
-                            <input type="tel" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
+                            <input 
+                                type="tel" 
+                                id="phoneNumber" 
+                                name="phoneNumber" 
+                                value={formData.phoneNumber} 
+                                onChange={handleChange} 
+                                required 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">Email Address *</label>
-                            <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required />
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                value={formData.email} 
+                                onChange={handleChange} 
+                                required 
+                            />
                         </div>
                         <div className="form-group form-group--full-width">
                             <label htmlFor="residentialAddress">Residential Address</label>
-                            <input type="text" id="residentialAddress" name="residentialAddress" value={formData.residentialAddress} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="residentialAddress" 
+                                name="residentialAddress" 
+                                value={formData.residentialAddress} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group form-group--full-width">
                             <label htmlFor="postalAddress">Postal Address</label>
-                            <input type="text" id="postalAddress" name="postalAddress" value={formData.postalAddress} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="postalAddress" 
+                                name="postalAddress" 
+                                value={formData.postalAddress} 
+                                onChange={handleChange} 
+                            />
                         </div>
 
                         <h4 className="sub-header-line form-group--full-width">Emergency Contact</h4>
 
                         <div className="form-group">
                             <label htmlFor="emergencyContactName">Emergency Contact Name</label>
-                            <input type="text" id="emergencyContactName" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="emergencyContactName" 
+                                name="emergencyContactName" 
+                                value={formData.emergencyContactName} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="emergencyContactPhone">Emergency Contact Phone</label>
-                            <input type="tel" id="emergencyContactPhone" name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleChange} />
+                            <input 
+                                type="tel" 
+                                id="emergencyContactPhone" 
+                                name="emergencyContactPhone" 
+                                value={formData.emergencyContactPhone} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="emergencyRelationship">Relationship</label>
-                            <input type="text" id="emergencyRelationship" name="emergencyRelationship" value={formData.emergencyRelationship} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="emergencyRelationship" 
+                                name="emergencyRelationship" 
+                                value={formData.emergencyRelationship} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group"></div>
                     </div>
@@ -429,7 +524,13 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                     <div className="form-grid">
                         <div className="form-group">
                             <label htmlFor="jobTitle">Job Title / Position *</label>
-                            <select id="jobTitle" name="jobTitle" value={formData.jobTitle} onChange={handleChange} required>
+                            <select 
+                                id="jobTitle" 
+                                name="jobTitle" 
+                                value={formData.jobTitle} 
+                                onChange={handleChange} 
+                                required
+                            >
                                 <option value="">Select Job Title</option>
                                 {JOB_TITLE_OPTIONS.map(opt => (
                                     <option key={opt} value={opt}>{opt}</option>
@@ -438,7 +539,12 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                         </div>
                         <div className="form-group">
                             <label htmlFor="department">Department</label>
-                            <select id="department" name="department" value={formData.department} onChange={handleChange}>
+                            <select 
+                                id="department" 
+                                name="department" 
+                                value={formData.department} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Department</option>
                                 {DEPARTMENT_OPTIONS.map(opt => (
                                     <option key={opt} value={opt}>{opt}</option>
@@ -447,7 +553,12 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                         </div>
                         <div className="form-group">
                             <label htmlFor="division">Division / Section</label>
-                            <select id="division" name="division" value={formData.division} onChange={handleChange}>
+                            <select 
+                                id="division" 
+                                name="division" 
+                                value={formData.division} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Division/Section</option>
                                 {DIVISION_OPTIONS.map(opt => (
                                     <option key={opt} value={opt}>{opt}</option>
@@ -456,7 +567,12 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                         </div>
                         <div className="form-group">
                             <label htmlFor="grade">Grade / Level / Rank</label>
-                            <select id="grade" name="grade" value={formData.grade} onChange={handleChange}>
+                            <select 
+                                id="grade" 
+                                name="grade" 
+                                value={formData.grade} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Rank</option>
                                 {GRADE_OPTIONS.map(opt => (
                                     <option key={opt} value={opt}>{opt}</option>
@@ -466,36 +582,79 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
 
                         <div className="form-group">
                             <label htmlFor="employmentType">Employment Type *</label>
-                            <select id="employmentType" name="employmentType" value={formData.employmentType} onChange={handleChange} required>
+                            <select 
+                                id="employmentType" 
+                                name="employmentType" 
+                                value={formData.employmentType} 
+                                onChange={handleChange} 
+                                required
+                            >
                                 {EMPLOYMENT_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label htmlFor="employmentStatus">Employment Status *</label>
-                            <select id="employmentStatus" name="employmentStatus" value={formData.employmentStatus} onChange={handleChange} required>
+                            <select 
+                                id="employmentStatus" 
+                                name="employmentStatus" 
+                                value={formData.employmentStatus} 
+                                onChange={handleChange} 
+                                required
+                            >
                                 {EMPLOYMENT_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label htmlFor="dateOfHire">Date of Hire / Joining Date *</label>
-                            <input type="date" id="dateOfHire" name="dateOfHire" value={formData.dateOfHire} onChange={handleChange} required />
+                            <input 
+                                type="date" 
+                                id="dateOfHire" 
+                                name="dateOfHire" 
+                                value={formData.dateOfHire} 
+                                onChange={handleChange} 
+                                required 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="workLocation">Work Location / Branch</label>
-                            <input type="text" id="workLocation" name="workLocation" value={formData.workLocation} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="workLocation" 
+                                name="workLocation" 
+                                value={formData.workLocation} 
+                                onChange={handleChange} 
+                            />
                         </div>
 
                         <div className="form-group">
                             <label htmlFor="contractStartDate">Contract Start Date</label>
-                            <input type="date" id="contractStartDate" name="contractStartDate" value={formData.contractStartDate} onChange={handleChange} />
+                            <input 
+                                type="date" 
+                                id="contractStartDate" 
+                                name="contractStartDate" 
+                                value={formData.contractStartDate} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="contractEndDate">Contract End Date</label>
-                            <input type="date" id="contractEndDate" name="contractEndDate" value={formData.contractEndDate} onChange={handleChange} />
+                            <input 
+                                type="date" 
+                                id="contractEndDate" 
+                                name="contractEndDate" 
+                                value={formData.contractEndDate} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="supervisor">Supervisor / Manager Name or ID</label>
-                            <input type="text" id="supervisor" name="supervisor" value={formData.supervisor} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="supervisor" 
+                                name="supervisor" 
+                                value={formData.supervisor} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group"></div>
                     </div>
@@ -510,26 +669,60 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
 
                         <div className="form-group">
                             <label htmlFor="basicSalary">Basic Salary</label>
-                            <input type="number" id="basicSalary" name="basicSalary" value={formData.basicSalary} onChange={handleChange} placeholder="0.00" />
+                            <input 
+                                type="number" 
+                                id="basicSalary" 
+                                name="basicSalary" 
+                                value={formData.basicSalary} 
+                                onChange={handleChange} 
+                                placeholder="0.00" 
+                                step="0.01"
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="allowances">Allowances</label>
-                            <input type="number" id="allowances" name="allowances" value={formData.allowances} onChange={handleChange} placeholder="0.00" />
+                            <input 
+                                type="number" 
+                                id="allowances" 
+                                name="allowances" 
+                                value={formData.allowances} 
+                                onChange={handleChange} 
+                                placeholder="0.00" 
+                                step="0.01"
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="deductions">Deductions</label>
-                            <input type="number" id="deductions" name="deductions" value={formData.deductions} onChange={handleChange} placeholder="0.00" />
+                            <input 
+                                type="number" 
+                                id="deductions" 
+                                name="deductions" 
+                                value={formData.deductions} 
+                                onChange={handleChange} 
+                                placeholder="0.00" 
+                                step="0.01"
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="currency">Currency</label>
-                            <select id="currency" name="currency" value={formData.currency} onChange={handleChange}>
+                            <select 
+                                id="currency" 
+                                name="currency" 
+                                value={formData.currency} 
+                                onChange={handleChange}
+                            >
                                 {CURRENCY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
 
                         <div className="form-group">
                             <label htmlFor="bankName">Bank Name</label>
-                            <select id="bankName" name="bankName" value={formData.bankName} onChange={handleChange}>
+                            <select 
+                                id="bankName" 
+                                name="bankName" 
+                                value={formData.bankName} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Bank</option>
                                 {BANK_OPTIONS.map(opt => (
                                     <option key={opt} value={opt}>{opt}</option>
@@ -538,11 +731,22 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                         </div>
                         <div className="form-group">
                             <label htmlFor="bankAccountNumber">Bank Account Number</label>
-                            <input type="text" id="bankAccountNumber" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="bankAccountNumber" 
+                                name="bankAccountNumber" 
+                                value={formData.bankAccountNumber} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="paymentMethod">Payment Method</label>
-                            <select id="paymentMethod" name="paymentMethod" value={formData.paymentMethod} onChange={handleChange}>
+                            <select 
+                                id="paymentMethod" 
+                                name="paymentMethod" 
+                                value={formData.paymentMethod} 
+                                onChange={handleChange}
+                            >
                                 {PAYMENT_METHOD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
@@ -550,11 +754,23 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
 
                         <div className="form-group">
                             <label htmlFor="nssfNumber">NSSF / Pension Number</label>
-                            <input type="text" id="nssfNumber" name="nssfNumber" value={formData.nssfNumber} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="nssfNumber" 
+                                name="nssfNumber" 
+                                value={formData.nssfNumber} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="nhifNumber">NHIF / Health Insurance Number</label>
-                            <input type="text" id="nhifNumber" name="nhifNumber" value={formData.nhifNumber} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="nhifNumber" 
+                                name="nhifNumber" 
+                                value={formData.nhifNumber} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group"></div>
                         <div className="form-group"></div>
@@ -569,42 +785,89 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                     <div className="form-grid">
                         <div className="form-group">
                             <label htmlFor="highestEducation">Highest Education Level</label>
-                            <select id="highestEducation" name="highestEducation" value={formData.highestEducation} onChange={handleChange}>
+                            <select 
+                                id="highestEducation" 
+                                name="highestEducation" 
+                                value={formData.highestEducation} 
+                                onChange={handleChange}
+                            >
                                 <option value="">Select Level</option>
                                 {EDUCATION_LEVELS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label htmlFor="institutionName">Institution Name</label>
-                            <input type="text" id="institutionName" name="institutionName" value={formData.institutionName} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="institutionName" 
+                                name="institutionName" 
+                                value={formData.institutionName} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="fieldOfStudy">Field of Study</label>
-                            <input type="text" id="fieldOfStudy" name="fieldOfStudy" value={formData.fieldOfStudy} onChange={handleChange} />
+                            <input 
+                                type="text" 
+                                id="fieldOfStudy" 
+                                name="fieldOfStudy" 
+                                value={formData.fieldOfStudy} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="graduationYear">Graduation Year</label>
-                            <input type="number" id="graduationYear" name="graduationYear" value={formData.graduationYear} onChange={handleChange} placeholder="YYYY" />
+                            <input 
+                                type="number" 
+                                id="graduationYear" 
+                                name="graduationYear" 
+                                value={formData.graduationYear} 
+                                onChange={handleChange} 
+                                placeholder="YYYY" 
+                                min="1900"
+                                max="2100"
+                            />
                         </div>
 
                         <div className="form-group form-group--full-width">
                             <label htmlFor="professionalCertifications">Professional Certifications</label>
-                            <textarea id="professionalCertifications" name="professionalCertifications" rows="2" value={formData.professionalCertifications} onChange={handleChange} placeholder="List certifications, separated by commas..."></textarea>
+                            <textarea 
+                                id="professionalCertifications" 
+                                name="professionalCertifications" 
+                                rows="2" 
+                                value={formData.professionalCertifications} 
+                                onChange={handleChange} 
+                                placeholder="List certifications, separated by commas..."
+                            ></textarea>
                         </div>
                         <div className="form-group form-group--full-width">
                             <label htmlFor="skills">Skills / Competencies</label>
-                            <textarea id="skills" name="skills" rows="2" value={formData.skills} onChange={handleChange} placeholder="List technical and soft skills..."></textarea>
+                            <textarea 
+                                id="skills" 
+                                name="skills" 
+                                rows="2" 
+                                value={formData.skills} 
+                                onChange={handleChange} 
+                                placeholder="List technical and soft skills..."
+                            ></textarea>
                         </div>
                         <div className="form-group form-group--full-width">
                             <label htmlFor="languages">Languages Known</label>
-                            <input type="text" id="languages" name="languages" value={formData.languages} onChange={handleChange} placeholder="e.g., English, Swahili, French" />
+                            <input 
+                                type="text" 
+                                id="languages" 
+                                name="languages" 
+                                value={formData.languages} 
+                                onChange={handleChange} 
+                                placeholder="e.g., English, Swahili, French" 
+                            />
                         </div>
 
                     </div>
                 </div>
 
                 {/* ----------------------------------------------------------------- */}
-                {/* 6. FORM ACTIONS (UNCHANGED) */}
+                {/* 6. FORM ACTIONS */}
                 {/* ----------------------------------------------------------------- */}
                 <div className="page-form-actions">
                     <button type="button" className="btn-secondary" onClick={onCancel}>
@@ -704,7 +967,7 @@ const EmployeeForm = ({ onSave, onCancel, employeeData }) => {
                     border-radius: 4px;
                     font-size: 1em;
                     width: 100%;
-                    box-sizing: border-box; /* Crucial for full-width inputs */
+                    box-sizing: border-box;
                 }
                 .disabled-input {
                     background-color: #e9ecef;

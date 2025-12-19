@@ -1,0 +1,129 @@
+AUTO REPAIR GARAGE SYSTEM
+│
+├── 1. CUSTOMER MANAGEMENT
+│   ├── 1.1 Customer Profiles
+│   │   ├── 1.1.1 Personal Information
+│   │   ├── 1.1.2 Contact Details
+│   │   └── 1.1.3 Communication Preferences
+│   │
+│   ├── 1.2 Vehicle Management
+│   │   ├── 1.2.1 Vehicle Registration
+│   │   ├── 1.2.2 Service History
+│   │   ├── 1.2.3 Maintenance Records
+│   │   └── 1.2.4 Warranty Information
+│   │
+│   └── 1.3 Service Requests
+│       ├── 1.3.1 New Service Request
+│       ├── 1.3.2 Customer Concerns
+│       ├── 1.3.3 Initial Inspection
+│       └── 1.3.4 Priority Assignment
+│
+├── 2. SERVICE WORKFLOW
+│   ├── 2.1 Job Card System
+│   │   ├── 2.1.1 Create Job Card
+│   │   │   ├── Service Details
+│   │   │   ├── Technician Assignment
+│   │   │   └── Time Estimation
+│   │   │
+│   │   └── 2.1.2 Kanban Board
+│   │       ├── TODO (New Jobs)
+│   │       ├── DIAGNOSIS
+│   │       ├── IN PROGRESS
+│   │       ├── WAITING PARTS
+│   │       ├── QUALITY CHECK
+│   │       └── COMPLETED
+│   │
+│   ├── 2.2 Technician Operations
+│   │   ├── 2.2.1 Work Assignment
+│   │   ├── 2.2.2 Progress Updates
+│   │   ├── 2.2.3 Parts Requests
+│   │   └── 2.2.4 Time Tracking
+│   │
+│   └── 2.3 Service Execution
+│       ├── 2.3.1 Diagnosis
+│       ├── 2.3.2 Repair Work
+│       ├── 2.3.3 Quality Control
+│       └── 2.3.4 Final Inspection
+│
+├── 3. INVENTORY SYSTEM
+│   ├── 3.1 Parts Management
+│   │   ├── 3.1.1 Parts Catalog
+│   │   │   ├── OEM Parts
+│   │   │   ├── Aftermarket Parts
+│   │   │   └── Generic Parts
+│   │   │
+│   │   ├── 3.1.2 Stock Control
+│   │   │   ├── Stock Levels
+│   │   │   ├── Low Stock Alerts
+│   │   │   └── Inventory Counts
+│   │   │
+│   │   └── 3.1.3 Parts Usage
+│   │       ├── Job Card Integration
+│   │       ├── Automatic Deduction
+│   │       └── Return to Stock
+│   │
+│   ├── 3.2 Purchase Management
+│   │   ├── 3.2.1 Purchase Orders
+│   │   ├── 3.2.2 Vendor Management
+│   │   ├── 3.2.3 Price Comparison
+│   │   └── 3.2.4 Delivery Tracking
+│   │
+│   └── 3.3 Special Inventory
+│       ├── 3.3.1 Tires
+│       ├── 3.3.2 Labor Services
+│       └── 3.3.3 Business Assets
+│
+├── 4. FINANCIAL SYSTEM
+│   ├── 4.1 Estimating
+│   │   ├── 4.1.1 Quick Estimates
+│   │   ├── 4.1.2 Detailed Estimates
+│   │   └── 4.1.3 Customer Approval
+│   │
+│   ├── 4.2 Invoicing
+│   │   ├── 4.2.1 Invoice Generation
+│   │   ├── 4.2.2 Tax Calculation
+│   │   └── 4.2.3 Discount Management
+│   │
+│   ├── 4.3 Payments
+│   │   ├── 4.3.1 Payment Processing
+│   │   ├── 4.3.2 Multiple Payment Methods
+│   │   └── 4.3.3 Receipt Generation
+│   │
+│   └── 4.4 Accounting
+│       ├── 4.4.1 Revenue Tracking
+│       ├── 4.4.2 Expense Management
+│       └── 4.4.3 Financial Reports
+│
+├── 5. EMPLOYEE MANAGEMENT
+│   ├── 5.1 Employee Profiles
+│   ├── 5.2 Role Permissions
+│   ├── 5.3 Time Tracking
+│   └── 5.4 Performance Metrics
+│
+├── 6. APPOINTMENTS & SCHEDULING
+│   ├── 6.1 Calendar Management
+│   ├── 6.2 Technician Scheduling
+│   ├── 6.3 Resource Allocation
+│   └── 6.4 Reminder System
+│
+├── 7. REPORTING & ANALYTICS
+│   ├── 7.1 Operational Reports
+│   │   ├── 7.1.1 Technician Productivity
+│   │   ├── 7.1.2 Job Completion Rates
+│   │   └── 7.1.3 Workshop Efficiency
+│   │
+│   ├── 7.2 Financial Reports
+│   │   ├── 7.2.1 Revenue Analysis
+│   │   ├── 7.2.2 Profit Margins
+│   │   └── 7.2.3 Expense Tracking
+│   │
+│   └── 7.3 Customer Reports
+│       ├── 7.3.1 Service History
+│       ├── 7.3.2 Customer Retention
+│       └── 7.3.3 Satisfaction Metrics
+│
+└── 8. SYSTEM ADMINISTRATION
+    ├── 8.1 User Management
+    ├── 8.2 System Configuration
+    ├── 8.3 Data Backup
+    └── 8.4 Security Settings
